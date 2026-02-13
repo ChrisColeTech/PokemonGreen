@@ -67,6 +67,12 @@ public class TileRenderer
 
     private void DrawOverlayTile(SpriteBatch spriteBatch, Rectangle destination, int tileId, TileRenderRule renderRule, int waterFrameIndex)
     {
+        if (renderRule.VisualKind == TileVisualKind.Item)
+        {
+            DrawItem(spriteBatch, destination, tileId, renderRule);
+            return;
+        }
+
         var texture = GetTextureForVisualKind(renderRule.VisualKind, waterFrameIndex);
 
         if (renderRule.VisualKind == TileVisualKind.Tree)
@@ -100,6 +106,23 @@ public class TileRenderer
         {
             DrawTemporaryMarker(spriteBatch, destination, tileId);
         }
+    }
+
+    private void DrawItem(SpriteBatch spriteBatch, Rectangle destination, int tileId, TileRenderRule renderRule)
+    {
+        if (!_textures.Items.TryGetValue(tileId, out var texture))
+        {
+            texture = _textures.Entity;
+        }
+
+        var itemSize = _tileMap.TileSize;
+        var itemDest = new Rectangle(
+            destination.X + (destination.Width - itemSize) / 2,
+            destination.Y + (destination.Height - itemSize) / 2,
+            itemSize,
+            itemSize);
+
+        spriteBatch.Draw(texture, itemDest, Color.White);
     }
 
     public void DrawOverlayMarkers(SpriteBatch spriteBatch)

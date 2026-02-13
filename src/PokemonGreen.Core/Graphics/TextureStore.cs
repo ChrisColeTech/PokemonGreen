@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -24,6 +25,8 @@ public class TextureStore
     public Texture2D PlayerCombat { get; set; } = null!;
     public Texture2D PlayerSpellcast { get; set; } = null!;
     public Texture2D Pixel { get; set; } = null!;
+    
+    public Dictionary<int, Texture2D> Items { get; } = new();
 
     public void Load(ContentManager content, GraphicsDevice graphicsDevice)
     {
@@ -53,6 +56,40 @@ public class TextureStore
         PlayerClimb = LoadTextureOrFallback(content, "Sprites/player_climb", PlayerWalk);
         PlayerCombat = LoadTextureOrFallback(content, "Sprites/player_combat", PlayerWalk);
         PlayerSpellcast = LoadTextureOrFallback(content, "Sprites/player_spellcast", PlayerWalk);
+
+        LoadItems(content);
+    }
+
+    private void LoadItems(ContentManager content)
+    {
+        var itemFiles = new Dictionary<int, string>
+        {
+            [51] = "pokeball",
+            [52] = "greatball",
+            [53] = "ultraball",
+            [54] = "potion",
+            [55] = "superpotion",
+            [56] = "stone_fire",
+            [57] = "stone_water",
+            [58] = "stone_thunder",
+            [59] = "stone_leaf",
+            [60] = "stone_moon",
+            [61] = "crystal_red",
+            [62] = "crystal_blue",
+            [63] = "crystal_green",
+            [64] = "fruit_apple",
+            [65] = "berry_red",
+            [66] = "berry_blue",
+            [67] = "herb_green",
+            [68] = "megaring",
+            [69] = "masterball",
+            [70] = "crystal_yellow",
+        };
+
+        foreach (var (tileId, fileName) in itemFiles)
+        {
+            Items[tileId] = LoadTextureOrFallback(content, $"Sprites/Items/{fileName}", Entity);
+        }
     }
 
     private Texture2D LoadTextureOrFallback(ContentManager content, string contentPath, Texture2D fallbackTexture)

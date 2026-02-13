@@ -15,7 +15,8 @@ public enum TileVisualKind
     EntityMarker,
     TrainerMarker,
     Statue,
-    Solid
+    Solid,
+    Item
 }
 
 public enum TileBaseLayer
@@ -78,7 +79,7 @@ public readonly record struct TileRenderRule(
 public sealed class TileRenderCatalog
 {
     public const int MinKnownTileId = 0;
-    public const int MaxKnownTileId = 50;
+    public const int MaxKnownTileId = 70;
 
     private readonly Dictionary<int, TileRenderRule> _rules;
 
@@ -145,6 +146,27 @@ public sealed class TileRenderCatalog
             [48] = TileRenderRule.Create(TileVisualKind.EntityMarker, TileBaseLayer.Structures, 221, 160, 221, TileOverlayKind.EntityNpc),
             [49] = TileRenderRule.Create(TileVisualKind.Statue, TileBaseLayer.Structures, overlayKind: TileOverlayKind.Statue),
             [50] = TileRenderRule.Create(TileVisualKind.EntityMarker, TileBaseLayer.Structures, 0, 206, 209, TileOverlayKind.EntityItem),
+            
+            [51] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 231, 76, 60, TileOverlayKind.EntityItem),
+            [52] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 52, 152, 219, TileOverlayKind.EntityItem),
+            [53] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 241, 196, 15, TileOverlayKind.EntityItem),
+            [54] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 231, 76, 60, TileOverlayKind.EntityItem),
+            [55] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 230, 126, 34, TileOverlayKind.EntityItem),
+            [56] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 231, 76, 60, TileOverlayKind.EntityItem),
+            [57] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 52, 152, 219, TileOverlayKind.EntityItem),
+            [58] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 241, 196, 15, TileOverlayKind.EntityItem),
+            [59] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 39, 174, 96, TileOverlayKind.EntityItem),
+            [60] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 189, 195, 199, TileOverlayKind.EntityItem),
+            [61] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 231, 76, 60, TileOverlayKind.EntityItem),
+            [62] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 52, 152, 219, TileOverlayKind.EntityItem),
+            [63] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 46, 204, 113, TileOverlayKind.EntityItem),
+            [64] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 231, 76, 60, TileOverlayKind.EntityItem),
+            [65] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 231, 76, 60, TileOverlayKind.EntityItem),
+            [66] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 52, 152, 219, TileOverlayKind.EntityItem),
+            [67] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 39, 174, 96, TileOverlayKind.EntityItem),
+            [68] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 192, 57, 43, TileOverlayKind.EntityItem),
+            [69] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 155, 89, 182, TileOverlayKind.EntityItem),
+            [70] = TileRenderRule.Create(TileVisualKind.Item, TileBaseLayer.Structures, 255, 215, 0, TileOverlayKind.EntityItem),
         };
     }
 

@@ -77,11 +77,17 @@ public class Player
     {
         if (_currentAction.HasValue)
         {
+            var action = _currentAction.Value;
             UpdateActionAnimation(deltaTime);
+            
+            if (action == PlayerState.Jump)
+            {
+                UpdateMovement(dx, dy, map, deltaTime, keepState: true);
+            }
             return;
         }
 
-        UpdateMovement(dx, dy, map, deltaTime);
+        UpdateMovement(dx, dy, map, deltaTime, keepState: false);
         UpdateLoopingAnimation(deltaTime);
     }
 
@@ -106,12 +112,15 @@ public class Player
         FrameIndex = Math.Clamp((int)(AnimationProgress * frameCount), 0, frameCount - 1);
     }
 
-    private void UpdateMovement(float dx, float dy, TileMap map, float deltaTime)
+    private void UpdateMovement(float dx, float dy, TileMap map, float deltaTime, bool keepState)
     {
         if (dx != 0f || dy != 0f)
         {
             Facing = GetDirection(dx, dy);
-            State = IsRunningToggled ? PlayerState.Run : PlayerState.Walk;
+            if (!keepState)
+            {
+                State = IsRunningToggled ? PlayerState.Run : PlayerState.Walk;
+            }
 
             var speed = IsRunningToggled ? Speed * 1.8f : Speed;
             var newX = X + dx * speed * deltaTime;
@@ -126,7 +135,7 @@ public class Player
                 Y = newY;
             }
         }
-        else
+        else if (!keepState)
         {
             State = PlayerState.Idle;
         }
