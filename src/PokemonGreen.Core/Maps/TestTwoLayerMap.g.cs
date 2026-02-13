@@ -6,22 +6,12 @@ public sealed class TestTwoLayerMap : MapDefinition
 {
     private static readonly int[] BaseTileData =
     [
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 2, 2, 2, 2, 1, 1,
-        1, 1, 2, 2, 2, 2, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     ];
 
     private static readonly int?[] OverlayTileData =
     [
-        null, null, null, null, null, null, null, null,
-        null,   51, null, null, null, null,   56, null,
-        null, null, null, null, null, null, null, null,
-        null, null, null, null, null, null,   54, null,
-        null, null, null,   19, null, null, null, null,
-        null, null, null, null, null, null, null, null
+        null, null, null, null, null, null, null, null, null, 3, null, null, null, null, null, null, null, null, null, null, 19, null, null, null, null, null, 8, null,   51, null, null, null, null, null,   54, null, null, null, null, null, null, null,   56, null, null, null
     ];
 
     private static readonly int[] WalkableTileIds =
