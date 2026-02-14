@@ -3,11 +3,13 @@ const fs = require('fs');
 const path = require('path');
 
 const inputDir = path.resolve(__dirname, '..', 'Assets', 'Sprites');
-const outputDir = path.resolve(__dirname, '..', 'src', 'PokemonGreen', 'Content', 'sprites');
+const outputDir = path.resolve(__dirname, '..', 'src', 'PokemonGreen.Assets', 'Sprites');
 
 fs.mkdirSync(outputDir, { recursive: true });
 
-const files = fs.readdirSync(inputDir).filter(f => f.endsWith('.svg'));
+// Skip v2 files — their blades are now baked into the main SVGs
+const files = fs.readdirSync(inputDir)
+    .filter(f => f.endsWith('.svg') && !f.includes('_v2'));
 
 (async () => {
     for (const file of files) {
@@ -16,7 +18,7 @@ const files = fs.readdirSync(inputDir).filter(f => f.endsWith('.svg'));
         const outputPath = path.join(outputDir, `${name}.png`);
 
         try {
-            await sharp(inputPath, { density: 72 })
+            await sharp(inputPath, { density: 144 })
                 .png()
                 .toFile(outputPath);
 

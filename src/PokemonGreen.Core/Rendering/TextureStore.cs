@@ -45,6 +45,19 @@ public static class TextureStore
         return texture;
     }
 
+    public static Texture2D? GetTexture(string spriteName)
+    {
+        if (_cache.TryGetValue(spriteName, out var cached))
+            return cached;
+
+        var texture = AssetLoader.LoadSprite(spriteName);
+        if (texture != null)
+        {
+            _cache[spriteName] = texture;
+        }
+        return texture;
+    }
+
     public static Texture2D? LoadPlayerSheet(string name)
     {
         if (_cache.TryGetValue($"player_{name}", out var cached))

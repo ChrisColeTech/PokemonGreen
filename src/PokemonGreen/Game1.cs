@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -112,18 +113,45 @@ public class Game1 : Game
 
         if (_gameWorld.CurrentMap != null)
         {
-            TileRenderer.DrawMap(
+            int playerTileX = _gameWorld.Player.TileX;
+            int playerTileY = _gameWorld.Player.TileY;
+
+            TileRenderer.DrawBaseTiles(
                 _spriteBatch,
                 _gameWorld.CurrentMap,
                 _gameWorld.Camera,
                 GameWorld.TileSize);
-        }
 
-        _playerRenderer.Draw(
-            _spriteBatch,
-            _gameWorld.Player,
-            _gameWorld.Camera,
-            GameWorld.TileSize);
+            TileRenderer.DrawOverlaysBehindPlayer(
+                _spriteBatch,
+                _gameWorld.CurrentMap,
+                _gameWorld.Camera,
+                GameWorld.TileSize,
+                playerTileX,
+                playerTileY);
+
+            _playerRenderer.Draw(
+                _spriteBatch,
+                _gameWorld.Player,
+                _gameWorld.Camera,
+                GameWorld.TileSize);
+
+            TileRenderer.DrawOverlaysInFrontOfPlayer(
+                _spriteBatch,
+                _gameWorld.CurrentMap,
+                _gameWorld.Camera,
+                GameWorld.TileSize,
+                playerTileX,
+                playerTileY);
+        }
+        else
+        {
+            _playerRenderer.Draw(
+                _spriteBatch,
+                _gameWorld.Player,
+                _gameWorld.Camera,
+                GameWorld.TileSize);
+        }
 
         _spriteBatch.End();
 
