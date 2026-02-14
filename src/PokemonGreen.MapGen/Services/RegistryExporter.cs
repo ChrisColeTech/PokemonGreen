@@ -13,10 +13,6 @@ public static class RegistryExporter
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
-    /// <summary>
-    /// Exports the TileRegistry data as JSON matching the TypeScript format.
-    /// </summary>
-    /// <returns>JSON string representation of the tile registry.</returns>
     public static string ExportToJson()
     {
         var tiles = TileRegistry.AllTiles
@@ -27,14 +23,26 @@ public static class RegistryExporter
                 Name = t.Name,
                 Walkable = t.Walkable,
                 Color = t.Color,
-                Category = t.Category.ToString(),
+                Category = t.Category.ToString().ToLowerInvariant(),
                 OverlayBehavior = t.OverlayBehavior
+            })
+            .ToList();
+
+        var categories = Enum.GetValues<TileCategory>()
+            .Select(c => new CategoryExportModel
+            {
+                Id = c.ToString().ToLowerInvariant(),
+                Label = c.ToString(),
+                ShowInPalette = true
             })
             .ToList();
 
         var export = new RegistryExportModel
         {
-            Version = 1,
+            Id = "pokemon-green-tiles",
+            Name = "Pokemon Green Tile Registry",
+            Version = "1.0.0",
+            Categories = categories,
             Tiles = tiles
         };
 
@@ -43,8 +51,18 @@ public static class RegistryExporter
 
     private class RegistryExportModel
     {
-        public int Version { get; set; }
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Version { get; set; } = "";
+        public List<CategoryExportModel> Categories { get; set; } = [];
         public List<TileExportModel> Tiles { get; set; } = [];
+    }
+
+    private class CategoryExportModel
+    {
+        public string Id { get; set; } = "";
+        public string Label { get; set; } = "";
+        public bool ShowInPalette { get; set; }
     }
 
     private class TileExportModel

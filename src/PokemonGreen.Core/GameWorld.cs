@@ -28,7 +28,6 @@ public class GameWorld
     private TransitionState _transitionState;
     private float _fadeTimer;
     private WarpConnection? _pendingWarp;
-    private readonly float _baseZoom; // VisibleTilesY-based zoom, set once at game start
 
     // ── Constructor ───────────────────────────────────────────────────
 
@@ -37,7 +36,6 @@ public class GameWorld
         Camera = new Camera(viewportWidth, viewportHeight);
         Input = new InputManager();
         Player = new PlayerClass(0, 0);
-        _baseZoom = viewportHeight / (float)(VisibleTilesY * TileSize);
     }
 
     // ── LoadMap overloads ─────────────────────────────────────────────
@@ -225,13 +223,9 @@ public class GameWorld
 
     private float CalculateZoom()
     {
-        // Fill zoom ensures small maps always fill the screen (no empty space).
-        // This recalculates on resize so the map never has black borders.
-        float fillX = Camera.ViewportWidth / (float)(CurrentMap!.Width * TileSize);
-        float fillY = Camera.ViewportHeight / (float)(CurrentMap.Height * TileSize);
-        float fillZoom = MathF.Max(fillX, fillY);
-
-        return MathF.Max(_baseZoom, fillZoom);
+        // Zoom scales with viewport height so the player always sees
+        // VisibleTilesY tiles vertically, regardless of window size.
+        return Camera.ViewportHeight / (float)(VisibleTilesY * TileSize);
     }
 
     // ── Edge transition logic ─────────────────────────────────────────

@@ -54,6 +54,7 @@ interface EditorState {
   paint: (x: number, y: number, tileId?: number) => void
   resize: (width: number, height: number) => void
   clear: () => void
+  rotateMap: (direction: 1 | -1) => void
   setMapData: (data: number[][], width: number, height: number) => void
   setCellSize: (size: number) => void
   setMapName: (name: string) => void
@@ -139,6 +140,31 @@ export const useEditorStore = create<EditorState>()(
       state.selectedTile = fallbackTileId(state.registry as EditorTileRegistry)
       state.selectedBuilding = null
       state.buildingRotation = 0
+    }),
+
+    rotateMap: (direction) => set(state => {
+      const oldW = state.mapWidth
+      const oldH = state.mapHeight
+      const newW = oldH
+      const newH = oldW
+      const newMap: number[][] = []
+
+      for (let y = 0; y < newH; y++) {
+        newMap[y] = []
+        for (let x = 0; x < newW; x++) {
+          if (direction === 1) {
+            // Clockwise: new[y][x] = old[oldH - 1 - x][y]
+            newMap[y][x] = state.mapData[oldH - 1 - x][y]
+          } else {
+            // Counter-clockwise: new[y][x] = old[x][oldW - 1 - y]
+            newMap[y][x] = state.mapData[x][oldW - 1 - y]
+          }
+        }
+      }
+
+      state.mapData = newMap
+      state.mapWidth = newW
+      state.mapHeight = newH
     }),
 
     setMapData: (data, width, height) => set(state => {

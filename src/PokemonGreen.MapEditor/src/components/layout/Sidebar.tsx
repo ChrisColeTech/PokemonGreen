@@ -1,42 +1,186 @@
-import { useState, useEffect, useCallback } from 'react'
-import { PanelLeftClose, PanelLeftOpen, RotateCcw, RotateCw, Shuffle, FileDown } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import {
+  PanelLeftClose,
+  PanelLeftOpen,
+  RotateCcw,
+  RotateCw,
+  Shuffle,
+  FileDown,
+  ChevronRight,
+  ChevronDown,
+} from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
-import { buildingWidth, buildingHeight } from '../../services/registryService'
-import { MAP_TEMPLATES, TEMPLATE_CATEGORIES, loadTemplate } from '../../data/templates'
-import type { MapTemplate } from '../../data/templates'
+import { paletteCategories, tilesForCategory, buildingWidth, buildingHeight } from '../../services/registryService'
+import { MAP_TEMPLATES, TEMPLATE_CATEGORIES, loadTemplate, type MapTemplate } from '../../data/templates'
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+type SectionId = 'palette' | 'controls'
 
+function SectionHeader({
+  title,
+  sectionId,
+  expanded,
+  onToggle,
+  badge,
+}: {
+  title: string
+  sectionId: SectionId
+  expanded: boolean
+  onToggle: (id: SectionId) => void
+  badge?: number
+}) {
+  return (
+    <button
+      onClick={() => onToggle(sectionId)}
+      style={{
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+        height: 22,
+        padding: '0 8px',
+        background: '#252526',
+        border: 'none',
+        borderBottom: '1px solid #2d2d2d',
+        color: '#e0e0e0',
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        cursor: 'pointer',
+        gap: 4,
+      }}
+    >
+      {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+      <span style={{ flex: 1, textAlign: 'left' }}>{title}</span>
+      {badge !== undefined && (
+        <span style={{ fontSize: 10, color: '#808080', fontWeight: 400 }}>
+          {badge}
+        </span>
+      )}
+    </button>
+  )
+}
+
+
+function PaletteSection() {
   const registry = useEditorStore(s => s.registry)
   const selectedTile = useEditorStore(s => s.selectedTile)
   const selectedBuilding = useEditorStore(s => s.selectedBuilding)
-  const mapWidth = useEditorStore(s => s.mapWidth)
-  const mapHeight = useEditorStore(s => s.mapHeight)
-  const cellSize = useEditorStore(s => s.cellSize)
-  const mapName = useEditorStore(s => s.mapName)
   const selectTile = useEditorStore(s => s.selectTile)
   const selectBuilding = useEditorStore(s => s.selectBuilding)
   const rotateBuilding = useEditorStore(s => s.rotateBuilding)
+  const categories = useMemo(() => paletteCategories(registry), [registry])
+
+  const btnStyle: React.CSSProperties = {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    padding: '3px 6px',
+    background: '#3c3c3c',
+    border: '1px solid #2d2d2d',
+    borderRadius: 3,
+    color: '#e0e0e0',
+    fontSize: 11,
+    cursor: 'pointer',
+  }
+
+  return (
+    <div className="p-2" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Tiles */}
+      {categories.map(cat => {
+        const tiles = tilesForCategory(registry, cat.id)
+        if (tiles.length === 0) return null
+        return (
+          <div key={cat.id}>
+            <div style={{ fontSize: 10, color: '#808080', marginBottom: 3, textTransform: 'uppercase' }}>
+              {cat.label}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {tiles.map(tile => (
+                <button
+                  key={tile.id}
+                  onClick={() => selectTile(tile.id)}
+                  style={{
+                    padding: 6,
+                    background: tile.color,
+                    border: selectedTile === tile.id && selectedBuilding === null ? '2px solid #fff' : '2px solid transparent',
+                    borderRadius: 3,
+                    cursor: 'pointer',
+                    color: '#e0e0e0',
+                    fontSize: 11,
+                    textAlign: 'center',
+                  }}
+                >
+                  {tile.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+
+      {/* Buildings */}
+      {registry.buildings.length > 0 && (
+        <>
+          <div style={{ fontSize: 10, color: '#808080', marginTop: 4, textTransform: 'uppercase' }}>
+            Buildings
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+            {registry.buildings.map((b, idx) => (
+              <button
+                key={b.id}
+                onClick={() => selectBuilding(idx)}
+                style={{
+                  padding: 6,
+                  background: selectedBuilding === idx ? '#094771' : '#2a4a3a',
+                  border: selectedBuilding === idx ? '2px solid #fff' : '2px solid transparent',
+                  borderRadius: 3,
+                  color: '#e0e0e0',
+                  fontSize: 10,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {b.name}{'\n'}{buildingWidth(b)}x{buildingHeight(b)}
+              </button>
+            ))}
+          </div>
+          {selectedBuilding !== null && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button onClick={() => rotateBuilding(-1)} style={btnStyle}>
+                <RotateCcw size={12} /> Rotate Left
+              </button>
+              <button onClick={() => rotateBuilding(1)} style={btnStyle}>
+                <RotateCw size={12} /> Rotate Right
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function ControlsSection() {
+  const mapName = useEditorStore(s => s.mapName)
+  const setMapName = useEditorStore(s => s.setMapName)
+  const registry = useEditorStore(s => s.registry)
+  const mapWidth = useEditorStore(s => s.mapWidth)
+  const mapHeight = useEditorStore(s => s.mapHeight)
+  const cellSize = useEditorStore(s => s.cellSize)
   const resize = useEditorStore(s => s.resize)
   const clear = useEditorStore(s => s.clear)
+  const rotateMap = useEditorStore(s => s.rotateMap)
   const setCellSize = useEditorStore(s => s.setCellSize)
-  const setMapName = useEditorStore(s => s.setMapName)
-
   const importJson = useEditorStore(s => s.importJson)
 
-  const [inputWidth, setInputWidth] = useState(mapWidth)
-  const [inputHeight, setInputHeight] = useState(mapHeight)
-  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [w, setW] = useState(mapWidth)
+  const [h, setH] = useState(mapHeight)
+  const [selectedTemplate, setSelectedTemplate] = useState<MapTemplate | null>(null)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
-
-  // Sync local inputs when store dimensions change (e.g. after import)
-  useEffect(() => {
-    setInputWidth(mapWidth)
-  }, [mapWidth])
-  useEffect(() => {
-    setInputHeight(mapHeight)
-  }, [mapHeight])
 
   const handleLoadTemplate = useCallback(async (template: MapTemplate) => {
     setLoadingTemplate(true)
@@ -50,220 +194,247 @@ export function Sidebar() {
     }
   }, [importJson])
 
-  const handleLoadSelected = useCallback(() => {
-    const template = MAP_TEMPLATES.find(t => t.id === selectedTemplate)
-    if (template) handleLoadTemplate(template)
-  }, [selectedTemplate, handleLoadTemplate])
-
-  const handleLoadRandom = useCallback(() => {
-    const template = MAP_TEMPLATES[Math.floor(Math.random() * MAP_TEMPLATES.length)]
-    setSelectedTemplate(template.id)
-    handleLoadTemplate(template)
+  const handleRandom = useCallback(() => {
+    const t = MAP_TEMPLATES[Math.floor(Math.random() * MAP_TEMPLATES.length)]
+    setSelectedTemplate(t)
+    handleLoadTemplate(t)
   }, [handleLoadTemplate])
 
-  const paletteCategories = registry.categories.filter(c => c.showInPalette)
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '3px 6px',
+    background: '#3c3c3c',
+    border: '1px solid #2d2d2d',
+    borderRadius: 3,
+    color: '#e0e0e0',
+    fontSize: 12,
+    outline: 'none',
+  }
+
+  const btnStyle: React.CSSProperties = {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    padding: '4px 6px',
+    background: '#3c3c3c',
+    border: '1px solid #2d2d2d',
+    borderRadius: 3,
+    color: '#e0e0e0',
+    fontSize: 11,
+    cursor: 'pointer',
+  }
+
+  return (
+    <div className="p-2" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Map name */}
+      <label style={{ fontSize: 10, color: '#808080' }}>
+        Map Name
+        <input
+          type="text"
+          value={mapName}
+          onChange={e => setMapName(e.target.value)}
+          style={{ ...inputStyle, display: 'block', marginTop: 2 }}
+        />
+      </label>
+      <div style={{ fontSize: 10, color: '#808080' }}>
+        Registry: <span style={{ color: '#e0e0e0' }}>{registry.name} v{registry.version}</span>
+      </div>
+
+      {/* Grid size */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+        <label style={{ fontSize: 10, color: '#808080' }}>
+          Width
+          <input type="number" min={1} max={200} value={w} onChange={e => setW(+e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ fontSize: 10, color: '#808080' }}>
+          Height
+          <input type="number" min={1} max={200} value={h} onChange={e => setH(+e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ fontSize: 10, color: '#808080' }}>
+          Cell
+          <input type="number" min={8} max={64} value={cellSize} onChange={e => setCellSize(+e.target.value)} style={inputStyle} />
+        </label>
+      </div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button onClick={() => resize(w, h)} style={btnStyle}>Resize</button>
+        <button onClick={clear} style={{ ...btnStyle, color: '#f48771' }}>Clear All</button>
+      </div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button onClick={() => rotateMap(-1)} style={btnStyle}>
+          <RotateCcw size={12} /> Rotate CCW
+        </button>
+        <button onClick={() => rotateMap(1)} style={btnStyle}>
+          <RotateCw size={12} /> Rotate CW
+        </button>
+      </div>
+
+      {/* Templates */}
+      <div style={{ fontSize: 10, color: '#808080', marginTop: 4, textTransform: 'uppercase' }}>
+        Templates
+      </div>
+      <select
+        value={selectedTemplate?.id ?? ''}
+        onChange={e => {
+          const t = MAP_TEMPLATES.find(t => t.id === e.target.value) ?? null
+          setSelectedTemplate(t)
+        }}
+        style={{
+          width: '100%',
+          padding: '3px 6px',
+          background: '#3c3c3c',
+          border: '1px solid #2d2d2d',
+          borderRadius: 3,
+          color: '#e0e0e0',
+          fontSize: 12,
+          outline: 'none',
+        }}
+      >
+        <option value="">Select template...</option>
+        {TEMPLATE_CATEGORIES.map(cat => (
+          <optgroup key={cat.id} label={cat.label}>
+            {MAP_TEMPLATES.filter(t => t.category === cat.id).map(t => (
+              <option key={t.id} value={t.id}>{t.name} ({t.size})</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button
+          disabled={!selectedTemplate || loadingTemplate}
+          onClick={() => selectedTemplate && handleLoadTemplate(selectedTemplate)}
+          style={{
+            ...btnStyle,
+            background: selectedTemplate ? '#094771' : '#3c3c3c',
+            color: selectedTemplate ? '#e0e0e0' : '#808080',
+            cursor: selectedTemplate ? 'pointer' : 'default',
+            opacity: loadingTemplate ? 0.6 : 1,
+          }}
+        >
+          <FileDown size={12} /> {loadingTemplate ? 'Loading...' : 'Load Template'}
+        </button>
+        <button
+          disabled={loadingTemplate}
+          onClick={handleRandom}
+          style={{ ...btnStyle, opacity: loadingTemplate ? 0.6 : 1 }}
+        >
+          <Shuffle size={12} /> Random
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false)
+  const [sections, setSections] = useState<Record<SectionId, boolean>>({
+    palette: true,
+    controls: true,
+  })
+
+  const registry = useEditorStore(s => s.registry)
+
+  const toggleSection = useCallback((id: SectionId) => {
+    setSections(prev => ({ ...prev, [id]: !prev[id] }))
+  }, [])
+
+  const paletteCount = registry.tiles.length + registry.buildings.length
 
   if (collapsed) {
     return (
-      <div className="w-[36px] bg-[#1e1e1e] border-r border-[#2d2d2d] flex flex-col items-center pt-[6px]">
+      <div
+        style={{
+          width: 36,
+          height: '100%',
+          flexShrink: 0,
+          background: '#252526',
+          borderRight: '1px solid #2d2d2d',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: 8,
+        }}
+      >
         <button
-          className="w-[28px] h-[28px] border-none rounded-[3px] cursor-pointer text-[#808080] bg-transparent hover:bg-[#2d2d2d] hover:text-[#e0e0e0] flex items-center justify-center"
           onClick={() => setCollapsed(false)}
-          title="Expand sidebar"
+          title="Expand Sidebar"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#e0e0e0',
+            cursor: 'pointer',
+            padding: 4,
+          }}
         >
-          <PanelLeftOpen size={16} />
+          <PanelLeftOpen size={18} />
         </button>
       </div>
     )
   }
 
   return (
-    <div className="w-[280px] bg-[#1e1e1e] border-r border-[#2d2d2d] flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-[10px] h-[30px] border-b border-[#2d2d2d]">
-        <span className="text-[11px] text-[#808080] uppercase tracking-wider">Palette</span>
+    <div
+      style={{
+        width: 240,
+        height: '100%',
+        flexShrink: 0,
+        background: '#1e1e1e',
+        borderRight: '1px solid #2d2d2d',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Sidebar top bar */}
+      <div
+        style={{
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '4px 8px',
+          borderBottom: '1px solid #2d2d2d',
+          background: '#252526',
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#e0e0e0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Explorer
+        </span>
         <button
-          className="w-[22px] h-[22px] border-none rounded-[3px] cursor-pointer text-[#808080] bg-transparent hover:bg-[#2d2d2d] hover:text-[#e0e0e0] flex items-center justify-center"
           onClick={() => setCollapsed(true)}
-          title="Collapse sidebar"
+          title="Collapse Sidebar"
+          style={{ background: 'none', border: 'none', color: '#808080', cursor: 'pointer', padding: 2 }}
         >
-          <PanelLeftClose size={14} />
+          <PanelLeftClose size={16} />
         </button>
       </div>
 
-      {/* Map Name */}
-      <div className="px-[10px] py-[8px] border-b border-[#2d2d2d]">
-        <label className="text-[11px] text-[#808080] block mb-[2px]">Map Name</label>
-        <input
-          type="text"
-          value={mapName}
-          onChange={(e) => setMapName(e.target.value)}
-          className="w-full p-[5px] border border-[#2d2d2d] rounded-[3px] bg-[#161616] text-[#e0e0e0] text-[13px]"
-        />
-      </div>
-
-      {/* Registry indicator */}
-      <div className="px-[10px] py-[4px] border-b border-[#2d2d2d]">
-        <span className="text-[10px] text-[#555555]">{registry.name} v{registry.version}</span>
-      </div>
-
-      {/* Tile Palette — dynamic from registry */}
-      <div className="flex-1 overflow-y-auto p-[10px]">
-        {paletteCategories.map((cat) => {
-          const tiles = registry.tiles.filter(t => t.category === cat.id)
-          if (tiles.length === 0) return null
-
-          return (
-            <div key={cat.id}>
-              <div className="text-[11px] text-[#808080] mt-[10px] mb-[5px]">{cat.label}</div>
-              <div className="grid grid-cols-2 gap-[4px]">
-                {tiles.map((tile) => (
-                  <button
-                    key={tile.id}
-                    className="p-[8px] rounded-[3px] cursor-pointer text-[12px] text-[#e0e0e0] text-center"
-                    style={{
-                      background: tile.color,
-                      border: selectedTile === tile.id && selectedBuilding === null ? '2px solid #e0e0e0' : '2px solid transparent',
-                    }}
-                    onClick={() => selectTile(tile.id)}
-                  >
-                    {tile.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-
-        {/* Buildings — dynamic from registry */}
-        {registry.buildings.length > 0 && (
-          <div>
-            <div className="text-[11px] text-[#808080] mt-[10px] mb-[5px]">Buildings</div>
-            <div className="grid grid-cols-2 gap-[4px]">
-              {registry.buildings.map((building, idx) => {
-                const w = buildingWidth(building)
-                const h = buildingHeight(building)
-                return (
-                  <button
-                    key={building.id}
-                    className="p-[8px] rounded-[3px] cursor-pointer text-[10px] text-[#e0e0e0] text-center whitespace-pre-line"
-                    style={{
-                      background: '#2a4a3a',
-                      border: selectedBuilding === idx ? '2px solid #e0e0e0' : '2px solid transparent',
-                    }}
-                    onClick={() => selectBuilding(idx)}
-                  >
-                    {building.name}{'\n'}{w}x{h}
-                  </button>
-                )
-              })}
-            </div>
+      {/* Sections container - fills remaining space, no scrollbar */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Palette — Tiles & Buildings */}
+        <SectionHeader title="Palette" sectionId="palette" expanded={sections.palette} onToggle={toggleSection} badge={paletteCount} />
+        {sections.palette && (
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <PaletteSection />
           </div>
         )}
-      </div>
 
-      {/* Map Controls */}
-      <div className="p-[10px] border-t border-[#2d2d2d] flex flex-col gap-[6px]">
-        <div className="flex gap-[6px]">
-          <div className="flex-1">
-            <label className="text-[11px] text-[#808080] block mb-[2px]">Width</label>
-            <input
-              type="number"
-              value={inputWidth}
-              min={5}
-              max={100}
-              onChange={(e) => setInputWidth(Number(e.target.value))}
-              className="w-full p-[5px] border border-[#2d2d2d] rounded-[3px] bg-[#161616] text-[#e0e0e0] text-[13px]"
-            />
+        {/* Controls — Grid, Rotate & Templates */}
+        <SectionHeader title="Controls" sectionId="controls" expanded={sections.controls} onToggle={toggleSection} />
+        {sections.controls && (
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <ControlsSection />
           </div>
-          <div className="flex-1">
-            <label className="text-[11px] text-[#808080] block mb-[2px]">Height</label>
-            <input
-              type="number"
-              value={inputHeight}
-              min={5}
-              max={100}
-              onChange={(e) => setInputHeight(Number(e.target.value))}
-              className="w-full p-[5px] border border-[#2d2d2d] rounded-[3px] bg-[#161616] text-[#e0e0e0] text-[13px]"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="text-[11px] text-[#808080] block mb-[2px]">Cell Size</label>
-            <input
-              type="number"
-              value={cellSize}
-              min={8}
-              max={48}
-              onChange={(e) => setCellSize(Number(e.target.value))}
-              className="w-full p-[5px] border border-[#2d2d2d] rounded-[3px] bg-[#161616] text-[#e0e0e0] text-[13px]"
-            />
-          </div>
-        </div>
-        <button
-          onClick={() => resize(inputWidth, inputHeight)}
-          className="w-full p-[5px] border-none rounded-[3px] cursor-pointer text-[13px] text-[#e0e0e0] bg-[#2d2d2d] hover:bg-[#383838]"
-        >
-          Resize
-        </button>
-        <button
-          onClick={() => { clear(); setInputWidth(25); setInputHeight(18) }}
-          className="w-full p-[5px] border-none rounded-[3px] cursor-pointer text-[13px] text-[#e0e0e0] bg-[#2d2d2d] hover:bg-[#383838]"
-        >
-          Clear All
-        </button>
-        <div className="flex gap-[4px]">
-          <button
-            disabled={selectedBuilding === null}
-            onClick={() => rotateBuilding(-1)}
-            className="flex-1 p-[5px] border-none rounded-[3px] cursor-pointer text-[13px] text-[#e0e0e0] bg-[#2d2d2d] hover:bg-[#383838] disabled:opacity-40 disabled:cursor-default flex items-center justify-center gap-[4px]"
-          >
-            <RotateCcw size={14} /> Left
-          </button>
-          <button
-            disabled={selectedBuilding === null}
-            onClick={() => rotateBuilding(1)}
-            className="flex-1 p-[5px] border-none rounded-[3px] cursor-pointer text-[13px] text-[#e0e0e0] bg-[#2d2d2d] hover:bg-[#383838] disabled:opacity-40 disabled:cursor-default flex items-center justify-center gap-[4px]"
-          >
-            <RotateCw size={14} /> Right
-          </button>
-        </div>
-
-        {/* Template Loader */}
-        <div className="border-t border-[#2d2d2d] pt-[6px] mt-[2px]">
-          <label className="text-[11px] text-[#808080] block mb-[2px]">Templates</label>
-          <select
-            value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value)}
-            className="w-full p-[5px] border border-[#2d2d2d] rounded-[3px] bg-[#161616] text-[#e0e0e0] text-[12px] mb-[4px]"
-          >
-            <option value="">Select a template...</option>
-            {TEMPLATE_CATEGORIES.map(cat => (
-              <optgroup key={cat.id} label={cat.label}>
-                {MAP_TEMPLATES.filter(t => t.category === cat.id).map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.size})
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <div className="flex gap-[4px]">
-            <button
-              disabled={!selectedTemplate || loadingTemplate}
-              onClick={handleLoadSelected}
-              className="flex-1 p-[5px] border-none rounded-[3px] cursor-pointer text-[12px] text-[#e0e0e0] bg-[#1a5c2e] hover:bg-[#1e7a38] disabled:opacity-40 disabled:cursor-default flex items-center justify-center gap-[4px]"
-            >
-              <FileDown size={13} /> {loadingTemplate ? 'Loading...' : 'Load'}
-            </button>
-            <button
-              disabled={loadingTemplate}
-              onClick={handleLoadRandom}
-              className="flex-1 p-[5px] border-none rounded-[3px] cursor-pointer text-[12px] text-[#e0e0e0] bg-[#4a2d7a] hover:bg-[#5c38a0] disabled:opacity-40 disabled:cursor-default flex items-center justify-center gap-[4px]"
-            >
-              <Shuffle size={13} /> Random
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

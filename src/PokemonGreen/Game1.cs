@@ -20,9 +20,6 @@ public class Game1 : Game
     private const int ViewportWidth = 800;
     private const int ViewportHeight = 600;
     private bool _windowResized;
-    private int _frameCount;
-    private int _lastLoggedVpW;
-    private int _lastLoggedVpH;
 
     public Game1()
     {
@@ -43,7 +40,7 @@ public class Game1 : Game
 
         _gameWorld = new GameWorld(ViewportWidth, ViewportHeight);
 
-        if (MapCatalog.TryGetMap("greenleaf_metro", out var startMap) && startMap != null)
+        if (MapCatalog.TryGetMap("test_map_center", out var startMap) && startMap != null)
         {
             _gameWorld.LoadMap(startMap);
         }
@@ -78,7 +75,6 @@ public class Game1 : Game
 
         _gameWorld.Camera.ViewportWidth = GraphicsDevice.Viewport.Width;
         _gameWorld.Camera.ViewportHeight = GraphicsDevice.Viewport.Height;
-        Console.WriteLine($"[INIT LoadContent] GD.Viewport={GraphicsDevice.Viewport.Width}x{GraphicsDevice.Viewport.Height} Camera.Viewport={_gameWorld.Camera.ViewportWidth}x{_gameWorld.Camera.ViewportHeight} Zoom={_gameWorld.Camera.Zoom:F2} BackBuffer={GraphicsDevice.PresentationParameters.BackBufferWidth}x{GraphicsDevice.PresentationParameters.BackBufferHeight}");
     }
 
     protected override void Update(GameTime gameTime)
@@ -91,16 +87,12 @@ public class Game1 : Game
             _windowResized = false;
             int w = Window.ClientBounds.Width;
             int h = Window.ClientBounds.Height;
-            Console.WriteLine($"[RESIZE UPDATE] Processing: ClientBounds={w}x{h}");
             if (w > 0 && h > 0)
             {
                 _graphics.PreferredBackBufferWidth = w;
                 _graphics.PreferredBackBufferHeight = h;
                 _graphics.ApplyChanges();
-                var vp = GraphicsDevice.Viewport;
-                Console.WriteLine($"[RESIZE UPDATE] After ApplyChanges: Viewport={vp.Width}x{vp.Height} BackBuffer={GraphicsDevice.PresentationParameters.BackBufferWidth}x{GraphicsDevice.PresentationParameters.BackBufferHeight}");
                 _gameWorld.OnViewportResized(w, h);
-                Console.WriteLine($"[RESIZE UPDATE] Camera: Viewport={_gameWorld.Camera.ViewportWidth}x{_gameWorld.Camera.ViewportHeight} Zoom={_gameWorld.Camera.Zoom:F2} Pos=({_gameWorld.Camera.X:F1},{_gameWorld.Camera.Y:F1})");
             }
         }
 
@@ -114,17 +106,6 @@ public class Game1 : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        _frameCount++;
-        var gdVp = GraphicsDevice.Viewport;
-        int camW = _gameWorld.Camera.ViewportWidth;
-        int camH = _gameWorld.Camera.ViewportHeight;
-        if (camW != _lastLoggedVpW || camH != _lastLoggedVpH || _frameCount % 300 == 0)
-        {
-            Console.WriteLine($"[DRAW #{_frameCount}] GD.Viewport={gdVp.Width}x{gdVp.Height} Camera.Viewport={camW}x{camH} Zoom={_gameWorld.Camera.Zoom:F2} Bounds={_gameWorld.Camera.Bounds}");
-            _lastLoggedVpW = camW;
-            _lastLoggedVpH = camH;
-        }
-
         GraphicsDevice.Clear(Color.Black);
 
         var transformMatrix = _gameWorld.Camera.GetTransformMatrix();
@@ -171,7 +152,6 @@ public class Game1 : Game
 
     private void OnClientSizeChanged(object? sender, System.EventArgs e)
     {
-        Console.WriteLine($"[RESIZE EVENT] ClientBounds={Window.ClientBounds.Width}x{Window.ClientBounds.Height} BackBuffer={_graphics.PreferredBackBufferWidth}x{_graphics.PreferredBackBufferHeight}");
         _windowResized = true;
     }
 
