@@ -1,149 +1,139 @@
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Graphics;
-using PokemonGreen.Core.Audio;
-using PokemonGreen.Core.Graphics;
-using PokemonGreen.Core.Input;
 using PokemonGreen.Core.Maps;
-using PokemonGreen.Core.Rendering;
+using PokemonGreen.Core.Systems;
+using PlayerDirection = PokemonGreen.Core.Player.Direction;
+using PlayerClass = PokemonGreen.Core.Player.Player;
 
 namespace PokemonGreen.Core;
 
+/// <summary>
+/// Main orchestrator that coordinates all game systems including maps, player, camera, and input.
+/// </summary>
 public class GameWorld
 {
-    private TextureStore? _textures;
-    private TileRenderer? _tileRenderer;
-    private PlayerRenderer? _playerRenderer;
-    private SoundManager _soundManager = null!;
-    private bool _isPaused;
-    private float _animationTimer;
-    private int _waterFrameIndex;
+    /// <summary>
+    /// Size of each tile in pixels.
+    /// </summary>
+    public const int TileSize = 16;
 
-    public TileMap TileMap { get; private set; }
-    public Player Player { get; }
-    public Camera Camera { get; } = new();
-    public InputManager Input { get; } = new();
-    public TileRenderCatalog TileRenderCatalog { get; } = new();
-    public bool IsPaused => _isPaused;
-    public bool ShouldQuit { get; private set; }
+    /// <summary>
+    /// The currently loaded tile map.
+    /// </summary>
+    public TileMap? CurrentMap { get; private set; }
 
-    public GameWorld(string mapId)
+    /// <summary>
+    /// The player character.
+    /// </summary>
+    public PlayerClass Player { get; }
+
+    /// <summary>
+    /// The camera for viewport management.
+    /// </summary>
+    public Camera Camera { get; }
+
+    /// <summary>
+    /// The input manager for handling player input.
+    /// </summary>
+    public InputManager Input { get; }
+
+    /// <summary>
+    /// Indicates whether the game world has been initialized with a map.
+    /// </summary>
+    public bool IsInitialized => CurrentMap != null;
+
+    /// <summary>
+    /// Creates a new GameWorld with the specified viewport dimensions.
+    /// </summary>
+    /// <param name="viewportWidth">Width of the viewport in pixels.</param>
+    /// <param name="viewportHeight">Height of the viewport in pixels.</param>
+    public GameWorld(int viewportWidth, int viewportHeight)
     {
-        var activeMap = MapCatalog.TryGetById(mapId, out var generatedMap)
-            ? generatedMap!
-            : TestTwoLayerMap.Instance;
-
-        TileMap = activeMap.CreateTileMap();
-        var spawnPosition = FindSpawnPosition();
-        Player = new Player(spawnPosition.X, spawnPosition.Y);
+        Camera = new Camera(viewportWidth, viewportHeight);
+        Input = new InputManager();
+        Player = new PlayerClass(0, 0);
     }
 
-    private Vector2 FindSpawnPosition()
+    /// <summary>
+    /// Loads a map from a map definition and positions the player at the spawn point.
+    /// </summary>
+    /// <param name="mapDef">The map definition to load.</param>
+    public void LoadMap(MapDefinition mapDef)
     {
-        var startX = TileMap.Width / 2;
-        var startY = TileMap.Height / 2;
-
-        for (var radius = 0; radius <= Math.Max(TileMap.Width, TileMap.Height); radius += 1)
-        {
-            var minX = Math.Max(0, startX - radius);
-            var maxX = Math.Min(TileMap.Width - 1, startX + radius);
-            var minY = Math.Max(0, startY - radius);
-            var maxY = Math.Min(TileMap.Height - 1, startY + radius);
-
-            for (var y = minY; y <= maxY; y += 1)
-            {
-                for (var x = minX; x <= maxX; x += 1)
-                {
-                    if (!TileMap.IsWalkable(x, y))
-                    {
-                        continue;
-                    }
-
-                    return new Vector2(
-                        (x * TileMap.TileSize) + (TileMap.TileSize / 2f),
-                        (y * TileMap.TileSize) + (TileMap.TileSize / 2f));
-                }
-            }
-        }
-
-        return new Vector2(TileMap.TileSize / 2f, TileMap.TileSize / 2f);
+        LoadMap(mapDef.CreateTileMap());
     }
 
-    public void LoadTextures(ContentManager content, GraphicsDevice graphicsDevice)
+    /// <summary>
+    /// Loads a tile map directly and positions the player at the spawn point.
+    /// </summary>
+    /// <param name="map">The tile map to load.</param>
+    public void LoadMap(TileMap map)
     {
-        _textures = new TextureStore();
-        _textures.Load(content, graphicsDevice);
-        _tileRenderer = new TileRenderer(TileMap, TileRenderCatalog, _textures);
-        _playerRenderer = new PlayerRenderer(Player, _textures);
-        
-        _soundManager = SoundManager.Instance;
-        _soundManager.Load(content);
+        CurrentMap = map;
+
+        // Position player at spawn point (center of map by default)
+        float spawnX = CurrentMap.Width / 2f;
+        float spawnY = CurrentMap.Height / 2f;
+        Player.SetPosition(spawnX, spawnY);
+
+        // Center camera on player
+        Camera.X = spawnX * TileSize;
+        Camera.Y = spawnY * TileSize;
     }
 
-    public bool Update(GameTime gameTime)
+    /// <summary>
+    /// Main update loop that processes input, updates player, and updates camera.
+    /// </summary>
+    /// <param name="deltaTime">Time elapsed since last update in seconds.</param>
+    public void Update(float deltaTime)
     {
-        ShouldQuit = false;
+        if (CurrentMap == null)
+            return;
+
+        // 1. Update input state
         Input.Update();
 
-        if (Input.Quit)
+        // 2. Handle player movement from input
+        var moveDir = Input.MoveDirection;
+        if (moveDir.HasValue)
         {
-            ShouldQuit = true;
-            return true;
+            // Convert from Systems.Direction to Player.Direction
+            var playerDir = ConvertDirection(moveDir.Value);
+            Player.Move(playerDir, Input.IsRunning, CurrentMap);
         }
 
-        if (Input.PauseToggled)
-        {
-            _isPaused = !_isPaused;
-        }
+        // 3. Update player
+        Player.Update(deltaTime, CurrentMap);
 
-        if (_isPaused)
-        {
-            return false;
-        }
-
-        if (Input.RunToggled)
-        {
-            Player.ToggleRun();
-        }
-
-        if (Input.TriggeredAction.HasValue)
-        {
-            Player.TriggerAction(Input.TriggeredAction.Value);
-        }
-
-        Player.Update(Input.Movement.X, Input.Movement.Y, TileMap, (float)gameTime.ElapsedGameTime.TotalSeconds);
-
-        if (Input.ZoomIn)
-        {
-            Camera.ZoomIn();
-        }
-
-        if (Input.ZoomOut)
-        {
-            Camera.ZoomOut();
-        }
-
-        _animationTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
-        if (_animationTimer >= 0.25f)
-        {
-            _animationTimer = 0f;
-            _waterFrameIndex = (_waterFrameIndex + 1) % 4;
-        }
-
-        return false;
+        // 4. Update camera to follow player
+        Camera.Update(
+            Player.X * TileSize,
+            Player.Y * TileSize,
+            CurrentMap.Width,
+            CurrentMap.Height,
+            TileSize);
     }
 
-    public void Draw(SpriteBatch spriteBatch, Viewport viewport)
+    /// <summary>
+    /// Teleports the player to the specified position.
+    /// </summary>
+    /// <param name="x">Target X position in tiles.</param>
+    /// <param name="y">Target Y position in tiles.</param>
+    public void SetPlayerPosition(float x, float y)
     {
-        Camera.Update(new Vector2(Player.X, Player.Y), TileMap.Width, TileMap.Height, TileMap.TileSize, viewport);
+        Player.SetPosition(x, y);
+    }
 
-        spriteBatch.Begin(transformMatrix: Camera.Transform, samplerState: SamplerState.PointClamp);
-
-        _tileRenderer!.DrawBaseTiles(spriteBatch, _waterFrameIndex);
-        _tileRenderer.DrawOverlayTiles(spriteBatch, _waterFrameIndex);
-
-        _playerRenderer!.Draw(spriteBatch);
-
-        spriteBatch.End();
+    /// <summary>
+    /// Converts from Systems.Direction to Player.Direction.
+    /// </summary>
+    private static PlayerDirection ConvertDirection(Direction dir)
+    {
+        return dir switch
+        {
+            Direction.Up => PlayerDirection.Up,
+            Direction.Down => PlayerDirection.Down,
+            Direction.Left => PlayerDirection.Left,
+            Direction.Right => PlayerDirection.Right,
+            _ => PlayerDirection.Down
+        };
     }
 }

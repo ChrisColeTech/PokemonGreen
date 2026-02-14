@@ -1,168 +1,160 @@
-using System.Collections.ObjectModel;
-
 namespace PokemonGreen.Core.Maps;
 
-public enum TileCategory
-{
-    Terrain,
-    Decoration,
-    Interactive,
-    Entity,
-    Trainer,
-    Encounter,
-    Structure,
-    Item
-}
-
-
-
-public readonly record struct TileDefinition(
-    int Id,
-    string Name,
-    TileCategory Category,
-    TileVisualKind VisualKind,
-    bool Walkable,
-    byte Red = 128,
-    byte Green = 128,
-    byte Blue = 128,
-    TileOverlayKind OverlayKind = TileOverlayKind.None
-);
-
+/// <summary>
+/// Static registry containing all tile definitions for the game.
+/// </summary>
 public static class TileRegistry
 {
-    public static IReadOnlyDictionary<int, TileDefinition> All { get; }
-    public static IReadOnlyList<TileDefinition> List { get; }
-
-    static TileRegistry()
+    private static readonly Dictionary<int, TileDefinition> _tiles = new()
     {
-        var tiles = new Dictionary<int, TileDefinition>
-        {
-            [0] = New(0, "Water", TileCategory.Terrain, TileVisualKind.AnimatedWater, false, 92, 166, 232),
-            [1] = New(1, "Grass", TileCategory.Terrain, TileVisualKind.Grass, true, 116, 188, 94),
-            [2] = New(2, "Path", TileCategory.Terrain, TileVisualKind.Path, true, 224, 197, 146),
-            [3] = New(3, "Tree", TileCategory.Decoration, TileVisualKind.Tree, false, 82, 140, 78),
-            [4] = New(4, "Door", TileCategory.Interactive, TileVisualKind.InteractiveObject, true, 139, 69, 19, TileOverlayKind.Door),
-            [5] = New(5, "Bridge", TileCategory.Terrain, TileVisualKind.Path, true, 107, 68, 35),
-            [6] = New(6, "Cave", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 85, 85, 85),
-            [7] = New(7, "Tall Grass", TileCategory.Encounter, TileVisualKind.Grass, true, 26, 138, 26),
-            [8] = New(8, "Rock", TileCategory.Decoration, TileVisualKind.Rock, false),
-            [9] = New(9, "Sign", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 139, 115, 85, TileOverlayKind.Sign),
-            [10] = New(10, "NPC", TileCategory.Entity, TileVisualKind.EntityMarker, false, 255, 107, 107, TileOverlayKind.EntityNpc),
-            [11] = New(11, "Service NPC", TileCategory.Entity, TileVisualKind.EntityMarker, false, 255, 217, 61, TileOverlayKind.EntityService),
-            [12] = New(12, "Heal NPC", TileCategory.Entity, TileVisualKind.EntityMarker, false, 107, 203, 119, TileOverlayKind.EntityService),
-            [13] = New(13, "Item", TileCategory.Entity, TileVisualKind.EntityMarker, true, 157, 78, 221, TileOverlayKind.EntityItem),
-            [14] = New(14, "Hidden Item", TileCategory.Entity, TileVisualKind.EntityMarker, true, 224, 64, 251, TileOverlayKind.EntityItem),
-            [15] = New(15, "Wall", TileCategory.Structure, TileVisualKind.Solid, false, 44, 44, 44),
-            [16] = New(16, "Warp", TileCategory.Interactive, TileVisualKind.InteractiveObject, true, 0, 206, 201, TileOverlayKind.Warp),
-            [17] = New(17, "Deep Water", TileCategory.Terrain, TileVisualKind.AnimatedWater, false, 41, 128, 185),
-            [18] = New(18, "Floor", TileCategory.Terrain, TileVisualKind.Path, true, 121, 85, 72),
-            [19] = New(19, "Flower", TileCategory.Decoration, TileVisualKind.Flower, true),
-            [20] = New(20, "Trainer Up", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 255, 146, 43, TileOverlayKind.TrainerUp),
-            [21] = New(21, "Trainer Down", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 245, 132, 32, TileOverlayKind.TrainerDown),
-            [22] = New(22, "Trainer Left", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 235, 121, 24, TileOverlayKind.TrainerLeft),
-            [23] = New(23, "Trainer Right", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 255, 163, 66, TileOverlayKind.TrainerRight),
-            [24] = New(24, "Trainer Boss", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 255, 23, 68, TileOverlayKind.TrainerBoss),
-            [25] = New(25, "Shallow Water", TileCategory.Terrain, TileVisualKind.AnimatedWater, false, 30, 144, 255),
-            [26] = New(26, "Strength Rock", TileCategory.Interactive, TileVisualKind.Rock, false, 141, 110, 99, TileOverlayKind.StrengthRock),
-            [27] = New(27, "Cut Tree", TileCategory.Interactive, TileVisualKind.Tree, false, 76, 175, 80, TileOverlayKind.CutTree),
-            [28] = New(28, "Rare Grass", TileCategory.Encounter, TileVisualKind.Grass, true, 255, 215, 0),
-            [29] = New(29, "Special Tile", TileCategory.Terrain, TileVisualKind.Grass, true, 255, 0, 255),
-            [30] = New(30, "Elite Trainer", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 128, 0, 128, TileOverlayKind.TrainerBoss),
-            [31] = New(31, "Gym Trainer Up", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 74, 0, 128, TileOverlayKind.TrainerUp),
-            [32] = New(32, "Gym Trainer Down", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 88, 18, 141, TileOverlayKind.TrainerDown),
-            [33] = New(33, "Gym Trainer Left", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 64, 0, 112, TileOverlayKind.TrainerLeft),
-            [34] = New(34, "Gym Trainer Right", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 96, 24, 160, TileOverlayKind.TrainerRight),
-            [35] = New(35, "Gym Leader Up", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 106, 13, 173, TileOverlayKind.TrainerUp),
-            [36] = New(36, "Gym Leader Down", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 120, 28, 188, TileOverlayKind.TrainerDown),
-            [37] = New(37, "Gym Leader Left", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 90, 0, 150, TileOverlayKind.TrainerLeft),
-            [38] = New(38, "Gym Leader Right", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 132, 45, 198, TileOverlayKind.TrainerRight),
-            [39] = New(39, "Rival", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 220, 20, 60, TileOverlayKind.TrainerDown),
-            [40] = New(40, "Pokeball Item", TileCategory.Entity, TileVisualKind.EntityMarker, true, 70, 130, 180, TileOverlayKind.EntityItem),
-            [41] = New(41, "PC", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 169, 169, 169, TileOverlayKind.Pc),
-            [42] = New(42, "Pokeball Visible", TileCategory.Entity, TileVisualKind.EntityMarker, true, 255, 0, 0, TileOverlayKind.EntityItem),
-            [43] = New(43, "Champion", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 192, 192, 192, TileOverlayKind.TrainerBoss),
-            [44] = New(44, "Elite Four 1", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 255, 215, 0, TileOverlayKind.TrainerBoss),
-            [45] = New(45, "Elite Four 2", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 240, 198, 0, TileOverlayKind.TrainerBoss),
-            [46] = New(46, "Elite Four 3", TileCategory.Trainer, TileVisualKind.TrainerMarker, false, 200, 16, 54, TileOverlayKind.TrainerBoss),
-            [47] = New(47, "Professor", TileCategory.Entity, TileVisualKind.EntityMarker, false, 139, 69, 19, TileOverlayKind.EntityNpc),
-            [48] = New(48, "Mom NPC", TileCategory.Entity, TileVisualKind.EntityMarker, false, 221, 160, 221, TileOverlayKind.EntityNpc),
-            [49] = New(49, "Statue", TileCategory.Decoration, TileVisualKind.Statue, false, overlayKind: TileOverlayKind.Statue),
-            [50] = New(50, "Hidden Pokeball", TileCategory.Entity, TileVisualKind.EntityMarker, true, 0, 206, 209, TileOverlayKind.EntityItem),
-            [51] = New(51, "Pokeball", TileCategory.Item, TileVisualKind.Item, true),
-            [52] = New(52, "Great Ball", TileCategory.Item, TileVisualKind.Item, true),
-            [53] = New(53, "Ultra Ball", TileCategory.Item, TileVisualKind.Item, true),
-            [54] = New(54, "Potion", TileCategory.Item, TileVisualKind.Item, true),
-            [55] = New(55, "Super Potion", TileCategory.Item, TileVisualKind.Item, true),
-            [56] = New(56, "Fire Stone", TileCategory.Item, TileVisualKind.Item, true),
-            [57] = New(57, "Water Stone", TileCategory.Item, TileVisualKind.Item, true),
-            [58] = New(58, "Thunder Stone", TileCategory.Item, TileVisualKind.Item, true),
-            [59] = New(59, "Leaf Stone", TileCategory.Item, TileVisualKind.Item, true),
-            [60] = New(60, "Moon Stone", TileCategory.Item, TileVisualKind.Item, true),
-            [61] = New(61, "Red Crystal", TileCategory.Item, TileVisualKind.Item, true),
-            [62] = New(62, "Blue Crystal", TileCategory.Item, TileVisualKind.Item, true),
-            [63] = New(63, "Green Crystal", TileCategory.Item, TileVisualKind.Item, true),
-            [64] = New(64, "Apple", TileCategory.Item, TileVisualKind.Item, true),
-            [65] = New(65, "Red Berry", TileCategory.Item, TileVisualKind.Item, true),
-            [66] = New(66, "Blue Berry", TileCategory.Item, TileVisualKind.Item, true),
-            [67] = New(67, "Green Herb", TileCategory.Item, TileVisualKind.Item, true),
-            [68] = New(68, "Mega Ring", TileCategory.Item, TileVisualKind.Item, true),
-            [69] = New(69, "Master Ball", TileCategory.Item, TileVisualKind.Item, true),
-            [70] = New(70, "Yellow Crystal", TileCategory.Item, TileVisualKind.Item, true),
-            [71] = New(71, "Ledge South", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [72] = New(72, "Ledge North", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [73] = New(73, "Ledge West", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [74] = New(74, "Ledge East", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [75] = New(75, "Ledge SW", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [76] = New(76, "Ledge SE", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [77] = New(77, "Ledge NW", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [78] = New(78, "Ledge NE", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
-            [79] = New(79, "Blocked South", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [80] = New(80, "Blocked North", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [81] = New(81, "Blocked West", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [82] = New(82, "Blocked East", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [83] = New(83, "Blocked SW", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [84] = New(84, "Blocked SE", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [85] = New(85, "Blocked NW", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [86] = New(86, "Blocked NE", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
-            [87] = New(87, "Spin South", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [88] = New(88, "Spin North", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [89] = New(89, "Spin West", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [90] = New(90, "Spin East", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [91] = New(91, "Spin SW", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [92] = New(92, "Spin SE", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [93] = New(93, "Spin NW", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [94] = New(94, "Spin NE", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
-            [95] = New(95, "Stair West", TileCategory.Terrain, TileVisualKind.Path, true, 160, 140, 120),
-            [96] = New(96, "Stair East", TileCategory.Terrain, TileVisualKind.Path, true, 160, 140, 120),
-            [97] = New(97, "Waterfall", TileCategory.Terrain, TileVisualKind.AnimatedWater, false, 30, 100, 180),
-            [98] = New(98, "Headbutt Tree", TileCategory.Interactive, TileVisualKind.Tree, false, 34, 120, 50, TileOverlayKind.HeadbuttTree),
-            [99] = New(99, "Honey Tree", TileCategory.Interactive, TileVisualKind.Tree, false, 218, 165, 32, TileOverlayKind.HoneyTree),
-            [100] = New(100, "Elevation Change", TileCategory.Terrain, TileVisualKind.Path, true, 200, 200, 100),
-            [101] = New(101, "Dark Grass", TileCategory.Encounter, TileVisualKind.Grass, true, 50, 50, 50),
-            [102] = New(102, "Headbutt Encounter", TileCategory.Encounter, TileVisualKind.Tree, true, 60, 100, 40),
-            [103] = New(103, "Honey Tree Encounter", TileCategory.Encounter, TileVisualKind.Tree, true, 180, 140, 20),
-        };
+        // Terrain (0-15)
+        [0] = new TileDefinition(0, "Water", false, "#3890f8", TileCategory.Terrain),
+        [1] = new TileDefinition(1, "Grass", true, "#7ec850", TileCategory.Terrain),
+        [2] = new TileDefinition(2, "Path", true, "#d4a574", TileCategory.Terrain),
+        [3] = new TileDefinition(3, "Floor", true, "#c0a080", TileCategory.Terrain),
+        [4] = new TileDefinition(4, "Bridge", true, "#8b7355", TileCategory.Terrain),
+        [5] = new TileDefinition(5, "DeepWater", false, "#2060c0", TileCategory.Terrain),
+        [6] = new TileDefinition(6, "Sand", true, "#e8d8a0", TileCategory.Terrain),
+        [7] = new TileDefinition(7, "Snow", true, "#f0f8ff", TileCategory.Terrain),
+        [8] = new TileDefinition(8, "Ice", true, "#b0e0f8", TileCategory.Terrain, "slippery"),
+        [9] = new TileDefinition(9, "Mud", true, "#6b4423", TileCategory.Terrain, "slow"),
+        [10] = new TileDefinition(10, "Lava", false, "#ff4500", TileCategory.Terrain),
+        [11] = new TileDefinition(11, "Void", false, "#000000", TileCategory.Terrain),
+        [12] = new TileDefinition(12, "CaveFloor", true, "#606060", TileCategory.Terrain),
+        [13] = new TileDefinition(13, "WoodFloor", true, "#a0522d", TileCategory.Terrain),
+        [14] = new TileDefinition(14, "Carpet", true, "#8b0000", TileCategory.Terrain),
+        [15] = new TileDefinition(15, "Tiles", true, "#d3d3d3", TileCategory.Terrain),
 
-        All = new ReadOnlyDictionary<int, TileDefinition>(tiles);
-        List = tiles.Values.OrderBy(t => t.Id).ToList();
+        // Decoration (16-31)
+        [16] = new TileDefinition(16, "Tree", false, "#228b22", TileCategory.Decoration),
+        [17] = new TileDefinition(17, "Rock", false, "#808080", TileCategory.Decoration),
+        [18] = new TileDefinition(18, "Flower", true, "#ff69b4", TileCategory.Decoration),
+        [19] = new TileDefinition(19, "Statue", false, "#a9a9a9", TileCategory.Decoration),
+        [20] = new TileDefinition(20, "Bush", false, "#2e8b57", TileCategory.Decoration),
+        [21] = new TileDefinition(21, "Stump", false, "#8b4513", TileCategory.Decoration),
+        [22] = new TileDefinition(22, "Boulder", false, "#696969", TileCategory.Decoration),
+        [23] = new TileDefinition(23, "Sign", false, "#deb887", TileCategory.Decoration, "readable"),
+        [24] = new TileDefinition(24, "Fence", false, "#cd853f", TileCategory.Decoration),
+        [25] = new TileDefinition(25, "Torch", false, "#ffa500", TileCategory.Decoration),
+        [26] = new TileDefinition(26, "Chest", false, "#8b4513", TileCategory.Decoration, "openable"),
+        [27] = new TileDefinition(27, "Barrel", false, "#a0522d", TileCategory.Decoration),
+        [28] = new TileDefinition(28, "Crate", false, "#d2691e", TileCategory.Decoration),
+        [29] = new TileDefinition(29, "Pot", false, "#cd5c5c", TileCategory.Decoration),
+        [30] = new TileDefinition(30, "Bookshelf", false, "#8b4513", TileCategory.Decoration, "readable"),
+        [31] = new TileDefinition(31, "Table", false, "#deb887", TileCategory.Decoration),
+
+        // Interactive (32-47)
+        [32] = new TileDefinition(32, "Door", true, "#8b4513", TileCategory.Interactive, "door"),
+        [33] = new TileDefinition(33, "Warp", true, "#9400d3", TileCategory.Interactive, "warp"),
+        [34] = new TileDefinition(34, "PC", false, "#4169e1", TileCategory.Interactive, "pc"),
+        [35] = new TileDefinition(35, "HealingMachine", false, "#ff6b6b", TileCategory.Interactive, "heal"),
+        [36] = new TileDefinition(36, "Mart", false, "#4682b4", TileCategory.Interactive, "shop"),
+        [37] = new TileDefinition(37, "StrengthRock", false, "#708090", TileCategory.Interactive, "strength"),
+        [38] = new TileDefinition(38, "CutTree", false, "#556b2f", TileCategory.Interactive, "cut"),
+        [39] = new TileDefinition(39, "SmashRock", false, "#778899", TileCategory.Interactive, "rock_smash"),
+        [40] = new TileDefinition(40, "WaterfallClimb", false, "#4682b4", TileCategory.Interactive, "waterfall"),
+        [41] = new TileDefinition(41, "Dive", false, "#1e90ff", TileCategory.Interactive, "dive"),
+        [42] = new TileDefinition(42, "Switch", true, "#daa520", TileCategory.Interactive, "switch"),
+        [43] = new TileDefinition(43, "PressurePlate", true, "#c0c0c0", TileCategory.Interactive, "pressure_plate"),
+        [44] = new TileDefinition(44, "LockedDoor", false, "#654321", TileCategory.Interactive, "locked_door"),
+        [45] = new TileDefinition(45, "HiddenItem", true, "#00000000", TileCategory.Interactive, "hidden_item"),
+        [46] = new TileDefinition(46, "ItemBall", true, "#ff0000", TileCategory.Interactive, "item_ball"),
+        [47] = new TileDefinition(47, "Teleporter", true, "#00ffff", TileCategory.Interactive, "teleport"),
+
+        // Entity (48-55)
+        [48] = new TileDefinition(48, "NPC", false, "#ffd700", TileCategory.Entity, "npc"),
+        [49] = new TileDefinition(49, "ServiceNPC", false, "#ffa500", TileCategory.Entity, "service_npc"),
+        [50] = new TileDefinition(50, "Nurse", false, "#ffb6c1", TileCategory.Entity, "nurse"),
+        [51] = new TileDefinition(51, "Clerk", false, "#87ceeb", TileCategory.Entity, "clerk"),
+        [52] = new TileDefinition(52, "GymGuide", false, "#98fb98", TileCategory.Entity, "gym_guide"),
+        [53] = new TileDefinition(53, "Rival", false, "#ff4500", TileCategory.Entity, "rival"),
+        [54] = new TileDefinition(54, "Professor", false, "#f5f5dc", TileCategory.Entity, "professor"),
+        [55] = new TileDefinition(55, "Mom", false, "#ffb6c1", TileCategory.Entity, "mom"),
+
+        // Trainer (56-71)
+        [56] = new TileDefinition(56, "TrainerUp", false, "#dc143c", TileCategory.Trainer, "trainer_up"),
+        [57] = new TileDefinition(57, "TrainerDown", false, "#dc143c", TileCategory.Trainer, "trainer_down"),
+        [58] = new TileDefinition(58, "TrainerLeft", false, "#dc143c", TileCategory.Trainer, "trainer_left"),
+        [59] = new TileDefinition(59, "TrainerRight", false, "#dc143c", TileCategory.Trainer, "trainer_right"),
+        [60] = new TileDefinition(60, "GymTrainer", false, "#b22222", TileCategory.Trainer, "gym_trainer"),
+        [61] = new TileDefinition(61, "GymLeader", false, "#8b0000", TileCategory.Trainer, "gym_leader"),
+        [62] = new TileDefinition(62, "EliteFour", false, "#4b0082", TileCategory.Trainer, "elite_four"),
+        [63] = new TileDefinition(63, "Champion", false, "#ffd700", TileCategory.Trainer, "champion"),
+        [64] = new TileDefinition(64, "Rocket", false, "#2f4f4f", TileCategory.Trainer, "team_rocket"),
+        [65] = new TileDefinition(65, "Aqua", false, "#00bfff", TileCategory.Trainer, "team_aqua"),
+        [66] = new TileDefinition(66, "Magma", false, "#ff4500", TileCategory.Trainer, "team_magma"),
+        [67] = new TileDefinition(67, "Galactic", false, "#483d8b", TileCategory.Trainer, "team_galactic"),
+        [68] = new TileDefinition(68, "Plasma", false, "#87cefa", TileCategory.Trainer, "team_plasma"),
+        [69] = new TileDefinition(69, "Flare", false, "#ff6347", TileCategory.Trainer, "team_flare"),
+        [70] = new TileDefinition(70, "Skull", false, "#2f2f2f", TileCategory.Trainer, "team_skull"),
+        [71] = new TileDefinition(71, "Yell", false, "#ff1493", TileCategory.Trainer, "team_yell"),
+
+        // Encounter (72-79)
+        [72] = new TileDefinition(72, "TallGrass", true, "#5a9c3a", TileCategory.Encounter, "wild_encounter"),
+        [73] = new TileDefinition(73, "RareGrass", true, "#4a8c2a", TileCategory.Encounter, "rare_encounter"),
+        [74] = new TileDefinition(74, "DarkGrass", true, "#3a7c1a", TileCategory.Encounter, "double_encounter"),
+        [75] = new TileDefinition(75, "CaveEncounter", true, "#505050", TileCategory.Encounter, "cave_encounter"),
+        [76] = new TileDefinition(76, "WaterEncounter", false, "#3890f8", TileCategory.Encounter, "water_encounter"),
+        [77] = new TileDefinition(77, "SurfEncounter", false, "#4090ff", TileCategory.Encounter, "surf_encounter"),
+        [78] = new TileDefinition(78, "FishingSpot", false, "#2080e8", TileCategory.Encounter, "fishing"),
+        [79] = new TileDefinition(79, "Headbutt", false, "#228b22", TileCategory.Encounter, "headbutt"),
+
+        // Structure (80-95)
+        [80] = new TileDefinition(80, "Wall", false, "#404040", TileCategory.Structure),
+        [81] = new TileDefinition(81, "LedgeDown", true, "#7ec850", TileCategory.Structure, "ledge_down"),
+        [82] = new TileDefinition(82, "LedgeLeft", true, "#7ec850", TileCategory.Structure, "ledge_left"),
+        [83] = new TileDefinition(83, "LedgeRight", true, "#7ec850", TileCategory.Structure, "ledge_right"),
+        [84] = new TileDefinition(84, "Blocked", false, "#303030", TileCategory.Structure),
+        [85] = new TileDefinition(85, "SpinUp", true, "#a0a0a0", TileCategory.Structure, "spin_up"),
+        [86] = new TileDefinition(86, "SpinDown", true, "#a0a0a0", TileCategory.Structure, "spin_down"),
+        [87] = new TileDefinition(87, "SpinLeft", true, "#a0a0a0", TileCategory.Structure, "spin_left"),
+        [88] = new TileDefinition(88, "SpinRight", true, "#a0a0a0", TileCategory.Structure, "spin_right"),
+        [89] = new TileDefinition(89, "StairsUp", true, "#8b7355", TileCategory.Structure, "stairs_up"),
+        [90] = new TileDefinition(90, "StairsDown", true, "#8b7355", TileCategory.Structure, "stairs_down"),
+        [91] = new TileDefinition(91, "Ladder", true, "#a0522d", TileCategory.Structure, "ladder"),
+        [92] = new TileDefinition(92, "Ramp", true, "#9b8b7b", TileCategory.Structure, "ramp"),
+        [93] = new TileDefinition(93, "Cliff", false, "#5a5a5a", TileCategory.Structure),
+        [94] = new TileDefinition(94, "Waterfall", false, "#4090ff", TileCategory.Structure, "waterfall_hm"),
+        [95] = new TileDefinition(95, "Whirlpool", false, "#3080e8", TileCategory.Structure, "whirlpool_hm"),
+
+        // Item (96-103)
+        [96] = new TileDefinition(96, "Pokeball", true, "#ff0000", TileCategory.Item, "item_pokeball"),
+        [97] = new TileDefinition(97, "Potion", true, "#9370db", TileCategory.Item, "item_potion"),
+        [98] = new TileDefinition(98, "Revive", true, "#ffd700", TileCategory.Item, "item_revive"),
+        [99] = new TileDefinition(99, "RareCandy", true, "#00ffff", TileCategory.Item, "item_rare_candy"),
+        [100] = new TileDefinition(100, "TM", true, "#cd853f", TileCategory.Item, "item_tm"),
+        [101] = new TileDefinition(101, "HM", true, "#daa520", TileCategory.Item, "item_hm"),
+        [102] = new TileDefinition(102, "KeyItem", true, "#ffa500", TileCategory.Item, "item_key"),
+        [103] = new TileDefinition(103, "Berry", true, "#ff6b6b", TileCategory.Item, "item_berry"),
+    };
+
+    /// <summary>
+    /// Gets a tile definition by its ID.
+    /// </summary>
+    /// <param name="id">The tile ID.</param>
+    /// <returns>The tile definition, or null if not found.</returns>
+    public static TileDefinition? GetTile(int id)
+    {
+        return _tiles.TryGetValue(id, out var tile) ? tile : null;
     }
 
-    public static bool TryGet(int id, out TileDefinition tile) => All.TryGetValue(id, out tile);
+    /// <summary>
+    /// Gets all tile definitions belonging to a specific category.
+    /// </summary>
+    /// <param name="category">The category to filter by.</param>
+    /// <returns>An enumerable of matching tile definitions.</returns>
+    public static IEnumerable<TileDefinition> GetTilesByCategory(TileCategory category)
+    {
+        return _tiles.Values.Where(t => t.Category == category);
+    }
 
-    public static TileDefinition Get(int id) => All.TryGetValue(id, out var tile) ? tile : throw new KeyNotFoundException($"Tile {id} not found");
+    /// <summary>
+    /// Gets all registered tile definitions.
+    /// </summary>
+    public static IEnumerable<TileDefinition> AllTiles => _tiles.Values;
 
-    public static IReadOnlySet<int> GetWalkableTileIds() => All.Values
-        .Where(t => t.Walkable)
-        .Select(t => t.Id)
-        .ToHashSet();
-
-    public static IReadOnlySet<int> GetDecorationTileIds() => All.Values
-        .Where(t => t.Category is TileCategory.Decoration or TileCategory.Item)
-        .Select(t => t.Id)
-        .ToHashSet();
-
-    private static TileDefinition New(int id, string name, TileCategory category, TileVisualKind visualKind, bool walkable, byte red = 128, byte green = 128, byte blue = 128, TileOverlayKind overlayKind = TileOverlayKind.None)
-        => new(id, name, category, visualKind, walkable, red, green, blue, overlayKind);
-
-    
+    /// <summary>
+    /// Gets the total number of registered tiles.
+    /// </summary>
+    public static int Count => _tiles.Count;
 }

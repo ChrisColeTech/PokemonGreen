@@ -1,163 +1,132 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace PokemonGreen.Core.Maps;
 
+/// <summary>
+/// Abstract base class for generated map definitions.
+/// Subclasses define specific maps with their layouts and properties.
+/// </summary>
 public abstract class MapDefinition
 {
-#if DEBUG
-    private static readonly TileRenderCatalog DebugTileRenderCatalog = new();
-#endif
+    /// <summary>
+    /// Unique identifier for this map (e.g., "pallet_town", "route_1").
+    /// </summary>
+    public abstract string Id { get; }
 
-    private readonly int[] _baseTileData;
-    private readonly int?[] _overlayTileData;
-    private readonly int[] _walkableTileIds;
+    /// <summary>
+    /// Display name for this map (e.g., "Pallet Town", "Route 1").
+    /// </summary>
+    public abstract string Name { get; }
 
-    public string MapId { get; }
-    public string DisplayName { get; }
-    public int Width { get; }
-    public int Height { get; }
-    public int TileSize { get; }
+    /// <summary>
+    /// Width of the map in tiles.
+    /// </summary>
+    public abstract int Width { get; }
 
-    protected MapDefinition(
-        string mapId,
-        string displayName,
-        int width,
-        int height,
-        int tileSize,
-        int[] baseTileData,
-        int?[] overlayTileData,
-        int[] walkableTileIds)
+    /// <summary>
+    /// Height of the map in tiles.
+    /// </summary>
+    public abstract int Height { get; }
+
+    /// <summary>
+    /// Creates and populates the TileMap for this map definition.
+    /// </summary>
+    /// <returns>A fully populated TileMap instance.</returns>
+    public abstract TileMap CreateTileMap();
+
+    /// <summary>
+    /// Helper method to fill a rectangular region with a specific base tile.
+    /// </summary>
+    /// <param name="map">The TileMap to modify.</param>
+    /// <param name="tileId">The tile ID to fill with.</param>
+    /// <param name="startX">Starting X coordinate.</param>
+    /// <param name="startY">Starting Y coordinate.</param>
+    /// <param name="width">Width of the region.</param>
+    /// <param name="height">Height of the region.</param>
+    protected static void FillBaseTiles(TileMap map, int tileId, int startX, int startY, int width, int height)
     {
-        if (string.IsNullOrWhiteSpace(mapId))
+        for (int x = startX; x < startX + width && x < map.Width; x++)
         {
-            throw new ArgumentException("Map id is required.", nameof(mapId));
-        }
-
-        if (width <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(width), "Width must be positive.");
-        }
-
-        if (height <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(height), "Height must be positive.");
-        }
-
-        if (tileSize <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(tileSize), "Tile size must be positive.");
-        }
-
-        if (baseTileData.Length != width * height)
-        {
-            throw new ArgumentException("Base tile count must match width * height.", nameof(baseTileData));
-        }
-
-        if (overlayTileData.Length != width * height)
-        {
-            throw new ArgumentException("Overlay tile count must match width * height.", nameof(overlayTileData));
-        }
-
-        MapId = mapId;
-        DisplayName = string.IsNullOrWhiteSpace(displayName) ? mapId : displayName;
-        Width = width;
-        Height = height;
-        TileSize = tileSize;
-        _baseTileData = baseTileData;
-        _overlayTileData = overlayTileData;
-        _walkableTileIds = walkableTileIds.Distinct().ToArray();
-
-#if DEBUG
-        ValidateRenderableTileCoverage(mapId, _baseTileData, _overlayTileData);
-#endif
-    }
-
-    public int GetBaseTileId(int x, int y)
-    {
-        if (x < 0 || x >= Width)
-        {
-            throw new ArgumentOutOfRangeException(nameof(x), "x is out of bounds.");
-        }
-
-        if (y < 0 || y >= Height)
-        {
-            throw new ArgumentOutOfRangeException(nameof(y), "y is out of bounds.");
-        }
-
-        return _baseTileData[(y * Width) + x];
-    }
-
-    public int? GetOverlayTileId(int x, int y)
-    {
-        if (x < 0 || x >= Width)
-        {
-            throw new ArgumentOutOfRangeException(nameof(x), "x is out of bounds.");
-        }
-
-        if (y < 0 || y >= Height)
-        {
-            throw new ArgumentOutOfRangeException(nameof(y), "y is out of bounds.");
-        }
-
-        return _overlayTileData[(y * Width) + x];
-    }
-
-    public IReadOnlyCollection<int> GetWalkableTileIds() => _walkableTileIds;
-
-    public (int[,] BaseTiles, int?[,] OverlayTiles) CreateTileGrids()
-    {
-        var baseTiles = new int[Height, Width];
-        var overlayTiles = new int?[Height, Width];
-        
-        for (var y = 0; y < Height; y += 1)
-        {
-            for (var x = 0; x < Width; x += 1)
+            for (int y = startY; y < startY + height && y < map.Height; y++)
             {
-                var index = (y * Width) + x;
-                baseTiles[y, x] = _baseTileData[index];
-                overlayTiles[y, x] = _overlayTileData[index];
+                if (map.IsInBounds(x, y))
+                    map.SetBaseTile(x, y, tileId);
             }
         }
-
-        return (baseTiles, overlayTiles);
     }
 
-    public TileMap CreateTileMap()
+    /// <summary>
+    /// Helper method to fill a rectangular region with a specific overlay tile.
+    /// </summary>
+    /// <param name="map">The TileMap to modify.</param>
+    /// <param name="tileId">The tile ID to fill with.</param>
+    /// <param name="startX">Starting X coordinate.</param>
+    /// <param name="startY">Starting Y coordinate.</param>
+    /// <param name="width">Width of the region.</param>
+    /// <param name="height">Height of the region.</param>
+    protected static void FillOverlayTiles(TileMap map, int tileId, int startX, int startY, int width, int height)
     {
-        var (baseTiles, overlayTiles) = CreateTileGrids();
-        return new TileMap(baseTiles, overlayTiles, TileSize, _walkableTileIds);
-    }
-
-#if DEBUG
-    private static void ValidateRenderableTileCoverage(string mapId, IReadOnlyCollection<int> baseTileData, IReadOnlyCollection<int?> overlayTileData)
-    {
-        var unmappedBaseTileIds = baseTileData
-            .Distinct()
-            .Where(tileId => !DebugTileRenderCatalog.TryGetRule(tileId, out _))
-            .OrderBy(tileId => tileId)
-            .ToArray();
-
-        if (unmappedBaseTileIds.Length > 0)
+        for (int x = startX; x < startX + width && x < map.Width; x++)
         {
-            throw new InvalidOperationException(
-                $"Map '{mapId}' contains base tile ids with no runtime render mapping: {string.Join(", ", unmappedBaseTileIds)}.");
-        }
-
-        var unmappedOverlayTileIds = overlayTileData
-            .Where(t => t.HasValue)
-            .Select(t => t!.Value)
-            .Distinct()
-            .Where(tileId => !DebugTileRenderCatalog.TryGetRule(tileId, out _))
-            .OrderBy(tileId => tileId)
-            .ToArray();
-
-        if (unmappedOverlayTileIds.Length > 0)
-        {
-            throw new InvalidOperationException(
-                $"Map '{mapId}' contains overlay tile ids with no runtime render mapping: {string.Join(", ", unmappedOverlayTileIds)}.");
+            for (int y = startY; y < startY + height && y < map.Height; y++)
+            {
+                if (map.IsInBounds(x, y))
+                    map.SetOverlayTile(x, y, tileId);
+            }
         }
     }
-#endif
+
+    /// <summary>
+    /// Helper method to fill the entire map with a base tile.
+    /// </summary>
+    /// <param name="map">The TileMap to modify.</param>
+    /// <param name="tileId">The tile ID to fill with.</param>
+    protected static void FillAllBaseTiles(TileMap map, int tileId)
+    {
+        FillBaseTiles(map, tileId, 0, 0, map.Width, map.Height);
+    }
+
+    /// <summary>
+    /// Helper method to place a horizontal line of base tiles.
+    /// </summary>
+    /// <param name="map">The TileMap to modify.</param>
+    /// <param name="tileId">The tile ID to place.</param>
+    /// <param name="startX">Starting X coordinate.</param>
+    /// <param name="y">Y coordinate of the line.</param>
+    /// <param name="length">Length of the line.</param>
+    protected static void PlaceHorizontalBaseLine(TileMap map, int tileId, int startX, int y, int length)
+    {
+        FillBaseTiles(map, tileId, startX, y, length, 1);
+    }
+
+    /// <summary>
+    /// Helper method to place a vertical line of base tiles.
+    /// </summary>
+    /// <param name="map">The TileMap to modify.</param>
+    /// <param name="tileId">The tile ID to place.</param>
+    /// <param name="x">X coordinate of the line.</param>
+    /// <param name="startY">Starting Y coordinate.</param>
+    /// <param name="length">Length of the line.</param>
+    protected static void PlaceVerticalBaseLine(TileMap map, int tileId, int x, int startY, int length)
+    {
+        FillBaseTiles(map, tileId, x, startY, 1, length);
+    }
+
+    /// <summary>
+    /// Helper method to place a rectangular border of base tiles.
+    /// </summary>
+    /// <param name="map">The TileMap to modify.</param>
+    /// <param name="tileId">The tile ID for the border.</param>
+    /// <param name="startX">Starting X coordinate.</param>
+    /// <param name="startY">Starting Y coordinate.</param>
+    /// <param name="width">Width of the bordered region.</param>
+    /// <param name="height">Height of the bordered region.</param>
+    protected static void PlaceBaseBorder(TileMap map, int tileId, int startX, int startY, int width, int height)
+    {
+        // Top and bottom edges
+        PlaceHorizontalBaseLine(map, tileId, startX, startY, width);
+        PlaceHorizontalBaseLine(map, tileId, startX, startY + height - 1, width);
+
+        // Left and right edges (excluding corners already placed)
+        PlaceVerticalBaseLine(map, tileId, startX, startY + 1, height - 2);
+        PlaceVerticalBaseLine(map, tileId, startX + width - 1, startY + 1, height - 2);
+    }
 }
