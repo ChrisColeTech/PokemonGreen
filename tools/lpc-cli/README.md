@@ -49,23 +49,91 @@ Validation output is grouped into:
 npm run dev -- generate --preset presets/sample.preset.json --assetsRoot D:/Projects/Universal-LPC-Spritesheet-Character-Generator/assets --outDir ./output/sample
 ```
 
-Optional generation helpers:
+Single preset with split actions + bundle zip:
+
+```bash
+npm run dev -- generate --preset presets/sample.preset.json --assetsRoot D:/Projects/Universal-LPC-Spritesheet-Character-Generator/assets --outDir ./output/sample --splitActions --bundleZip
+```
+
+Single preset with body type override + explicit output base name:
 
 ```bash
 npm run dev -- generate --preset presets/sample.custom.preset.json --assetsRoot D:/Projects/Universal-LPC-Spritesheet-Character-Generator/assets --outDir ./output/custom --bodyType male --outputName player-custom
 ```
 
+Batch generation for every preset in a folder:
+
+```bash
+npm run dev -- generate-batch --presetDir presets/npcs --assetsRoot D:/Projects/Universal-LPC-Spritesheet-Character-Generator/assets --outDir ./output/npcs --splitActions --bundleZip
+```
+
+`generate-batch` processes preset files in deterministic filename order (`*.json`, case-insensitive extension match) and prints per-preset `[ok]`/`[failed]` lines followed by a summary.
+
 `--outputName` controls deterministic file names. If omitted, files are named from the preset file name.
 
-## Output files
+`--bundleZip` writes `<name>.bundle.zip` that contains deterministic internal paths:
+- `<name>/<name>.spritesheet.png`
+- `<name>/<name>.character.json`
+- `<name>/<name>.credits.csv`
+- `<name>/<name>.credits.txt`
+- `<name>/actions/<action>.png` (when `--splitActions` is enabled)
 
-Generate writes four artifacts into `--outDir`:
+## Output layout
+
+`generate` writes four base artifacts into `--outDir`:
 - `<name>.spritesheet.png`
 - `<name>.character.json`
 - `<name>.credits.csv`
 - `<name>.credits.txt`
 
+Optional artifacts:
+- `<name>.actions/*.png` when `--splitActions` is enabled
+- `<name>.bundle.zip` when `--bundleZip` is enabled
+
 Before writing, lpc-cli removes those exact target files so regenerated output is clean and deterministic.
+
+Example layout (`--outDir ./output/sample`, `--splitActions --bundleZip`):
+
+```text
+output/sample/
+  sample.preset.spritesheet.png
+  sample.preset.character.json
+  sample.preset.credits.csv
+  sample.preset.credits.txt
+  sample.preset.bundle.zip
+  sample.preset.actions/
+    backslash.png
+    combat_idle.png
+    ...
+```
+
+Bundle zip internal layout:
+
+```text
+sample.preset/
+  sample.preset.spritesheet.png
+  sample.preset.character.json
+  sample.preset.credits.csv
+  sample.preset.credits.txt
+  actions/
+    backslash.png
+    combat_idle.png
+    ...
+```
+
+Batch layout example (`generate-batch --presetDir presets/npcs --outDir ./output/npcs`):
+
+```text
+output/npcs/
+  npc_fisher.preset.spritesheet.png
+  npc_fisher.preset.character.json
+  npc_fisher.preset.credits.csv
+  npc_fisher.preset.credits.txt
+  npc_fisher.preset.actions/
+  npc_fisher.preset.bundle.zip
+  npc_guard_sword.preset.spritesheet.png
+  ...
+```
 
 ## Custom animation caveats
 

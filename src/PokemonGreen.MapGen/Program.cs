@@ -2,11 +2,52 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using PokemonGreen.Core.Maps;
+using PokemonGreen.MapGen.Commands;
+using PokemonGreen.MapGen.Models;
 
-const int ExpectedSchemaVersionMin = 1;
-const int ExpectedSchemaVersionMax = 2;
-const int MinDimension = 1;
-const int MaxDimension = 512;
+if (args.Length > 0 && args[0].Equals("export", StringComparison.OrdinalIgnoreCase))
+{
+    return RunExport(args.Skip(1).ToArray());
+}
+
+return RunGenerate(args);
+
+static int RunExport(string[] args)
+{
+    string? inputDir = null;
+    string? outputDir = null;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--input" when i + 1 < args.Length:
+                inputDir = Path.GetFullPath(args[++i]);
+                break;
+            case "--output" when i + 1 < args.Length:
+                outputDir = Path.GetFullPath(args[++i]);
+                break;
+        }
+    }
+
+    if (string.IsNullOrEmpty(inputDir))
+    {
+        Console.Error.WriteLine("Usage: dotnet run -- export --input <folder> [--output <folder>]");
+        Console.Error.WriteLine("  --input   Directory containing .g.cs map files");
+        Console.Error.WriteLine("  --output  Output directory for .map.json files (default: maps/exported)");
+        return 1;
+    }
+
+    outputDir ??= Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../maps/exported"));
+    return ExportCommand.Execute(inputDir, outputDir);
+}
+
+static int RunGenerate(string[] args)
+{
+    const int ExpectedSchemaVersionMin = 1;
+    const int ExpectedSchemaVersionMax = 2;
+    const int MinDimension = 1;
+    const int MaxDimension = 512;
 
 var optionsResult = GeneratorOptions.Parse(args);
 if (!optionsResult.IsSuccess)
@@ -676,6 +717,7 @@ static JsonSerializerOptions CreateSerializerOptions() => new()
     AllowTrailingCommas = true,
     ReadCommentHandling = JsonCommentHandling.Skip,
 };
+}
 
 internal sealed record GeneratorOptions(string InputDirectory, string OutputDirectory, string GeneratedNamespace)
 {
@@ -779,10 +821,3 @@ internal sealed record ValidatedMapData(
     int[] FlatBaseTileData,
     int?[] FlatOverlayTileData,
     int[] WalkableTileIds);
-
-internal readonly record struct Result<T>(bool IsSuccess, T Value, string ErrorMessage)
-{
-    public static Result<T> Ok(T value) => new(true, value, string.Empty);
-
-    public static Result<T> Fail(string errorMessage) => new(false, default!, errorMessage);
-}

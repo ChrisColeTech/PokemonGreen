@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PokemonGreen.Core.Graphics;
@@ -33,11 +34,6 @@ public class TileRenderer
                 var destination = CreateTileRectangle(x, y);
                 var texture = GetTextureForVisualKind(renderRule.VisualKind);
                 spriteBatch.Draw(texture, destination, new Color(renderRule.Red, renderRule.Green, renderRule.Blue));
-
-                if (renderRule.IsTemporaryVisual)
-                {
-                    DrawTemporaryMarker(spriteBatch, destination, tileId);
-                }
             }
         }
     }
@@ -88,11 +84,11 @@ public class TileRenderer
         }
         else if (renderRule.VisualKind == TileVisualKind.Flower)
         {
-            var flowerSize = (int)(_tileMap.TileSize * 1.1f);
+            var flowerSize = (int)(_tileMap.TileSize * 0.7f);
             var offset = (_tileMap.TileSize - flowerSize) / 2;
             var flowerDest = new Rectangle(
                 destination.X + offset,
-                destination.Y + offset,
+                destination.Y + offset ,
                 flowerSize,
                 flowerSize);
             spriteBatch.Draw(texture, flowerDest, new Color(renderRule.Red, renderRule.Green, renderRule.Blue));
@@ -101,21 +97,17 @@ public class TileRenderer
         {
             spriteBatch.Draw(texture, destination, new Color(renderRule.Red, renderRule.Green, renderRule.Blue));
         }
-
-        if (renderRule.IsTemporaryVisual)
-        {
-            DrawTemporaryMarker(spriteBatch, destination, tileId);
-        }
     }
 
     private void DrawItem(SpriteBatch spriteBatch, Rectangle destination, int tileId, TileRenderRule renderRule)
     {
         if (!_textures.Items.TryGetValue(tileId, out var texture))
         {
+            Console.WriteLine($"[DrawItem] No texture for tileId {tileId}, using Entity fallback");
             texture = _textures.Entity;
         }
 
-        var itemSize = _tileMap.TileSize;
+        var itemSize = (int)(_tileMap.TileSize * 0.5f);
         var itemDest = new Rectangle(
             destination.X + (destination.Width - itemSize) / 2,
             destination.Y + (destination.Height - itemSize) / 2,

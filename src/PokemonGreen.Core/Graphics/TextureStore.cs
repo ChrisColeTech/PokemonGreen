@@ -86,9 +86,15 @@ public class TextureStore
             [70] = "crystal_yellow",
         };
 
+        Console.WriteLine($"[TextureStore] Loading {itemFiles.Count} items...");
+        
         foreach (var (tileId, fileName) in itemFiles)
         {
-            Items[tileId] = LoadTextureOrFallback(content, $"Sprites/Items/{fileName}", Entity);
+            var texture = LoadTextureOrFallback(content, $"Sprites/Items/{fileName}", Entity);
+            Items[tileId] = texture;
+            
+            var isFallback = texture == Entity;
+            Console.WriteLine($"[TextureStore] Item {tileId} ({fileName}): {(isFallback ? "FALLBACK" : "LOADED")}");
         }
     }
 

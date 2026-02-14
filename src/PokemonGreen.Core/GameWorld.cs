@@ -136,7 +136,6 @@ public class GameWorld
 
         _tileRenderer!.DrawBaseTiles(spriteBatch);
         _tileRenderer.DrawOverlayTiles(spriteBatch, _waterFrameIndex);
-        _tileRenderer.DrawOverlayMarkers(spriteBatch);
 
         _playerRenderer!.Draw(spriteBatch);
 
