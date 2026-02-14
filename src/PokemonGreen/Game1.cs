@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -13,6 +14,7 @@ public class Game1 : Game
     private SpriteBatch _spriteBatch = null!;
     private GameWorld _gameWorld = null!;
     private PlayerRenderer _playerRenderer = null!;
+    private Texture2D _pixelTexture = null!;
 
     private const int ViewportWidth = 800;
     private const int ViewportHeight = 600;
@@ -22,6 +24,8 @@ public class Game1 : Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
+        Window.AllowUserResizing = true;
+        Window.ClientSizeChanged += OnClientSizeChanged;
     }
 
     protected override void Initialize()
@@ -34,12 +38,22 @@ public class Game1 : Game
         // Create GameWorld with viewport size
         _gameWorld = new GameWorld(ViewportWidth, ViewportHeight);
 
-        // Create a simple test map (10x10 grass with walls around border)
-        var testMap = CreateTestMap();
-        _gameWorld.LoadMap(testMap);
+        // Register all generated maps
+        MapRegistry.Initialize();
 
-        // Set player starting position (center of map)
-        _gameWorld.SetPlayerPosition(5, 5);
+        // Try loading from MapCatalog first, fall back to test map
+        var allMaps = MapCatalog.GetAllMaps();
+        if (allMaps.Count > 0)
+        {
+            var firstMap = allMaps.First();
+            _gameWorld.LoadMap(firstMap);
+        }
+        else
+        {
+            var testMap = CreateTestMap();
+            _gameWorld.LoadMap(testMap);
+            _gameWorld.SetPlayerPosition(5, 5);
+        }
 
         // Create player renderer
         _playerRenderer = new PlayerRenderer();
@@ -51,8 +65,15 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
+        // Create a 1x1 white pixel for drawing overlays
+        _pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
+        _pixelTexture.SetData(new[] { Color.White });
+
         // Initialize TextureStore with the graphics device
         TextureStore.Initialize(GraphicsDevice);
+
+        // Load player sprite sheets
+        _playerRenderer.LoadContent(Content.RootDirectory);
     }
 
     protected override void Update(GameTime gameTime)
@@ -103,10 +124,28 @@ public class Game1 : Game
             GraphicsDevice,
             GameWorld.TileSize);
 
+        // Draw fade overlay
+        if (_gameWorld.FadeAlpha > 0f)
+        {
+            _spriteBatch.Draw(
+                _pixelTexture,
+                new Rectangle(0, 0, Window.ClientBounds.Width, Window.ClientBounds.Height),
+                Color.Black * _gameWorld.FadeAlpha);
+        }
+
         // End SpriteBatch
         _spriteBatch.End();
 
         base.Draw(gameTime);
+    }
+
+    private void OnClientSizeChanged(object? sender, System.EventArgs e)
+    {
+        int w = Window.ClientBounds.Width;
+        int h = Window.ClientBounds.Height;
+        if (w <= 0 || h <= 0) return;
+
+        _gameWorld.OnViewportResized(w, h);
     }
 
     /// <summary>
@@ -119,15 +158,10 @@ public class Game1 : Game
 
         var map = new TileMap(mapWidth, mapHeight);
 
-        // Tile IDs from TileRegistry:
-        // 1 = Grass (walkable)
-        // 80 = Wall (not walkable)
-
         for (int x = 0; x < mapWidth; x++)
         {
             for (int y = 0; y < mapHeight; y++)
             {
-                // Check if this is a border tile
                 bool isBorder = x == 0 || x == mapWidth - 1 || y == 0 || y == mapHeight - 1;
 
                 if (isBorder)

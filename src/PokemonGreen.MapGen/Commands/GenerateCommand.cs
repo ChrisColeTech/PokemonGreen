@@ -43,6 +43,7 @@ public static class GenerateCommand
 
         int successCount = 0;
         int errorCount = 0;
+        var generatedClassNames = new List<string>();
 
         foreach (var mapFile in mapFiles)
         {
@@ -57,6 +58,7 @@ public static class GenerateCommand
                 File.WriteAllText(outputFile, code);
 
                 Console.WriteLine($"Generated: {outputFile}");
+                generatedClassNames.Add(className);
                 successCount++;
             }
             catch (Exception ex)
@@ -64,6 +66,15 @@ public static class GenerateCommand
                 Console.Error.WriteLine($"Error processing {mapFile}: {ex.Message}");
                 errorCount++;
             }
+        }
+
+        // Generate MapRegistry.g.cs that initializes all map singletons
+        if (generatedClassNames.Count > 0)
+        {
+            var registryCode = CodeGenerator.GenerateMapRegistry(generatedClassNames);
+            var registryFile = Path.Combine(outputFolder, "MapRegistry.g.cs");
+            File.WriteAllText(registryFile, registryCode);
+            Console.WriteLine($"Generated: {registryFile}");
         }
 
         Console.WriteLine();

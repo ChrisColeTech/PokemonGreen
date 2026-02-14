@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
-import { PanelLeftClose, PanelLeftOpen, RotateCcw, RotateCw } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { PanelLeftClose, PanelLeftOpen, RotateCcw, RotateCw, Shuffle, FileDown } from 'lucide-react'
 import { useEditorStore } from '../../store/editorStore'
 import { buildingWidth, buildingHeight } from '../../services/registryService'
+import { MAP_TEMPLATES, TEMPLATE_CATEGORIES, loadTemplate } from '../../data/templates'
+import type { MapTemplate } from '../../data/templates'
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
@@ -21,8 +23,12 @@ export function Sidebar() {
   const setCellSize = useEditorStore(s => s.setCellSize)
   const setMapName = useEditorStore(s => s.setMapName)
 
+  const importJson = useEditorStore(s => s.importJson)
+
   const [inputWidth, setInputWidth] = useState(mapWidth)
   const [inputHeight, setInputHeight] = useState(mapHeight)
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [loadingTemplate, setLoadingTemplate] = useState(false)
 
   // Sync local inputs when store dimensions change (e.g. after import)
   useEffect(() => {
@@ -31,6 +37,29 @@ export function Sidebar() {
   useEffect(() => {
     setInputHeight(mapHeight)
   }, [mapHeight])
+
+  const handleLoadTemplate = useCallback(async (template: MapTemplate) => {
+    setLoadingTemplate(true)
+    try {
+      const json = await loadTemplate(template)
+      importJson(json)
+    } catch {
+      alert(`Failed to load template: ${template.name}`)
+    } finally {
+      setLoadingTemplate(false)
+    }
+  }, [importJson])
+
+  const handleLoadSelected = useCallback(() => {
+    const template = MAP_TEMPLATES.find(t => t.id === selectedTemplate)
+    if (template) handleLoadTemplate(template)
+  }, [selectedTemplate, handleLoadTemplate])
+
+  const handleLoadRandom = useCallback(() => {
+    const template = MAP_TEMPLATES[Math.floor(Math.random() * MAP_TEMPLATES.length)]
+    setSelectedTemplate(template.id)
+    handleLoadTemplate(template)
+  }, [handleLoadTemplate])
 
   const paletteCategories = registry.categories.filter(c => c.showInPalette)
 
@@ -197,6 +226,43 @@ export function Sidebar() {
           >
             <RotateCw size={14} /> Right
           </button>
+        </div>
+
+        {/* Template Loader */}
+        <div className="border-t border-[#2d2d2d] pt-[6px] mt-[2px]">
+          <label className="text-[11px] text-[#808080] block mb-[2px]">Templates</label>
+          <select
+            value={selectedTemplate}
+            onChange={(e) => setSelectedTemplate(e.target.value)}
+            className="w-full p-[5px] border border-[#2d2d2d] rounded-[3px] bg-[#161616] text-[#e0e0e0] text-[12px] mb-[4px]"
+          >
+            <option value="">Select a template...</option>
+            {TEMPLATE_CATEGORIES.map(cat => (
+              <optgroup key={cat.id} label={cat.label}>
+                {MAP_TEMPLATES.filter(t => t.category === cat.id).map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.size})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <div className="flex gap-[4px]">
+            <button
+              disabled={!selectedTemplate || loadingTemplate}
+              onClick={handleLoadSelected}
+              className="flex-1 p-[5px] border-none rounded-[3px] cursor-pointer text-[12px] text-[#e0e0e0] bg-[#1a5c2e] hover:bg-[#1e7a38] disabled:opacity-40 disabled:cursor-default flex items-center justify-center gap-[4px]"
+            >
+              <FileDown size={13} /> {loadingTemplate ? 'Loading...' : 'Load'}
+            </button>
+            <button
+              disabled={loadingTemplate}
+              onClick={handleLoadRandom}
+              className="flex-1 p-[5px] border-none rounded-[3px] cursor-pointer text-[12px] text-[#e0e0e0] bg-[#4a2d7a] hover:bg-[#5c38a0] disabled:opacity-40 disabled:cursor-default flex items-center justify-center gap-[4px]"
+            >
+              <Shuffle size={13} /> Random
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -33,6 +33,14 @@ public class MapJsonModel
     [JsonPropertyName("overlayTiles")]
     public int?[][]? OverlayTiles { get; set; }
 
+    /// <summary>Warp connections linking positions on this map to other maps.</summary>
+    [JsonPropertyName("warps")]
+    public List<WarpJsonModel>? Warps { get; set; }
+
+    /// <summary>Edge connections to adjacent maps.</summary>
+    [JsonPropertyName("connections")]
+    public List<ConnectionJsonModel>? Connections { get; set; }
+
     // ---- Legacy v1 fields (read-only, for import compat) ----
 
     [JsonPropertyName("name")]
@@ -43,4 +51,45 @@ public class MapJsonModel
 
     [JsonPropertyName("version")]
     public int? LegacyVersion { get; set; }
+}
+
+/// <summary>
+/// JSON model for a warp connection.
+/// </summary>
+public class WarpJsonModel
+{
+    [JsonPropertyName("x")]
+    public int X { get; set; }
+
+    [JsonPropertyName("y")]
+    public int Y { get; set; }
+
+    [JsonPropertyName("targetMapId")]
+    public string TargetMapId { get; set; } = "";
+
+    [JsonPropertyName("targetX")]
+    public int TargetX { get; set; }
+
+    [JsonPropertyName("targetY")]
+    public int TargetY { get; set; }
+
+    /// <summary>"step" or "interact". Defaults to "step".</summary>
+    [JsonPropertyName("trigger")]
+    public string Trigger { get; set; } = "step";
+}
+
+/// <summary>
+/// JSON model for an edge connection to an adjacent map.
+/// </summary>
+public class ConnectionJsonModel
+{
+    /// <summary>"north", "south", "east", or "west".</summary>
+    [JsonPropertyName("edge")]
+    public string Edge { get; set; } = "";
+
+    [JsonPropertyName("targetMapId")]
+    public string TargetMapId { get; set; } = "";
+
+    [JsonPropertyName("offset")]
+    public int Offset { get; set; }
 }

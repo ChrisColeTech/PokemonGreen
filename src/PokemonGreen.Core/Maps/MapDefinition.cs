@@ -12,6 +12,8 @@ public abstract class MapDefinition
     private readonly int[] _baseTileData;
     private readonly int?[] _overlayTileData;
     private readonly HashSet<int> _walkableTileIds;
+    private readonly WarpConnection[] _warps;
+    private readonly MapConnection[] _connections;
 
     /// <summary>Unique identifier for this map (e.g., "pallet_town").</summary>
     public string Id { get; }
@@ -28,21 +30,22 @@ public abstract class MapDefinition
     /// <summary>Tile size in pixels used by the runtime renderer.</summary>
     public int TileSize { get; }
 
+    /// <summary>Warp connections (doors, teleporters) defined on this map.</summary>
+    public IReadOnlyList<WarpConnection> Warps => _warps;
+
+    /// <summary>Edge connections to adjacent maps.</summary>
+    public IReadOnlyList<MapConnection> Connections => _connections;
+
     /// <summary>
     /// Creates a MapDefinition from flat row-major tile arrays.
+    /// Automatically registers this map in MapCatalog.
     /// </summary>
-    /// <param name="id">Map identifier (snake_case).</param>
-    /// <param name="name">Display name.</param>
-    /// <param name="width">Width in tiles.</param>
-    /// <param name="height">Height in tiles.</param>
-    /// <param name="tileSize">Tile size in pixels.</param>
-    /// <param name="baseTileData">Flat row-major base tile array (width * height elements).</param>
-    /// <param name="overlayTileData">Flat row-major overlay tile array (null = no overlay).</param>
-    /// <param name="walkableTileIds">Set of tile IDs that are walkable in this map.</param>
     protected MapDefinition(
         string id, string name,
         int width, int height, int tileSize,
-        int[] baseTileData, int?[] overlayTileData, int[] walkableTileIds)
+        int[] baseTileData, int?[] overlayTileData, int[] walkableTileIds,
+        WarpConnection[]? warps = null,
+        MapConnection[]? connections = null)
     {
         Id = id;
         Name = name;
@@ -52,6 +55,10 @@ public abstract class MapDefinition
         _baseTileData = baseTileData;
         _overlayTileData = overlayTileData;
         _walkableTileIds = new HashSet<int>(walkableTileIds);
+        _warps = warps ?? [];
+        _connections = connections ?? [];
+
+        MapCatalog.TryRegister(this);
     }
 
     /// <summary>
@@ -95,4 +102,30 @@ public abstract class MapDefinition
     /// Checks if a tile ID is walkable according to this map's walkable set.
     /// </summary>
     public bool IsWalkableTile(int tileId) => _walkableTileIds.Contains(tileId);
+
+    /// <summary>
+    /// Gets the warp connection at the specified position with the given trigger, or null if none.
+    /// </summary>
+    public WarpConnection? GetWarp(int x, int y, WarpTrigger trigger)
+    {
+        foreach (var warp in _warps)
+        {
+            if (warp.X == x && warp.Y == y && warp.Trigger == trigger)
+                return warp;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the edge connection for the given direction, or null if none.
+    /// </summary>
+    public MapConnection? GetConnection(MapEdge edge)
+    {
+        foreach (var conn in _connections)
+        {
+            if (conn.Edge == edge)
+                return conn;
+        }
+        return null;
+    }
 }

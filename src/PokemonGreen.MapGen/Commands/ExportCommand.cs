@@ -125,6 +125,10 @@ public static partial class ExportCommand
             }
         }
 
+        // Extract warps and connections
+        var warps = ExtractWarps(code);
+        var connections = ExtractConnections(code);
+
         return new MapJsonModel
         {
             SchemaVersion = 2,
@@ -134,7 +138,9 @@ public static partial class ExportCommand
             Width = width,
             Height = height,
             BaseTiles = baseTiles,
-            OverlayTiles = overlayTiles
+            OverlayTiles = overlayTiles,
+            Warps = warps?.Count > 0 ? warps : null,
+            Connections = connections?.Count > 0 ? connections : null
         };
     }
 
@@ -171,7 +177,88 @@ public static partial class ExportCommand
         ).ToArray();
     }
 
+    /// <summary>
+    /// Extracts WarpConnection entries from the generated Warps array.
+    /// </summary>
+    private static List<WarpJsonModel>? ExtractWarps(string code)
+    {
+        // Match the Warps array block
+        var arrayMatch = Regex.Match(code, @"WarpConnection\[\]\s+WarpData\s*=\s*\[([\s\S]*?)\];");
+        if (!arrayMatch.Success)
+            return null;
+
+        var body = arrayMatch.Groups[1].Value;
+
+        // Match each new(...) entry
+        var entries = WarpEntryRegex().Matches(body);
+        if (entries.Count == 0)
+            return null;
+
+        var warps = new List<WarpJsonModel>();
+        foreach (Match entry in entries)
+        {
+            var trigger = entry.Groups[6].Value.Contains("Interact", StringComparison.OrdinalIgnoreCase)
+                ? "interact"
+                : "step";
+
+            warps.Add(new WarpJsonModel
+            {
+                X = int.Parse(entry.Groups[1].Value),
+                Y = int.Parse(entry.Groups[2].Value),
+                TargetMapId = entry.Groups[3].Value,
+                TargetX = int.Parse(entry.Groups[4].Value),
+                TargetY = int.Parse(entry.Groups[5].Value),
+                Trigger = trigger
+            });
+        }
+
+        return warps;
+    }
+
+    /// <summary>
+    /// Extracts MapConnection entries from the generated ConnectionData array.
+    /// </summary>
+    private static List<ConnectionJsonModel>? ExtractConnections(string code)
+    {
+        var arrayMatch = Regex.Match(code, @"MapConnection\[\]\s+ConnectionData\s*=\s*\[([\s\S]*?)\];");
+        if (!arrayMatch.Success)
+            return null;
+
+        var body = arrayMatch.Groups[1].Value;
+        var entries = ConnectionEntryRegex().Matches(body);
+        if (entries.Count == 0)
+            return null;
+
+        var connections = new List<ConnectionJsonModel>();
+        foreach (Match entry in entries)
+        {
+            var edge = entry.Groups[1].Value switch
+            {
+                "MapEdge.North" => "north",
+                "MapEdge.South" => "south",
+                "MapEdge.East" => "east",
+                "MapEdge.West" => "west",
+                _ => "north"
+            };
+            connections.Add(new ConnectionJsonModel
+            {
+                Edge = edge,
+                TargetMapId = entry.Groups[2].Value,
+                Offset = int.Parse(entry.Groups[3].Value)
+            });
+        }
+        return connections;
+    }
+
     // Matches: base("mapId", "displayName", width, height, tileSize, ...)
     [GeneratedRegex(@"base\(\s*""([^""]*)""\s*,\s*""([^""]*)""\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,")]
     private static partial Regex ConstructorRegex();
+
+    // Matches: new(x, y, "targetMapId", targetX, targetY, WarpTrigger.Step)
+    [GeneratedRegex(@"new\(\s*(\d+)\s*,\s*(\d+)\s*,\s*""([^""]*)""\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(WarpTrigger\.\w+)\s*\)")]
+    private static partial Regex WarpEntryRegex();
+
+    // Matches: new(MapEdge.North, "targetMapId", offset)
+    [GeneratedRegex(@"new\(\s*(MapEdge\.\w+)\s*,\s*""([^""]*)""\s*,\s*(-?\d+)\s*\)")]
+    private static partial Regex ConnectionEntryRegex();
 }

@@ -25,6 +25,17 @@ public static class MapCatalog
     }
 
     /// <summary>
+    /// Registers a map definition if not already present.
+    /// </summary>
+    /// <param name="map">The map definition to register.</param>
+    /// <returns>True if the map was registered, false if a map with the same ID already exists.</returns>
+    public static bool TryRegister(MapDefinition map)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        return _maps.TryAdd(map.Id, map);
+    }
+
+    /// <summary>
     /// Gets a map definition by its ID.
     /// </summary>
     /// <param name="id">The unique identifier of the map.</param>

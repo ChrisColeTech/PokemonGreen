@@ -1,34 +1,64 @@
+using System.Collections.Generic;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PokemonGreen.Core.Systems;
 using Direction = PokemonGreen.Core.Player.Direction;
 using Player = PokemonGreen.Core.Player.Player;
+using PlayerState = PokemonGreen.Core.Player.PlayerState;
 
 #nullable enable
 
 namespace PokemonGreen.Rendering;
 
 /// <summary>
-/// Renders the player sprite.
+/// Renders the player using sprite sheet animations.
 /// </summary>
 public class PlayerRenderer
 {
-    private Texture2D? _playerTexture;
-    private readonly Color _playerColor = new Color(220, 20, 60); // Crimson red
+    private const int FrameWidth = 64;
+    private const int FrameHeight = 64;
+
+    // Row order in the sprite sheets: Up=0, Left=1, Down=2, Right=3
+    private static readonly Dictionary<Direction, int> DirectionRow = new()
+    {
+        { Direction.Up, 0 },
+        { Direction.Left, 1 },
+        { Direction.Down, 2 },
+        { Direction.Right, 3 },
+    };
+
+    private static readonly Dictionary<PlayerState, string> StateToSheet = new()
+    {
+        { PlayerState.Idle, "idle" },
+        { PlayerState.Walk, "walk" },
+        { PlayerState.Run, "run" },
+        { PlayerState.Jump, "jump" },
+        { PlayerState.Combat, "slash" },
+        { PlayerState.Spellcast, "slash" },
+        { PlayerState.Climb, "idle" },
+    };
+
+    private readonly Dictionary<string, Texture2D> _sheets = new();
+    private string? _contentPath;
 
     /// <summary>
-    /// Size of the player sprite in pixels.
+    /// Loads all player sprite sheets from the Content/player directory.
     /// </summary>
-    public int PlayerSize { get; set; } = 28;
+    public void LoadContent(string contentRootPath)
+    {
+        _contentPath = Path.Combine(contentRootPath, "player");
+        foreach (var name in new[] { "idle", "walk", "run", "jump", "slash" })
+        {
+            var path = Path.Combine(_contentPath, $"{name}.png");
+            if (File.Exists(path))
+                _sheets[name] = TextureStore.LoadFromFile(path);
+        }
+    }
 
     /// <summary>
-    /// Draws the player at their current position.
+    /// Draws the player at their current position using the appropriate sprite frame.
     /// </summary>
-    /// <param name="spriteBatch">The sprite batch to draw with.</param>
-    /// <param name="player">The player to draw.</param>
-    /// <param name="camera">The camera for viewport calculations.</param>
-    /// <param name="graphicsDevice">The graphics device for creating textures.</param>
-    /// <param name="tileSize">The size of each tile in pixels.</param>
     public void Draw(
         SpriteBatch spriteBatch,
         Player player,
@@ -36,78 +66,41 @@ public class PlayerRenderer
         GraphicsDevice graphicsDevice,
         int tileSize = 32)
     {
-        // Create texture if needed
-        _playerTexture ??= TextureStore.CreateColorTexture(graphicsDevice, _playerColor);
+        var sheetName = StateToSheet.GetValueOrDefault(player.State, "idle");
+        if (!_sheets.TryGetValue(sheetName, out var sheet))
+            return;
 
-        // Convert player tile position to world position (center of tile)
+        int row = DirectionRow.GetValueOrDefault(player.Facing, 2);
+        int col = player.AnimationFrame;
+
+        var sourceRect = new Rectangle(col * FrameWidth, row * FrameHeight, FrameWidth, FrameHeight);
+
+        // Convert player tile position to world position
         float worldX = player.X * tileSize;
         float worldY = player.Y * tileSize;
 
-        // Convert to screen position
         var (screenX, screenY) = camera.WorldToScreen(worldX, worldY);
 
-        // Calculate scaled sizes
-        int scaledTileSize = (int)(tileSize * camera.Zoom);
-        int scaledPlayerSize = (int)(PlayerSize * camera.Zoom);
+        // Scale the sprite to match the tile zoom. The sprite is 64x64 but occupies one tile.
+        float scale = camera.Zoom * tileSize / (float)FrameWidth;
+        int scaledWidth = (int)(FrameWidth * scale);
+        int scaledHeight = (int)(FrameHeight * scale);
 
-        // Center the player sprite within the tile
-        int offsetX = (scaledTileSize - scaledPlayerSize) / 2;
-        int offsetY = (scaledTileSize - scaledPlayerSize) / 2;
+        // Center the 64px sprite on the 16px tile — offset so feet align with tile center
+        int offsetX = (int)((tileSize * camera.Zoom - scaledWidth) / 2);
+        int offsetY = (int)(tileSize * camera.Zoom - scaledHeight);
 
-        // Draw the player as a colored rectangle
+        // Apply jump arc — lift the sprite upward
+        offsetY -= (int)(player.JumpHeight * tileSize * camera.Zoom);
+
         spriteBatch.Draw(
-            _playerTexture,
+            sheet,
             new Rectangle(
                 screenX + offsetX,
                 screenY + offsetY,
-                scaledPlayerSize,
-                scaledPlayerSize),
-            Color.White);
-
-        // Draw a small indicator showing facing direction
-        DrawFacingIndicator(spriteBatch, player.Facing, screenX, screenY, scaledTileSize, graphicsDevice);
-    }
-
-    /// <summary>
-    /// Draws a small indicator showing which direction the player is facing.
-    /// </summary>
-    private void DrawFacingIndicator(
-        SpriteBatch spriteBatch,
-        Direction facing,
-        int screenX,
-        int screenY,
-        int scaledTileSize,
-        GraphicsDevice graphicsDevice)
-    {
-        var indicatorTexture = TextureStore.CreateColorTexture(graphicsDevice, Color.White);
-        int indicatorSize = (int)(6 * (scaledTileSize / 32f));
-        int centerX = screenX + scaledTileSize / 2 - indicatorSize / 2;
-        int centerY = screenY + scaledTileSize / 2 - indicatorSize / 2;
-
-        int indicatorX = centerX;
-        int indicatorY = centerY;
-
-        int offset = scaledTileSize / 4;
-
-        switch (facing)
-        {
-            case Direction.Up:
-                indicatorY = screenY + offset / 2;
-                break;
-            case Direction.Down:
-                indicatorY = screenY + scaledTileSize - offset / 2 - indicatorSize;
-                break;
-            case Direction.Left:
-                indicatorX = screenX + offset / 2;
-                break;
-            case Direction.Right:
-                indicatorX = screenX + scaledTileSize - offset / 2 - indicatorSize;
-                break;
-        }
-
-        spriteBatch.Draw(
-            indicatorTexture,
-            new Rectangle(indicatorX, indicatorY, indicatorSize, indicatorSize),
+                scaledWidth,
+                scaledHeight),
+            sourceRect,
             Color.White);
     }
 }

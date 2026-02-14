@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -50,6 +51,23 @@ public static class TextureStore
     public static Texture2D? GetTexture(string name)
     {
         return _cache.TryGetValue(name, out var texture) ? texture : null;
+    }
+
+    /// <summary>
+    /// Loads a texture from a PNG file on disk and caches it.
+    /// </summary>
+    public static Texture2D LoadFromFile(string path)
+    {
+        if (_graphicsDevice == null)
+            throw new InvalidOperationException("TextureStore must be initialized with a GraphicsDevice first.");
+
+        if (_cache.TryGetValue(path, out var cached))
+            return cached;
+
+        using var stream = File.OpenRead(path);
+        var texture = Texture2D.FromStream(_graphicsDevice, stream);
+        _cache[path] = texture;
+        return texture;
     }
 
     /// <summary>

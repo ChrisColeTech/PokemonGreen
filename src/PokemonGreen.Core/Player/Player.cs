@@ -46,7 +46,7 @@ public class Player
     /// <summary>
     /// Movement speed in tiles per second.
     /// </summary>
-    public float MoveSpeed { get; set; } = 4.0f;
+    public float MoveSpeed { get; set; } = 2.0f;
 
     /// <summary>
     /// Speed multiplier when running.
@@ -68,9 +68,26 @@ public class Player
     public float AnimationTimer { get; private set; }
 
     /// <summary>
-    /// Duration of each animation frame in seconds.
+    /// Duration of each animation frame in seconds for the current state.
     /// </summary>
-    public float FrameDuration { get; set; } = 0.15f;
+    /// <summary>
+    /// Duration of each animation frame in seconds for the current state.
+    /// Synced to movement speed: one full cycle = time to cross one tile.
+    /// Walk: 0.5s / 9 frames, Run: 0.333s / 8 frames.
+    /// </summary>
+    public float FrameDuration => State switch
+    {
+        PlayerState.Idle => 0.6f,
+        PlayerState.Walk => 1f / (MoveSpeed * FramesPerState()),            // ~0.056s at 2 tiles/sec
+        PlayerState.Run => 1f / (MoveSpeed * RunMultiplier * FramesPerState()), // ~0.042s at 3 tiles/sec
+        PlayerState.Jump => 0.1f,
+        _ => 0.15f
+    };
+
+    /// <summary>
+    /// Visual vertical offset during a jump (in tiles). 0 = on ground.
+    /// </summary>
+    public float JumpHeight { get; private set; }
 
     #endregion
 
@@ -80,6 +97,8 @@ public class Player
     private float _targetY;
     private bool _isMoving;
     private bool _isRunning;
+    private float _jumpTimer;
+    private float _jumpDuration;
 
     #endregion
 
@@ -112,6 +131,11 @@ public class Player
         if (_isMoving)
         {
             UpdateMovement(deltaTime);
+        }
+
+        if (State == PlayerState.Jump)
+        {
+            UpdateJump(deltaTime);
         }
 
         UpdateAnimation(deltaTime);
@@ -198,12 +222,12 @@ public class Player
     /// <returns>Number of frames for the current state.</returns>
     public int FramesPerState() => State switch
     {
-        PlayerState.Idle => 1,
-        PlayerState.Walk => 4,
-        PlayerState.Run => 4,
-        PlayerState.Jump => 3,
+        PlayerState.Idle => 2,
+        PlayerState.Walk => 9,
+        PlayerState.Run => 8,
+        PlayerState.Jump => 5,
         PlayerState.Climb => 2,
-        PlayerState.Combat => 4,
+        PlayerState.Combat => 6,
         PlayerState.Spellcast => 6,
         _ => 1
     };
@@ -226,13 +250,80 @@ public class Player
         while (AnimationTimer >= FrameDuration)
         {
             AnimationTimer -= FrameDuration;
-            AnimationFrame = (AnimationFrame + 1) % frameCount;
+            int nextFrame = AnimationFrame + 1;
+
+            // One-shot animations return to idle after the last frame
+            if (nextFrame >= frameCount && IsOneShotState(State))
+            {
+                SetState(PlayerState.Idle);
+                return;
+            }
+
+            AnimationFrame = nextFrame % frameCount;
         }
     }
 
     #endregion
 
+    /// <summary>
+    /// Starts a jump. Moves one tile forward in the facing direction if walkable.
+    /// </summary>
+    public void BeginJump(TileMap map)
+    {
+        _jumpDuration = 0.5f;
+        _jumpTimer = 0f;
+        JumpHeight = 0f;
+        SetState(PlayerState.Jump);
+
+        // Move forward one tile if possible
+        if (!_isMoving)
+        {
+            var (dx, dy) = Facing.ToVector();
+            int targetTileX = TileX + dx;
+            int targetTileY = TileY + dy;
+            if (CanMoveTo(targetTileX, targetTileY, map))
+            {
+                _targetX = targetTileX;
+                _targetY = targetTileY;
+                _isMoving = true;
+                _isRunning = false;
+            }
+        }
+    }
+
+    private static bool IsOneShotState(PlayerState state) => state is PlayerState.Jump or PlayerState.Combat or PlayerState.Spellcast;
+
     #region Private Methods
+
+    private void UpdateJump(float deltaTime)
+    {
+        _jumpTimer += deltaTime;
+        if (_jumpTimer >= _jumpDuration)
+        {
+            // Land
+            JumpHeight = 0f;
+            SetState(PlayerState.Idle);
+            return;
+        }
+
+        // Parabolic arc: peaks at 1.0 tile height at midpoint
+        float t = _jumpTimer / _jumpDuration; // 0 to 1
+        JumpHeight = 4f * t * (1f - t); // peaks at 1.0 when t=0.5
+    }
+
+    /// <summary>
+    /// Snaps the player to the target tile immediately. Called when input is released.
+    /// </summary>
+    public void SnapToTarget()
+    {
+        if (_isMoving && State != PlayerState.Jump)
+        {
+            X = _targetX;
+            Y = _targetY;
+            _isMoving = false;
+            SetState(PlayerState.Idle);
+        }
+    }
 
     private void UpdateMovement(float deltaTime)
     {
@@ -250,7 +341,9 @@ public class Player
             X = _targetX;
             Y = _targetY;
             _isMoving = false;
-            SetState(PlayerState.Idle);
+            // Don't interrupt one-shot animations (jump, combat, etc.)
+            if (!IsOneShotState(State))
+                SetState(PlayerState.Idle);
         }
         else
         {
