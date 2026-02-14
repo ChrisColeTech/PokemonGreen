@@ -139,7 +139,7 @@ public class GameWorld
 
         spriteBatch.Begin(transformMatrix: Camera.Transform, samplerState: SamplerState.PointClamp);
 
-        _tileRenderer!.DrawBaseTiles(spriteBatch);
+        _tileRenderer!.DrawBaseTiles(spriteBatch, _waterFrameIndex);
         _tileRenderer.DrawOverlayTiles(spriteBatch, _waterFrameIndex);
 
         _playerRenderer!.Draw(spriteBatch);

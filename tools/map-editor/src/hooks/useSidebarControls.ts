@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { rotateBuildingFootprint } from '../services/buildingService'
+import { getBuildingsById, getVisiblePaletteCategories } from '../services/registryService'
 import { clearPersistedEditorData } from '../services/storageService'
 import { useEditorStore } from '../store/editorStore'
-import { categoriesForPalette, buildings as registryBuildings, buildingsById, tilesForSelectedCategory } from '../store/selectors/registrySelectors'
 import { selectSidebarActions, selectSidebarState } from '../store/selectors/sidebarSelectors'
 import type { PaletteCategory } from '../types/editor'
 import { useShallow } from 'zustand/react/shallow'
@@ -24,11 +24,28 @@ export const useSidebarControls = () => {
     cellSize,
   } = useEditorStore(useShallow(selectSidebarState))
 
-  const paletteCategories = useEditorStore(categoriesForPalette)
-  const visibleTiles = useEditorStore(tilesForSelectedCategory)
-  const buildings = useEditorStore(registryBuildings)
-  const buildingsByRegistryId = useEditorStore(buildingsById)
-  const registryTiles = useEditorStore((state) => state.activeRegistry.tiles)
+  const activeRegistry = useEditorStore((state) => state.activeRegistry)
+
+  const paletteCategories = useMemo(
+    () => getVisiblePaletteCategories(activeRegistry),
+    [activeRegistry],
+  )
+
+  const visibleTiles = useMemo(
+    () =>
+      selectedCategory === 'buildings'
+        ? []
+        : activeRegistry.tiles.filter((tile) => tile.category === selectedCategory),
+    [activeRegistry.tiles, selectedCategory],
+  )
+
+  const buildings = activeRegistry.buildings
+  const registryTiles = activeRegistry.tiles
+
+  const buildingsByRegistryId = useMemo(
+    () => getBuildingsById(activeRegistry),
+    [activeRegistry],
+  )
 
   const {
     setSelectedCategory,

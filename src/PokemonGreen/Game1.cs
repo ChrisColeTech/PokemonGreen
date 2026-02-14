@@ -50,7 +50,7 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
-        _world = new GameWorld("test_two_layer_map");
+        _world = new GameWorld("test_legacy_map");
         base.Initialize();
     }
 
