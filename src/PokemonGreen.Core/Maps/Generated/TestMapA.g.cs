@@ -7,41 +7,41 @@ public sealed class TestMapA : MapDefinition
     private static readonly int[] BaseTileData =
     [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-        0, 0, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 18, 1, 1, 1, 1, 1, 1, 17, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 22, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 16, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 80, 0, 0, 
-        0, 0, 80, 1, 1, 1, 2, 2, 2, 2, 23, 1, 1, 80, 0, 0
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0
     ];
 
     private static readonly int?[] OverlayTileData =
     [
         null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
+        null, null,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80,   18, null, null, null, null, null, null,   17, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null,   22, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null,   16, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null,   23, null, null,   80, null, null
     ];
 
     private static readonly int[] WalkableTileIds =

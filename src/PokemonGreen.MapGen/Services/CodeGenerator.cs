@@ -71,6 +71,15 @@ public static class CodeGenerator
 
     #region Formatters
 
+    private const int DefaultBaseTileId = 1; // Grass
+
+    private static bool IsGroundTile(int tileId)
+    {
+        var tile = TileRegistry.GetTile(tileId);
+        if (tile == null) return true;
+        return tile.Category is TileCategory.Terrain;
+    }
+
     private static string FormatBaseTiles(MapJsonModel map, int w, int h)
     {
         var sb = new StringBuilder();
@@ -81,6 +90,9 @@ public static class CodeGenerator
             {
                 int tileId = (map.BaseTiles.Length > y && map.BaseTiles[y].Length > x)
                     ? map.BaseTiles[y][x] : 0;
+                // Non-ground tiles get moved to overlay; put default terrain here instead
+                if (!IsGroundTile(tileId))
+                    tileId = DefaultBaseTileId;
                 sb.Append(tileId);
                 if (x < w - 1 || y < h - 1) sb.Append(", ");
             }
@@ -97,7 +109,16 @@ public static class CodeGenerator
             sb.Append("        ");
             for (int x = 0; x < w; x++)
             {
+                // First check if the JSON already has an explicit overlay
                 int? val = GetOverlayValue(map.OverlayTiles, x, y);
+                // If no explicit overlay, check if the base tile should be promoted
+                if (!val.HasValue)
+                {
+                    int baseTileId = (map.BaseTiles.Length > y && map.BaseTiles[y].Length > x)
+                        ? map.BaseTiles[y][x] : 0;
+                    if (!IsGroundTile(baseTileId))
+                        val = baseTileId;
+                }
                 sb.Append(val.HasValue ? $"{val.Value,4}" : "null");
                 if (x < w - 1 || y < h - 1) sb.Append(", ");
             }

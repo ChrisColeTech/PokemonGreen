@@ -1,11 +1,10 @@
-using System;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using PokemonGreen.Core;
 using PokemonGreen.Core.Maps;
-using PokemonGreen.Rendering;
+using PokemonGreen.Core.Rendering;
 
 namespace PokemonGreen;
 
@@ -37,7 +36,6 @@ public class Game1 : Game
         _graphics.ApplyChanges();
 
         MapRegistry.Initialize();
-
         _gameWorld = new GameWorld(ViewportWidth, ViewportHeight);
 
         if (MapCatalog.TryGetMap("test_map_center", out var startMap) && startMap != null)
@@ -57,21 +55,16 @@ public class Game1 : Game
         }
 
         _playerRenderer = new PlayerRenderer();
-
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-
         _pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
         _pixelTexture.SetData(new[] { Color.White });
 
         TextureStore.Initialize(GraphicsDevice);
-
-        TileRenderer.LoadSprites(Content.RootDirectory);
-        _playerRenderer.LoadContent(Content.RootDirectory);
 
         _gameWorld.Camera.ViewportWidth = GraphicsDevice.Viewport.Width;
         _gameWorld.Camera.ViewportHeight = GraphicsDevice.Viewport.Height;
@@ -97,7 +90,6 @@ public class Game1 : Game
         }
 
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
         TileRenderer.Update(deltaTime);
         _gameWorld.Update(deltaTime);
 
@@ -111,7 +103,7 @@ public class Game1 : Game
         var transformMatrix = _gameWorld.Camera.GetTransformMatrix();
         _spriteBatch.Begin(
             SpriteSortMode.Deferred,
-            BlendState.AlphaBlend,
+            BlendState.NonPremultiplied,
             SamplerState.PointClamp,
             null,
             null,
@@ -124,7 +116,6 @@ public class Game1 : Game
                 _spriteBatch,
                 _gameWorld.CurrentMap,
                 _gameWorld.Camera,
-                GraphicsDevice,
                 GameWorld.TileSize);
         }
 
@@ -132,7 +123,6 @@ public class Game1 : Game
             _spriteBatch,
             _gameWorld.Player,
             _gameWorld.Camera,
-            GraphicsDevice,
             GameWorld.TileSize);
 
         _spriteBatch.End();
@@ -155,9 +145,6 @@ public class Game1 : Game
         _windowResized = true;
     }
 
-    /// <summary>
-    /// Creates a test map: 10x10 with grass interior and walls around the border.
-    /// </summary>
     private static TileMap CreateTestMap()
     {
         const int mapWidth = 10;
@@ -173,11 +160,11 @@ public class Game1 : Game
 
                 if (isBorder)
                 {
-                    map.SetBaseTile(x, y, 80); // Wall
+                    map.SetBaseTile(x, y, 80);
                 }
                 else
                 {
-                    map.SetBaseTile(x, y, 1); // Grass
+                    map.SetBaseTile(x, y, 1);
                 }
             }
         }
