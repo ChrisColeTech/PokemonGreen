@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +19,10 @@ public class Game1 : Game
 
     private const int ViewportWidth = 800;
     private const int ViewportHeight = 600;
+    private bool _windowResized;
+    private int _frameCount;
+    private int _lastLoggedVpW;
+    private int _lastLoggedVpH;
 
     public Game1()
     {
@@ -30,32 +35,30 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
-        // Set window size
         _graphics.PreferredBackBufferWidth = ViewportWidth;
         _graphics.PreferredBackBufferHeight = ViewportHeight;
         _graphics.ApplyChanges();
 
-        // Create GameWorld with viewport size
-        _gameWorld = new GameWorld(ViewportWidth, ViewportHeight);
-
-        // Register all generated maps
         MapRegistry.Initialize();
 
-        // Try loading from MapCatalog first, fall back to test map
-        var allMaps = MapCatalog.GetAllMaps();
-        if (allMaps.Count > 0)
+        _gameWorld = new GameWorld(ViewportWidth, ViewportHeight);
+
+        if (MapCatalog.TryGetMap("greenleaf_metro", out var startMap) && startMap != null)
         {
-            var firstMap = allMaps.First();
-            _gameWorld.LoadMap(firstMap);
+            _gameWorld.LoadMap(startMap);
         }
         else
         {
-            var testMap = CreateTestMap();
-            _gameWorld.LoadMap(testMap);
-            _gameWorld.SetPlayerPosition(5, 5);
+            var allMaps = MapCatalog.GetAllMaps();
+            if (allMaps.Count > 0)
+                _gameWorld.LoadMap(allMaps.First());
+            else
+            {
+                _gameWorld.LoadMap(CreateTestMap());
+                _gameWorld.SetPlayerPosition(5, 5);
+            }
         }
 
-        // Create player renderer
         _playerRenderer = new PlayerRenderer();
 
         base.Initialize();
@@ -65,15 +68,17 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // Create a 1x1 white pixel for drawing overlays
         _pixelTexture = new Texture2D(GraphicsDevice, 1, 1);
         _pixelTexture.SetData(new[] { Color.White });
 
-        // Initialize TextureStore with the graphics device
         TextureStore.Initialize(GraphicsDevice);
 
-        // Load player sprite sheets
+        TileRenderer.LoadSprites(Content.RootDirectory);
         _playerRenderer.LoadContent(Content.RootDirectory);
+
+        _gameWorld.Camera.ViewportWidth = GraphicsDevice.Viewport.Width;
+        _gameWorld.Camera.ViewportHeight = GraphicsDevice.Viewport.Height;
+        Console.WriteLine($"[INIT LoadContent] GD.Viewport={GraphicsDevice.Viewport.Width}x{GraphicsDevice.Viewport.Height} Camera.Viewport={_gameWorld.Camera.ViewportWidth}x{_gameWorld.Camera.ViewportHeight} Zoom={_gameWorld.Camera.Zoom:F2} BackBuffer={GraphicsDevice.PresentationParameters.BackBufferWidth}x{GraphicsDevice.PresentationParameters.BackBufferHeight}");
     }
 
     protected override void Update(GameTime gameTime)
@@ -81,10 +86,27 @@ public class Game1 : Game
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        // Get deltaTime from gameTime
+        if (_windowResized)
+        {
+            _windowResized = false;
+            int w = Window.ClientBounds.Width;
+            int h = Window.ClientBounds.Height;
+            Console.WriteLine($"[RESIZE UPDATE] Processing: ClientBounds={w}x{h}");
+            if (w > 0 && h > 0)
+            {
+                _graphics.PreferredBackBufferWidth = w;
+                _graphics.PreferredBackBufferHeight = h;
+                _graphics.ApplyChanges();
+                var vp = GraphicsDevice.Viewport;
+                Console.WriteLine($"[RESIZE UPDATE] After ApplyChanges: Viewport={vp.Width}x{vp.Height} BackBuffer={GraphicsDevice.PresentationParameters.BackBufferWidth}x{GraphicsDevice.PresentationParameters.BackBufferHeight}");
+                _gameWorld.OnViewportResized(w, h);
+                Console.WriteLine($"[RESIZE UPDATE] Camera: Viewport={_gameWorld.Camera.ViewportWidth}x{_gameWorld.Camera.ViewportHeight} Zoom={_gameWorld.Camera.Zoom:F2} Pos=({_gameWorld.Camera.X:F1},{_gameWorld.Camera.Y:F1})");
+            }
+        }
+
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        // Update the game world
+        TileRenderer.Update(deltaTime);
         _gameWorld.Update(deltaTime);
 
         base.Update(gameTime);
@@ -92,10 +114,20 @@ public class Game1 : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        // Clear to CornflowerBlue
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        _frameCount++;
+        var gdVp = GraphicsDevice.Viewport;
+        int camW = _gameWorld.Camera.ViewportWidth;
+        int camH = _gameWorld.Camera.ViewportHeight;
+        if (camW != _lastLoggedVpW || camH != _lastLoggedVpH || _frameCount % 300 == 0)
+        {
+            Console.WriteLine($"[DRAW #{_frameCount}] GD.Viewport={gdVp.Width}x{gdVp.Height} Camera.Viewport={camW}x{camH} Zoom={_gameWorld.Camera.Zoom:F2} Bounds={_gameWorld.Camera.Bounds}");
+            _lastLoggedVpW = camW;
+            _lastLoggedVpH = camH;
+        }
 
-        // Begin SpriteBatch
+        GraphicsDevice.Clear(Color.Black);
+
+        var transformMatrix = _gameWorld.Camera.GetTransformMatrix();
         _spriteBatch.Begin(
             SpriteSortMode.Deferred,
             BlendState.AlphaBlend,
@@ -103,9 +135,8 @@ public class Game1 : Game
             null,
             null,
             null,
-            null);
+            transformMatrix);
 
-        // Draw tiles
         if (_gameWorld.CurrentMap != null)
         {
             TileRenderer.DrawMap(
@@ -116,7 +147,6 @@ public class Game1 : Game
                 GameWorld.TileSize);
         }
 
-        // Draw player
         _playerRenderer.Draw(
             _spriteBatch,
             _gameWorld.Player,
@@ -124,28 +154,25 @@ public class Game1 : Game
             GraphicsDevice,
             GameWorld.TileSize);
 
-        // Draw fade overlay
+        _spriteBatch.End();
+
         if (_gameWorld.FadeAlpha > 0f)
         {
+            _spriteBatch.Begin();
             _spriteBatch.Draw(
                 _pixelTexture,
                 new Rectangle(0, 0, Window.ClientBounds.Width, Window.ClientBounds.Height),
                 Color.Black * _gameWorld.FadeAlpha);
+            _spriteBatch.End();
         }
-
-        // End SpriteBatch
-        _spriteBatch.End();
 
         base.Draw(gameTime);
     }
 
     private void OnClientSizeChanged(object? sender, System.EventArgs e)
     {
-        int w = Window.ClientBounds.Width;
-        int h = Window.ClientBounds.Height;
-        if (w <= 0 || h <= 0) return;
-
-        _gameWorld.OnViewportResized(w, h);
+        Console.WriteLine($"[RESIZE EVENT] ClientBounds={Window.ClientBounds.Width}x{Window.ClientBounds.Height} BackBuffer={_graphics.PreferredBackBufferWidth}x{_graphics.PreferredBackBufferHeight}");
+        _windowResized = true;
     }
 
     /// <summary>

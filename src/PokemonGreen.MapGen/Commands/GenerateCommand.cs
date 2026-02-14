@@ -17,10 +17,10 @@ public static class GenerateCommand
             Environment.Exit(1);
         }
 
-        // Default output: PokemonGreen.Core/Maps/ relative to MapGen project
+        // Default output: PokemonGreen.Core/Maps/Generated/ relative to MapGen project
         outputFolder ??= Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
-            "..", "..", "..", "..", "PokemonGreen.Core", "Maps"));
+            "..", "..", "..", "..", "PokemonGreen.Core", "Maps", "Generated"));
         outputFolder = Path.GetFullPath(outputFolder);
 
         if (!Directory.Exists(outputFolder))
@@ -66,15 +66,6 @@ public static class GenerateCommand
                 Console.Error.WriteLine($"Error processing {mapFile}: {ex.Message}");
                 errorCount++;
             }
-        }
-
-        // Generate MapRegistry.g.cs that initializes all map singletons
-        if (generatedClassNames.Count > 0)
-        {
-            var registryCode = CodeGenerator.GenerateMapRegistry(generatedClassNames);
-            var registryFile = Path.Combine(outputFolder, "MapRegistry.g.cs");
-            File.WriteAllText(registryFile, registryCode);
-            Console.WriteLine($"Generated: {registryFile}");
         }
 
         Console.WriteLine();

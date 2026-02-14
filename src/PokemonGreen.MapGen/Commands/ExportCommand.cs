@@ -129,6 +129,9 @@ public static partial class ExportCommand
         var warps = ExtractWarps(code);
         var connections = ExtractConnections(code);
 
+        // Extract worldX/worldY from constructor call
+        var (worldX, worldY) = ExtractWorldPosition(code);
+
         return new MapJsonModel
         {
             SchemaVersion = 2,
@@ -140,7 +143,9 @@ public static partial class ExportCommand
             BaseTiles = baseTiles,
             OverlayTiles = overlayTiles,
             Warps = warps?.Count > 0 ? warps : null,
-            Connections = connections?.Count > 0 ? connections : null
+            Connections = connections?.Count > 0 ? connections : null,
+            WorldX = worldX,
+            WorldY = worldY
         };
     }
 
@@ -250,9 +255,26 @@ public static partial class ExportCommand
         return connections;
     }
 
+    /// <summary>
+    /// Extracts worldX and worldY from the constructor call.
+    /// Looks for the pattern: ..., WalkableTileIds, warps?, connections?, worldX, worldY)
+    /// </summary>
+    private static (int worldX, int worldY) ExtractWorldPosition(string code)
+    {
+        var match = WorldPositionRegex().Match(code);
+        if (!match.Success)
+            return (0, 0);
+        return (int.Parse(match.Groups[1].Value), int.Parse(match.Groups[2].Value));
+    }
+
     // Matches: base("mapId", "displayName", width, height, tileSize, ...)
     [GeneratedRegex(@"base\(\s*""([^""]*)""\s*,\s*""([^""]*)""\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,")]
     private static partial Regex ConstructorRegex();
+
+    // Matches worldX, worldY as the last two integer args before the closing paren
+    // Pattern: ..., <int>, <int>)  where neither int is preceded by a quote (to avoid matching targetX/Y in warps)
+    [GeneratedRegex(@",\s*(-?\d+)\s*,\s*(-?\d+)\s*\)\s*$", RegexOptions.Multiline)]
+    private static partial Regex WorldPositionRegex();
 
     // Matches: new(x, y, "targetMapId", targetX, targetY, WarpTrigger.Step)
     [GeneratedRegex(@"new\(\s*(\d+)\s*,\s*(\d+)\s*,\s*""([^""]*)""\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(WarpTrigger\.\w+)\s*\)")]

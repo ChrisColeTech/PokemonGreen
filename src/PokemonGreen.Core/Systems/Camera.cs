@@ -3,46 +3,20 @@ using Microsoft.Xna.Framework;
 namespace PokemonGreen.Core.Systems;
 
 /// <summary>
-/// 2D camera system for viewport management and coordinate transformations.
+/// Follows the player, clamps to map edges, and produces a transform matrix
+/// for SpriteBatch rendering. Zoom is set once on map load and does not change
+/// on window resize. Position (X, Y) is the world-space point at screen center.
 /// </summary>
 public class Camera
 {
-    private float _x;
-    private float _y;
-    private float _zoom = 1.0f;
+    private float _zoom = 3.0f;
 
-    /// <summary>
-    /// Camera center X position in world coordinates.
-    /// </summary>
-    public float X
-    {
-        get => _x;
-        set => _x = value;
-    }
+    public float X { get; set; }
+    public float Y { get; set; }
 
-    /// <summary>
-    /// Camera center Y position in world coordinates.
-    /// </summary>
-    public float Y
-    {
-        get => _y;
-        set => _y = value;
-    }
-
-    /// <summary>
-    /// Viewport width in pixels.
-    /// </summary>
     public int ViewportWidth { get; set; }
-
-    /// <summary>
-    /// Viewport height in pixels.
-    /// </summary>
     public int ViewportHeight { get; set; }
 
-    /// <summary>
-    /// Camera zoom level. Default is 1.0 (no zoom).
-    /// Values greater than 1.0 zoom in, less than 1.0 zoom out.
-    /// </summary>
     public float Zoom
     {
         get => _zoom;
@@ -50,7 +24,8 @@ public class Camera
     }
 
     /// <summary>
-    /// Computed visible area in world coordinates.
+    /// The world-space rectangle currently visible on screen, accounting for zoom.
+    /// Used by TileRenderer for culling.
     /// </summary>
     public Rectangle Bounds
     {
@@ -59,19 +34,13 @@ public class Camera
             float scaledWidth = ViewportWidth / Zoom;
             float scaledHeight = ViewportHeight / Zoom;
             return new Rectangle(
-                (int)(X - scaledWidth / 2),
-                (int)(Y - scaledHeight / 2),
+                (int)(X - scaledWidth / 2f),
+                (int)(Y - scaledHeight / 2f),
                 (int)scaledWidth,
-                (int)scaledHeight
-            );
+                (int)scaledHeight);
         }
     }
 
-    /// <summary>
-    /// Creates a new camera with the specified viewport dimensions.
-    /// </summary>
-    /// <param name="viewportWidth">Viewport width in pixels.</param>
-    /// <param name="viewportHeight">Viewport height in pixels.</param>
     public Camera(int viewportWidth, int viewportHeight)
     {
         ViewportWidth = viewportWidth;
@@ -79,60 +48,60 @@ public class Camera
     }
 
     /// <summary>
-    /// Smoothly follows a target position using linear interpolation.
+    /// Centers the camera on the given world-space target.
     /// </summary>
-    /// <param name="targetX">Target X position in world coordinates.</param>
-    /// <param name="targetY">Target Y position in world coordinates.</param>
-    /// <param name="lerp">Interpolation factor (0.0 to 1.0). Lower values = smoother/slower follow.</param>
-    public void Follow(float targetX, float targetY, float lerp = 0.1f)
+    public void Follow(float targetX, float targetY)
     {
-        X = MathHelper.Lerp(X, targetX, lerp);
-        Y = MathHelper.Lerp(Y, targetY, lerp);
+        X = targetX;
+        Y = targetY;
     }
 
     /// <summary>
-    /// Clamps camera position to prevent showing areas outside the map boundaries.
+    /// Prevents the camera from showing space beyond the map edges.
+    /// If the map is smaller than the viewport (at current zoom), centers the camera on the map.
     /// </summary>
-    /// <param name="mapWidth">Map width in tiles.</param>
-    /// <param name="mapHeight">Map height in tiles.</param>
-    /// <param name="tileSize">Size of each tile in pixels.</param>
     public void ClampToMap(int mapWidth, int mapHeight, int tileSize)
     {
         float worldWidth = mapWidth * tileSize;
         float worldHeight = mapHeight * tileSize;
 
-        float halfViewWidth = (ViewportWidth / Zoom) / 2;
-        float halfViewHeight = (ViewportHeight / Zoom) / 2;
+        float halfViewWidth = ViewportWidth / Zoom / 2f;
+        float halfViewHeight = ViewportHeight / Zoom / 2f;
 
-        // Clamp X
         if (worldWidth <= ViewportWidth / Zoom)
-        {
-            // Map is smaller than viewport, center it
-            X = worldWidth / 2;
-        }
+            X = worldWidth / 2f;
         else
-        {
             X = MathHelper.Clamp(X, halfViewWidth, worldWidth - halfViewWidth);
-        }
 
-        // Clamp Y
         if (worldHeight <= ViewportHeight / Zoom)
-        {
-            // Map is smaller than viewport, center it
-            Y = worldHeight / 2;
-        }
+            Y = worldHeight / 2f;
         else
-        {
             Y = MathHelper.Clamp(Y, halfViewHeight, worldHeight - halfViewHeight);
-        }
     }
 
     /// <summary>
-    /// Converts world coordinates to screen coordinates.
+    /// Follows the player then clamps to map bounds. Called every frame by GameWorld.
     /// </summary>
-    /// <param name="worldX">X position in world coordinates.</param>
-    /// <param name="worldY">Y position in world coordinates.</param>
-    /// <returns>Screen coordinates as (screenX, screenY).</returns>
+    public void Update(float playerX, float playerY, int mapWidth, int mapHeight, int tileSize)
+    {
+        Follow(playerX, playerY);
+        ClampToMap(mapWidth, mapHeight, tileSize);
+    }
+
+    /// <summary>
+    /// Produces the transform matrix passed to SpriteBatch.Begin().
+    /// Translates by negative camera position, scales by zoom, then re-centers on the viewport.
+    /// </summary>
+    public Matrix GetTransformMatrix()
+    {
+        return Matrix.CreateTranslation(-X, -Y, 0f) *
+               Matrix.CreateScale(Zoom, Zoom, 1f) *
+               Matrix.CreateTranslation(ViewportWidth / 2f, ViewportHeight / 2f, 0f);
+    }
+
+    /// <summary>
+    /// Converts a world-space position to screen-space pixel coordinates.
+    /// </summary>
     public (int screenX, int screenY) WorldToScreen(float worldX, float worldY)
     {
         float screenX = (worldX - X) * Zoom + ViewportWidth / 2f;
@@ -141,40 +110,12 @@ public class Camera
     }
 
     /// <summary>
-    /// Converts screen coordinates to world coordinates.
+    /// Converts screen-space pixel coordinates to a world-space position.
     /// </summary>
-    /// <param name="screenX">X position in screen coordinates.</param>
-    /// <param name="screenY">Y position in screen coordinates.</param>
-    /// <returns>World coordinates as (worldX, worldY).</returns>
     public (float worldX, float worldY) ScreenToWorld(int screenX, int screenY)
     {
         float worldX = (screenX - ViewportWidth / 2f) / Zoom + X;
         float worldY = (screenY - ViewportHeight / 2f) / Zoom + Y;
         return (worldX, worldY);
-    }
-
-    /// <summary>
-    /// Updates camera position to follow the player and clamps to map boundaries.
-    /// </summary>
-    /// <param name="playerX">Player X position in world coordinates.</param>
-    /// <param name="playerY">Player Y position in world coordinates.</param>
-    /// <param name="mapWidth">Map width in tiles.</param>
-    /// <param name="mapHeight">Map height in tiles.</param>
-    /// <param name="tileSize">Size of each tile in pixels.</param>
-    public void Update(float playerX, float playerY, int mapWidth, int mapHeight, int tileSize)
-    {
-        Follow(playerX, playerY);
-        ClampToMap(mapWidth, mapHeight, tileSize);
-    }
-
-    /// <summary>
-    /// Gets the transformation matrix for use with SpriteBatch.
-    /// </summary>
-    /// <returns>Transformation matrix combining translation and scale.</returns>
-    public Matrix GetTransformMatrix()
-    {
-        return Matrix.CreateTranslation(-X, -Y, 0) *
-               Matrix.CreateScale(Zoom, Zoom, 1) *
-               Matrix.CreateTranslation(ViewportWidth / 2f, ViewportHeight / 2f, 0);
     }
 }

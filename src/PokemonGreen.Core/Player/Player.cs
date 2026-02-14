@@ -2,224 +2,136 @@ using PokemonGreen.Core.Maps;
 
 namespace PokemonGreen.Core.Player;
 
-/// <summary>
-/// Main player class handling position, movement, state, and animation.
-/// </summary>
 public class Player
 {
-    #region Position Properties
-
-    /// <summary>
-    /// X position in tiles (can be fractional for smooth movement).
-    /// </summary>
+    // Position (in tile coordinates, float for smooth movement)
     public float X { get; private set; }
-
-    /// <summary>
-    /// Y position in tiles (can be fractional for smooth movement).
-    /// </summary>
     public float Y { get; private set; }
-
-    /// <summary>
-    /// Computed integer tile X position.
-    /// </summary>
     public int TileX => (int)MathF.Floor(X);
-
-    /// <summary>
-    /// Computed integer tile Y position.
-    /// </summary>
     public int TileY => (int)MathF.Floor(Y);
 
-    #endregion
-
-    #region State Properties
-
-    /// <summary>
-    /// The direction the player is currently facing.
-    /// </summary>
+    // State
     public Direction Facing { get; private set; } = Direction.Down;
-
-    /// <summary>
-    /// The current state of the player.
-    /// </summary>
     public PlayerState State { get; private set; } = PlayerState.Idle;
 
-    /// <summary>
-    /// Movement speed in tiles per second.
-    /// </summary>
-    public float MoveSpeed { get; set; } = 2.0f;
+    // Movement tuning
+    public float MoveSpeed { get; set; } = 4.0f;
+    public float RunMultiplier { get; set; } = 2.0f;
 
-    /// <summary>
-    /// Speed multiplier when running.
-    /// </summary>
-    public float RunMultiplier { get; set; } = 1.5f;
-
-    #endregion
-
-    #region Animation Properties
-
-    /// <summary>
-    /// Current animation frame index.
-    /// </summary>
+    // Animation
     public int AnimationFrame { get; private set; }
+    public float JumpHeight { get; private set; }
 
-    /// <summary>
-    /// Timer tracking animation progress.
-    /// </summary>
-    public float AnimationTimer { get; private set; }
-
-    /// <summary>
-    /// Duration of each animation frame in seconds for the current state.
-    /// </summary>
-    /// <summary>
-    /// Duration of each animation frame in seconds for the current state.
-    /// Synced to movement speed: one full cycle = time to cross one tile.
-    /// Walk: 0.5s / 9 frames, Run: 0.333s / 8 frames.
-    /// </summary>
     public float FrameDuration => State switch
     {
         PlayerState.Idle => 0.6f,
-        PlayerState.Walk => 1f / (MoveSpeed * FramesPerState()),            // ~0.056s at 2 tiles/sec
-        PlayerState.Run => 1f / (MoveSpeed * RunMultiplier * FramesPerState()), // ~0.042s at 3 tiles/sec
-        PlayerState.Jump => 0.1f,
+        PlayerState.Walk => 0.1f,
+        PlayerState.Run => 0.06f,
+        PlayerState.Jump => 0.08f,
         _ => 0.15f
     };
 
-    /// <summary>
-    /// Visual vertical offset during a jump (in tiles). 0 = on ground.
-    /// </summary>
-    public float JumpHeight { get; private set; }
-
-    #endregion
-
-    #region Movement State
-
-    private float _targetX;
-    private float _targetY;
-    private bool _isMoving;
+    // Movement intent (set by Move, consumed by Update)
+    private bool _hasMovementIntent;
+    private Direction _moveDirection;
     private bool _isRunning;
+
+    // Jump state
+    private bool _isJumping;
     private float _jumpTimer;
-    private float _jumpDuration;
+    private const float JumpDuration = 0.4f;
+    private const float JumpPeakHeight = 0.8f;
 
-    #endregion
+    // Momentum stored at jump start (for air drift)
+    private float _jumpMomentumDx;
+    private float _jumpMomentumDy;
+    private float _jumpMomentumSpeed;
 
-    #region Constructor
+    // Animation timer
+    private float _animationTimer;
 
-    /// <summary>
-    /// Creates a new player at the specified tile position.
-    /// </summary>
-    /// <param name="startX">Starting X tile position.</param>
-    /// <param name="startY">Starting Y tile position.</param>
     public Player(float startX = 0, float startY = 0)
     {
         X = startX;
         Y = startY;
-        _targetX = startX;
-        _targetY = startY;
     }
 
-    #endregion
-
-    #region State Machine Methods
-
     /// <summary>
-    /// Main update method called each frame.
+    /// Called each frame by GameWorld to declare movement intent.
+    /// Actual position change happens in Update with proper deltaTime.
     /// </summary>
-    /// <param name="deltaTime">Time elapsed since last update in seconds.</param>
-    /// <param name="map">The current tile map for collision checks.</param>
-    public void Update(float deltaTime, TileMap map)
+    public void Move(Direction direction, bool isRunning, TileMap map)
     {
-        if (_isMoving)
+        if (_isJumping) return;
+
+        Facing = direction;
+        _hasMovementIntent = true;
+        _moveDirection = direction;
+        _isRunning = isRunning;
+
+        SetState(isRunning ? PlayerState.Run : PlayerState.Walk);
+    }
+
+    public void StopMoving()
+    {
+        _hasMovementIntent = false;
+        if (!_isJumping)
         {
-            UpdateMovement(deltaTime);
+            SetState(PlayerState.Idle);
+        }
+    }
+
+    public void BeginJump(TileMap map)
+    {
+        if (_isJumping) return;
+
+        _isJumping = true;
+        _jumpTimer = 0f;
+        JumpHeight = 0f;
+
+        // Capture current momentum: if the player was moving, carry that into the jump
+        if (_hasMovementIntent)
+        {
+            var (dx, dy) = _moveDirection.ToVector();
+            _jumpMomentumDx = dx;
+            _jumpMomentumDy = dy;
+            _jumpMomentumSpeed = MoveSpeed * (_isRunning ? RunMultiplier : 1f);
+        }
+        else
+        {
+            _jumpMomentumDx = 0;
+            _jumpMomentumDy = 0;
+            _jumpMomentumSpeed = 0;
         }
 
-        if (State == PlayerState.Jump)
+        SetState(PlayerState.Jump);
+    }
+
+    public void Update(float deltaTime, TileMap map)
+    {
+        if (_isJumping)
         {
-            UpdateJump(deltaTime);
+            UpdateJump(deltaTime, map);
+        }
+        else if (_hasMovementIntent)
+        {
+            ApplyMovement(deltaTime, map);
         }
 
         UpdateAnimation(deltaTime);
     }
 
-    /// <summary>
-    /// Sets the player to a new state.
-    /// </summary>
-    /// <param name="newState">The new state to transition to.</param>
-    public void SetState(PlayerState newState)
+    public void SetPosition(float x, float y)
     {
-        if (State != newState)
-        {
-            State = newState;
-            AnimationFrame = 0;
-            AnimationTimer = 0;
-        }
+        X = x;
+        Y = y;
     }
 
-    /// <summary>
-    /// Initiates movement in the specified direction.
-    /// </summary>
-    /// <param name="dir">The direction to move.</param>
-    /// <param name="running">Whether the player is running.</param>
-    /// <param name="map">The current tile map for collision checks.</param>
-    /// <returns>True if movement was initiated, false if blocked.</returns>
-    public bool Move(Direction dir, bool running, TileMap map)
-    {
-        // Always update facing direction
-        Facing = dir;
-
-        // Don't start new movement if already moving
-        if (_isMoving)
-        {
-            return false;
-        }
-
-        var (dx, dy) = dir.ToVector();
-        int targetTileX = TileX + dx;
-        int targetTileY = TileY + dy;
-
-        if (!CanMoveTo(targetTileX, targetTileY, map))
-        {
-            return false;
-        }
-
-        // Start movement
-        _targetX = targetTileX;
-        _targetY = targetTileY;
-        _isMoving = true;
-        _isRunning = running;
-
-        SetState(running ? PlayerState.Run : PlayerState.Walk);
-
-        return true;
-    }
-
-    /// <summary>
-    /// Checks if the player can move to the specified tile.
-    /// </summary>
-    /// <param name="x">Target tile X coordinate.</param>
-    /// <param name="y">Target tile Y coordinate.</param>
-    /// <param name="map">The current tile map for collision checks.</param>
-    /// <returns>True if the tile is walkable, false otherwise.</returns>
     public bool CanMoveTo(int x, int y, TileMap map)
     {
-        // Check map bounds
-        if (x < 0 || y < 0 || x >= map.Width || y >= map.Height)
-        {
-            return false;
-        }
-
-        // Check if tile is walkable
-        return map.IsWalkable(x, y);
+        return map.IsInBounds(x, y) && map.IsWalkable(x, y);
     }
 
-    #endregion
-
-    #region Animation Methods
-
-    /// <summary>
-    /// Gets the number of animation frames for the current state.
-    /// </summary>
-    /// <returns>Number of frames for the current state.</returns>
     public int FramesPerState() => State switch
     {
         PlayerState.Idle => 2,
@@ -232,14 +144,120 @@ public class Player
         _ => 1
     };
 
-    /// <summary>
-    /// Updates the animation timer and frame.
-    /// </summary>
-    /// <param name="deltaTime">Time elapsed since last update in seconds.</param>
-    public void UpdateAnimation(float deltaTime)
-    {
-        AnimationTimer += deltaTime;
+    // --- Private implementation ---
 
+    private void ApplyMovement(float deltaTime, TileMap map)
+    {
+        var (dx, dy) = _moveDirection.ToVector();
+        float speed = MoveSpeed * (_isRunning ? RunMultiplier : 1f);
+
+        float newX = X + dx * speed * deltaTime;
+        float newY = Y + dy * speed * deltaTime;
+
+        // Try full movement first
+        int targetTileX = (int)MathF.Floor(newX);
+        int targetTileY = (int)MathF.Floor(newY);
+
+        if (CanMoveTo(targetTileX, targetTileY, map))
+        {
+            X = newX;
+            Y = newY;
+            return;
+        }
+
+        // Axis-aligned sliding: try X alone
+        int slideTileX = (int)MathF.Floor(newX);
+        int currentTileY = (int)MathF.Floor(Y);
+        if (dx != 0 && CanMoveTo(slideTileX, currentTileY, map))
+        {
+            X = newX;
+            return;
+        }
+
+        // Try Y alone
+        int currentTileX = (int)MathF.Floor(X);
+        int slideTileY = (int)MathF.Floor(newY);
+        if (dy != 0 && CanMoveTo(currentTileX, slideTileY, map))
+        {
+            Y = newY;
+        }
+    }
+
+    private void UpdateJump(float deltaTime, TileMap map)
+    {
+        _jumpTimer += deltaTime;
+        float t = MathF.Min(_jumpTimer / JumpDuration, 1f);
+
+        // Sine arc for vertical height
+        JumpHeight = MathF.Sin(t * MathF.PI) * JumpPeakHeight;
+
+        // Apply horizontal momentum drift with collision checks
+        if (_jumpMomentumSpeed > 0)
+        {
+            float driftX = _jumpMomentumDx * _jumpMomentumSpeed * deltaTime;
+            float driftY = _jumpMomentumDy * _jumpMomentumSpeed * deltaTime;
+            float proposedX = X + driftX;
+            float proposedY = Y + driftY;
+
+            int targetTileX = (int)MathF.Floor(proposedX);
+            int targetTileY = (int)MathF.Floor(proposedY);
+
+            if (CanMoveTo(targetTileX, targetTileY, map))
+            {
+                X = proposedX;
+                Y = proposedY;
+            }
+            else
+            {
+                // Try sliding along each axis
+                int slideTileX = (int)MathF.Floor(proposedX);
+                int curTileY = (int)MathF.Floor(Y);
+                if (_jumpMomentumDx != 0 && CanMoveTo(slideTileX, curTileY, map))
+                {
+                    X = proposedX;
+                }
+                else
+                {
+                    int curTileX = (int)MathF.Floor(X);
+                    int slideTileY = (int)MathF.Floor(proposedY);
+                    if (_jumpMomentumDy != 0 && CanMoveTo(curTileX, slideTileY, map))
+                    {
+                        Y = proposedY;
+                    }
+                }
+            }
+        }
+
+        // Land when arc completes
+        if (_jumpTimer >= JumpDuration)
+        {
+            JumpHeight = 0f;
+            _isJumping = false;
+
+            // If still receiving movement input, go back to walk/run; otherwise idle
+            if (_hasMovementIntent)
+            {
+                SetState(_isRunning ? PlayerState.Run : PlayerState.Walk);
+            }
+            else
+            {
+                SetState(PlayerState.Idle);
+            }
+        }
+    }
+
+    private void SetState(PlayerState newState)
+    {
+        if (State != newState)
+        {
+            State = newState;
+            AnimationFrame = 0;
+            _animationTimer = 0f;
+        }
+    }
+
+    private void UpdateAnimation(float deltaTime)
+    {
         int frameCount = FramesPerState();
         if (frameCount <= 1)
         {
@@ -247,14 +265,16 @@ public class Player
             return;
         }
 
-        while (AnimationTimer >= FrameDuration)
+        _animationTimer += deltaTime;
+
+        while (_animationTimer >= FrameDuration)
         {
-            AnimationTimer -= FrameDuration;
+            _animationTimer -= FrameDuration;
             int nextFrame = AnimationFrame + 1;
 
-            // One-shot animations return to idle after the last frame
             if (nextFrame >= frameCount && IsOneShotState(State))
             {
+                // One-shot animation finished; return to idle
                 SetState(PlayerState.Idle);
                 return;
             }
@@ -263,114 +283,6 @@ public class Player
         }
     }
 
-    #endregion
-
-    /// <summary>
-    /// Starts a jump. Moves one tile forward in the facing direction if walkable.
-    /// </summary>
-    public void BeginJump(TileMap map)
-    {
-        _jumpDuration = 0.5f;
-        _jumpTimer = 0f;
-        JumpHeight = 0f;
-        SetState(PlayerState.Jump);
-
-        // Move forward one tile if possible
-        if (!_isMoving)
-        {
-            var (dx, dy) = Facing.ToVector();
-            int targetTileX = TileX + dx;
-            int targetTileY = TileY + dy;
-            if (CanMoveTo(targetTileX, targetTileY, map))
-            {
-                _targetX = targetTileX;
-                _targetY = targetTileY;
-                _isMoving = true;
-                _isRunning = false;
-            }
-        }
-    }
-
-    private static bool IsOneShotState(PlayerState state) => state is PlayerState.Jump or PlayerState.Combat or PlayerState.Spellcast;
-
-    #region Private Methods
-
-    private void UpdateJump(float deltaTime)
-    {
-        _jumpTimer += deltaTime;
-        if (_jumpTimer >= _jumpDuration)
-        {
-            // Land
-            JumpHeight = 0f;
-            SetState(PlayerState.Idle);
-            return;
-        }
-
-        // Parabolic arc: peaks at 1.0 tile height at midpoint
-        float t = _jumpTimer / _jumpDuration; // 0 to 1
-        JumpHeight = 4f * t * (1f - t); // peaks at 1.0 when t=0.5
-    }
-
-    /// <summary>
-    /// Snaps the player to the target tile immediately. Called when input is released.
-    /// </summary>
-    public void SnapToTarget()
-    {
-        if (_isMoving && State != PlayerState.Jump)
-        {
-            X = _targetX;
-            Y = _targetY;
-            _isMoving = false;
-            SetState(PlayerState.Idle);
-        }
-    }
-
-    private void UpdateMovement(float deltaTime)
-    {
-        float speed = MoveSpeed * (_isRunning ? RunMultiplier : 1.0f);
-        float movement = speed * deltaTime;
-
-        // Calculate direction to target
-        float dx = _targetX - X;
-        float dy = _targetY - Y;
-        float distance = MathF.Sqrt(dx * dx + dy * dy);
-
-        if (distance <= movement)
-        {
-            // Reached target
-            X = _targetX;
-            Y = _targetY;
-            _isMoving = false;
-            // Don't interrupt one-shot animations (jump, combat, etc.)
-            if (!IsOneShotState(State))
-                SetState(PlayerState.Idle);
-        }
-        else
-        {
-            // Move toward target
-            float ratio = movement / distance;
-            X += dx * ratio;
-            Y += dy * ratio;
-        }
-    }
-
-    #endregion
-
-    #region Utility Methods
-
-    /// <summary>
-    /// Teleports the player to the specified tile position.
-    /// </summary>
-    /// <param name="x">Target X tile position.</param>
-    /// <param name="y">Target Y tile position.</param>
-    public void SetPosition(float x, float y)
-    {
-        X = x;
-        Y = y;
-        _targetX = x;
-        _targetY = y;
-        _isMoving = false;
-    }
-
-    #endregion
+    private static bool IsOneShotState(PlayerState state) =>
+        state is PlayerState.Jump or PlayerState.Combat or PlayerState.Spellcast;
 }

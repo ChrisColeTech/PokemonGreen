@@ -30,6 +30,12 @@ public abstract class MapDefinition
     /// <summary>Tile size in pixels used by the runtime renderer.</summary>
     public int TileSize { get; }
 
+    /// <summary>World grid X position. Maps at adjacent grid positions auto-connect.</summary>
+    public int WorldX { get; }
+
+    /// <summary>World grid Y position. Maps at adjacent grid positions auto-connect.</summary>
+    public int WorldY { get; }
+
     /// <summary>Warp connections (doors, teleporters) defined on this map.</summary>
     public IReadOnlyList<WarpConnection> Warps => _warps;
 
@@ -45,13 +51,16 @@ public abstract class MapDefinition
         int width, int height, int tileSize,
         int[] baseTileData, int?[] overlayTileData, int[] walkableTileIds,
         WarpConnection[]? warps = null,
-        MapConnection[]? connections = null)
+        MapConnection[]? connections = null,
+        int worldX = 0, int worldY = 0)
     {
         Id = id;
         Name = name;
         Width = width;
         Height = height;
         TileSize = tileSize;
+        WorldX = worldX;
+        WorldY = worldY;
         _baseTileData = baseTileData;
         _overlayTileData = overlayTileData;
         _walkableTileIds = new HashSet<int>(walkableTileIds);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
@@ -47,7 +48,8 @@ public class PlayerRenderer
     /// </summary>
     public void LoadContent(string contentRootPath)
     {
-        _contentPath = Path.Combine(contentRootPath, "player");
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        _contentPath = Path.Combine(baseDir, contentRootPath, "player");
         foreach (var name in new[] { "idle", "walk", "run", "jump", "slash" })
         {
             var path = Path.Combine(_contentPath, $"{name}.png");
@@ -77,27 +79,22 @@ public class PlayerRenderer
 
         // Convert player tile position to world position
         float worldX = player.X * tileSize;
-        float worldY = player.Y * tileSize;
+        float worldY = player.Y * tileSize - player.JumpHeight * tileSize;
 
-        var (screenX, screenY) = camera.WorldToScreen(worldX, worldY);
+        // Scale the sprite to match the tile size. Sprite is 64x64 but occupies one tile.
+        float scale = (float)tileSize / FrameWidth;
+        int scaledWidth = tileSize;
+        int scaledHeight = tileSize;
 
-        // Scale the sprite to match the tile zoom. The sprite is 64x64 but occupies one tile.
-        float scale = camera.Zoom * tileSize / (float)FrameWidth;
-        int scaledWidth = (int)(FrameWidth * scale);
-        int scaledHeight = (int)(FrameHeight * scale);
-
-        // Center the 64px sprite on the 16px tile — offset so feet align with tile center
-        int offsetX = (int)((tileSize * camera.Zoom - scaledWidth) / 2);
-        int offsetY = (int)(tileSize * camera.Zoom - scaledHeight);
-
-        // Apply jump arc — lift the sprite upward
-        offsetY -= (int)(player.JumpHeight * tileSize * camera.Zoom);
+        // Center the sprite on the tile center (feet aligned)
+        int offsetX = (scaledWidth - (int)(FrameWidth * scale)) / 2;
+        int offsetY = scaledHeight - (int)(FrameHeight * scale);
 
         spriteBatch.Draw(
             sheet,
             new Rectangle(
-                screenX + offsetX,
-                screenY + offsetY,
+                (int)(worldX + offsetX),
+                (int)(worldY + offsetY),
                 scaledWidth,
                 scaledHeight),
             sourceRect,

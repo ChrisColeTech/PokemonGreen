@@ -23,14 +23,26 @@ public static class CodeGenerator
 
         bool hasWarps = map.Warps is { Count: > 0 };
         bool hasConnections = map.Connections is { Count: > 0 };
+        bool hasWorldPos = map.WorldX != 0 || map.WorldY != 0;
 
-        var extraArgs = (hasWarps, hasConnections) switch
+        // Build extra constructor args: warps?, connections?, worldX?, worldY?
+        var extraArgParts = new List<string>();
+
+        if (hasWarps || hasConnections || hasWorldPos)
+            extraArgParts.Add(hasWarps ? "WarpData" : "null");
+
+        if (hasConnections || hasWorldPos)
+            extraArgParts.Add(hasConnections ? "ConnectionData" : "null");
+
+        if (hasWorldPos)
         {
-            (true, true) => ", WarpData, ConnectionData",
-            (true, false) => ", WarpData",
-            (false, true) => ", null, ConnectionData",
-            _ => ""
-        };
+            extraArgParts.Add(map.WorldX.ToString());
+            extraArgParts.Add(map.WorldY.ToString());
+        }
+
+        var extraArgs = extraArgParts.Count > 0
+            ? ", " + string.Join(", ", extraArgParts)
+            : "";
 
         return MapClassTemplate
             .Replace("{{CLASS_NAME}}", className)

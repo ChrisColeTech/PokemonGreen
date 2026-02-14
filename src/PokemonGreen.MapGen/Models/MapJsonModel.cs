@@ -37,9 +37,17 @@ public class MapJsonModel
     [JsonPropertyName("warps")]
     public List<WarpJsonModel>? Warps { get; set; }
 
-    /// <summary>Edge connections to adjacent maps.</summary>
+    /// <summary>Edge connections to adjacent maps (optional, auto-resolved from worldX/worldY).</summary>
     [JsonPropertyName("connections")]
     public List<ConnectionJsonModel>? Connections { get; set; }
+
+    /// <summary>World grid X position. Maps at adjacent grid cells auto-connect.</summary>
+    [JsonPropertyName("worldX")]
+    public int WorldX { get; set; }
+
+    /// <summary>World grid Y position. Maps at adjacent grid cells auto-connect.</summary>
+    [JsonPropertyName("worldY")]
+    public int WorldY { get; set; }
 
     // ---- Legacy v1 fields (read-only, for import compat) ----
 

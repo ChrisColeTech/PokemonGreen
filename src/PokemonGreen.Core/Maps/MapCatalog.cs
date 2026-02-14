@@ -70,10 +70,51 @@ public static class MapCatalog
     }
 
     /// <summary>
-    /// Clears all registered maps from the catalog.
-    /// Primarily intended for testing purposes.
+    /// Finds the neighboring map at the adjacent grid position for the given edge.
+    /// Returns null if no map exists at that position.
     /// </summary>
-    internal static void Clear()
+    public static MapDefinition? GetNeighbor(MapDefinition from, MapEdge edge)
+    {
+        int nx = from.WorldX;
+        int ny = from.WorldY;
+        switch (edge)
+        {
+            case MapEdge.North: ny--; break;
+            case MapEdge.South: ny++; break;
+            case MapEdge.West: nx--; break;
+            case MapEdge.East: nx++; break;
+        }
+
+        foreach (var map in _maps.Values)
+        {
+            if (map.WorldX == nx && map.WorldY == ny)
+                return map;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Removes a map definition from the catalog by its ID.
+    /// </summary>
+    /// <returns>True if the map was removed; false if no map with that ID was found.</returns>
+    public static bool Unregister(string id)
+    {
+        return _maps.Remove(id);
+    }
+
+    /// <summary>
+    /// Replaces an existing map definition or adds it if not present.
+    /// </summary>
+    public static void RegisterOrReplace(MapDefinition map)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        _maps[map.Id] = map;
+    }
+
+    /// <summary>
+    /// Clears all registered maps from the catalog.
+    /// </summary>
+    public static void Clear()
     {
         _maps.Clear();
     }
