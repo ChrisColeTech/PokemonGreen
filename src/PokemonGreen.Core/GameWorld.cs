@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using PokemonGreen.Core.Audio;
 using PokemonGreen.Core.Graphics;
 using PokemonGreen.Core.Input;
 using PokemonGreen.Core.Maps;
@@ -13,6 +14,7 @@ public class GameWorld
     private TextureStore? _textures;
     private TileRenderer? _tileRenderer;
     private PlayerRenderer? _playerRenderer;
+    private SoundManager _soundManager = null!;
     private bool _isPaused;
     private float _animationTimer;
     private int _waterFrameIndex;
@@ -73,6 +75,9 @@ public class GameWorld
         _textures.Load(content, graphicsDevice);
         _tileRenderer = new TileRenderer(TileMap, TileRenderCatalog, _textures);
         _playerRenderer = new PlayerRenderer(Player, _textures);
+        
+        _soundManager = SoundManager.Instance;
+        _soundManager.Load(content);
     }
 
     public bool Update(GameTime gameTime)

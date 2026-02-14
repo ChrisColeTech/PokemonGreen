@@ -1,11 +1,12 @@
 import { isOverlayTile } from '../../data/tiles'
+import type { TileDirection } from '../../types/editor'
 
 export interface MapJsonTileType {
   name: string
   walkable: boolean
   category: string
   encounter?: string
-  direction?: 'up' | 'down' | 'left' | 'right'
+  direction?: TileDirection
 }
 
 export interface MapJsonPayload {

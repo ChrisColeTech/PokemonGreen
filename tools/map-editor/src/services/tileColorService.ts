@@ -1,4 +1,4 @@
-import type { TileCategory, TileDefinition } from '../types/editor'
+import type { EditorRegistryTileDefinition } from '../types/registry'
 
 interface HslColor {
   h: number
@@ -27,7 +27,14 @@ interface CategoryProfile {
 
 const ANCHOR_TILE_IDS = new Set<number>([0, 1, 2])
 
-const CATEGORY_PROFILES: Record<TileCategory, CategoryProfile> = {
+const DEFAULT_CATEGORY_PROFILE: CategoryProfile = {
+  hueCenter: 0,
+  hueSpread: 18,
+  saturationShift: 0.03,
+  lightnessShift: 0.02,
+}
+
+const KNOWN_CATEGORY_PROFILES: Record<string, CategoryProfile> = {
   terrain: { hueCenter: -2, hueSpread: 20, saturationShift: 0.02, lightnessShift: 0.01 },
   encounter: { hueCenter: 8, hueSpread: 22, saturationShift: 0.04, lightnessShift: 0.03 },
   interactive: { hueCenter: -10, hueSpread: 18, saturationShift: 0.03, lightnessShift: 0.02 },
@@ -151,6 +158,38 @@ export const shiftHexColorHsl = (hexColor: string, shift: HslShift): string => {
   return rgbToHex(hslToRgb(shiftedHsl))
 }
 
+const toCategoryProfileKey = (categoryId: string): string => categoryId.trim().toLowerCase()
+
+const hashCategory = (categoryId: string): number => {
+  let hash = 0
+  for (let index = 0; index < categoryId.length; index += 1) {
+    hash = (hash * 31 + categoryId.charCodeAt(index)) >>> 0
+  }
+
+  return hash
+}
+
+const resolveCategoryProfile = (categoryId: string): CategoryProfile => {
+  const normalizedId = toCategoryProfileKey(categoryId)
+  const knownProfile = KNOWN_CATEGORY_PROFILES[normalizedId]
+  if (knownProfile) {
+    return knownProfile
+  }
+
+  const hash = hashCategory(normalizedId)
+  const hueCenterOffset = (hash % 31) - 15
+  const hueSpreadOffset = ((Math.floor(hash / 31) % 7) - 3) * 2
+  const saturationOffset = ((Math.floor(hash / 217) % 5) - 2) * 0.005
+  const lightnessOffset = ((Math.floor(hash / 1085) % 5) - 2) * 0.005
+
+  return {
+    hueCenter: DEFAULT_CATEGORY_PROFILE.hueCenter + hueCenterOffset,
+    hueSpread: DEFAULT_CATEGORY_PROFILE.hueSpread + hueSpreadOffset,
+    saturationShift: DEFAULT_CATEGORY_PROFILE.saturationShift + saturationOffset,
+    lightnessShift: DEFAULT_CATEGORY_PROFILE.lightnessShift + lightnessOffset,
+  }
+}
+
 const getRelativePosition = (index: number, size: number): number => {
   if (size <= 1) {
     return 0
@@ -171,32 +210,27 @@ const getCategoryLightnessShift = (tileId: number, index: number, profile: Categ
   return profile.lightnessShift + position * 0.1 + parityJitter
 }
 
-export const createDistinctTileColorMap = (tiles: TileDefinition[]): Record<number, string> => {
+export const createDistinctTileColorMap = (tiles: EditorRegistryTileDefinition[]): Record<number, string> => {
   const displayColors: Record<number, string> = {}
 
   for (const tile of tiles) {
     displayColors[tile.id] = tile.color
   }
 
-  const groupedTiles: Record<TileCategory, TileDefinition[]> = {
-    terrain: [],
-    encounter: [],
-    interactive: [],
-    entity: [],
-    trainer: [],
-  }
+  const groupedTiles: Record<string, EditorRegistryTileDefinition[]> = {}
 
   for (const tile of tiles) {
     if (ANCHOR_TILE_IDS.has(tile.id)) {
       continue
     }
 
+    groupedTiles[tile.category] ??= []
     groupedTiles[tile.category].push(tile)
   }
 
-  for (const category of Object.keys(groupedTiles) as TileCategory[]) {
+  for (const category of Object.keys(groupedTiles)) {
     const tilesInCategory = [...groupedTiles[category]].sort((a, b) => a.id - b.id)
-    const profile = CATEGORY_PROFILES[category]
+    const profile = resolveCategoryProfile(category)
 
     tilesInCategory.forEach((tile, index) => {
       const sourceHsl = rgbToHsl(hexToRgb(tile.color))
@@ -218,7 +252,7 @@ export const createDistinctTileColorMap = (tiles: TileDefinition[]): Record<numb
 }
 
 export const getDisplayTileColor = (
-  tile: TileDefinition,
+  tile: EditorRegistryTileDefinition,
   displayColorMap: Record<number, string>,
   useDistinctColors: boolean,
 ): string => {

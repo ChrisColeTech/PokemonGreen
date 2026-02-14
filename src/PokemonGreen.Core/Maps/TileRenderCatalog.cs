@@ -42,7 +42,10 @@ public enum TileOverlayKind
     TrainerDown,
     TrainerLeft,
     TrainerRight,
-    TrainerBoss
+    TrainerBoss,
+    Ledge,
+    HeadbuttTree,
+    HoneyTree
 }
 
 public readonly record struct TileRenderRule(
@@ -57,7 +60,7 @@ public readonly record struct TileRenderRule(
 public sealed class TileRenderCatalog
 {
     public const int MinKnownTileId = 0;
-    public const int MaxKnownTileId = 70;
+    public const int MaxKnownTileId = 103;
 
     private readonly Dictionary<int, TileRenderRule> _rules;
 

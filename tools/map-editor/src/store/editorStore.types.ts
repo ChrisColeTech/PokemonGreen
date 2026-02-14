@@ -2,8 +2,10 @@ import type { StateCreator } from 'zustand'
 import type { ValidMapData } from '../services/mapIoService'
 import type { BuildingId, BuildingRotation, DrawMode, PaletteCategory, TileGrid } from '../types/editor'
 import type { ArchetypeId, GenerationDiagnostics, GenerationTemplateId } from '../types/generation'
+import type { EditorTileRegistry } from '../types/registry'
 
 export interface EditorStoreState {
+  activeRegistry: EditorTileRegistry
   mapName: string
   mapWidth: number
   mapHeight: number
@@ -55,6 +57,7 @@ export interface EditorStoreState {
   setGenerationMaxRepairAttempts: (value: number) => void
   setGenerationEnforceSpawnSafety: (value: boolean) => void
   setGenerationEnforceDoorConnectivity: (value: boolean) => void
+  setActiveRegistry: (registry: EditorTileRegistry) => void
   generateRandomMapFromControls: (seedOverride?: string) => void
   regenerateRandomMap: () => void
   undo: () => void

@@ -82,7 +82,7 @@ public class Game1 : Game
             _lastViewportHeight = vp.Height;
         }
         
-        GraphicsDevice.Clear(Color.Black);
+        GraphicsDevice.Clear(new Color(156, 205, 255));
 
         _world!.Draw(_spriteBatch!, vp);
 

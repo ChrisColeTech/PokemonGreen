@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
-import { BUILDINGS, BUILDINGS_BY_ID } from '../data/buildings'
-import { TILES } from '../data/tiles'
 import { rotateBuildingFootprint } from '../services/buildingService'
 import { clearPersistedEditorData } from '../services/storageService'
 import { useEditorStore } from '../store/editorStore'
+import { categoriesForPalette, buildings as registryBuildings, buildingsById, tilesForSelectedCategory } from '../store/selectors/registrySelectors'
 import { selectSidebarActions, selectSidebarState } from '../store/selectors/sidebarSelectors'
-import type { BuildingId, PaletteCategory } from '../types/editor'
+import type { PaletteCategory } from '../types/editor'
 import { useShallow } from 'zustand/react/shallow'
 
 const parseNumericValue = (value: string, fallback: number) => {
@@ -25,6 +24,12 @@ export const useSidebarControls = () => {
     cellSize,
   } = useEditorStore(useShallow(selectSidebarState))
 
+  const paletteCategories = useEditorStore(categoriesForPalette)
+  const visibleTiles = useEditorStore(tilesForSelectedCategory)
+  const buildings = useEditorStore(registryBuildings)
+  const buildingsByRegistryId = useEditorStore(buildingsById)
+  const registryTiles = useEditorStore((state) => state.activeRegistry.tiles)
+
   const {
     setSelectedCategory,
     setSelectedTileId,
@@ -39,13 +44,16 @@ export const useSidebarControls = () => {
     resetToDefaults,
   } = useEditorStore(useShallow(selectSidebarActions))
 
-  const visibleTiles = useMemo(
-    () => (selectedCategory === 'buildings' ? [] : TILES.filter((tile) => tile.category === selectedCategory)),
-    [selectedCategory],
-  )
-
-  const selectedBuilding = selectedBuildingId ? BUILDINGS_BY_ID[selectedBuildingId] : null
+  const selectedBuilding = selectedBuildingId ? buildingsByRegistryId[selectedBuildingId] : null
   const rotatedBuilding = selectedBuilding ? rotateBuildingFootprint(selectedBuilding, buildingRotation) : null
+  const buildingsWithDimensions = useMemo(
+    () => buildings.map((building) => ({
+      ...building,
+      width: building.tiles[0]?.length ?? 0,
+      height: building.tiles.length,
+    })),
+    [buildings],
+  )
 
   const handleSelectCategory = (category: PaletteCategory) => {
     setSelectedCategory(category)
@@ -55,7 +63,7 @@ export const useSidebarControls = () => {
     setSelectedTileId(tileId)
   }
 
-  const handleToggleBuilding = (buildingId: BuildingId) => {
+  const handleToggleBuilding = (buildingId: string) => {
     toggleSelectedBuilding(buildingId)
   }
 
@@ -81,8 +89,10 @@ export const useSidebarControls = () => {
     widthInput,
     heightInput,
     cellSize,
+    paletteCategories,
+    registryTiles,
     visibleTiles,
-    buildings: BUILDINGS,
+    buildings: buildingsWithDimensions,
     selectedBuilding,
     rotatedBuilding,
     setMapName,

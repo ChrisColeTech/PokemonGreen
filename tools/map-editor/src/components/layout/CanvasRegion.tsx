@@ -1,25 +1,44 @@
-import { GRASS_TILE_ID, TILES, TILES_BY_ID } from '../../data/tiles'
+import { useMemo } from 'react'
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
 import { createDistinctTileColorMap, getDisplayTileColor } from '../../services/tileColorService'
 import { useEditorStore } from '../../store/editorStore'
 import { useUiStore } from '../../store/uiStore'
+import type { TileDirection } from '../../types/editor'
 
-const DISTINCT_TILE_COLOR_MAP = createDistinctTileColorMap(TILES)
+const UNKNOWN_TILE_COLOR = '#3f4752'
 
 function CanvasRegion() {
-  const directionIcons = {
+  const directionIcons: Record<TileDirection, string> = {
     up: '▲',
     down: '▼',
     left: '◀',
     right: '▶',
-  } as const
+    north: '▲',
+    south: '▼',
+    west: '◀',
+    east: '▶',
+    northwest: '↖',
+    northeast: '↗',
+    southwest: '↙',
+    southeast: '↘',
+  }
 
   const mapWidth = useEditorStore((state) => state.mapWidth)
   const mapHeight = useEditorStore((state) => state.mapHeight)
   const cellSize = useEditorStore((state) => state.cellSize)
   const grid = useEditorStore((state) => state.grid)
+  const registryTiles = useEditorStore((state) => state.activeRegistry.tiles)
   const useDistinctColors = useUiStore((state) => state.useDistinctColors)
   const { onCellMouseDown, onCellMouseEnter, onGridMouseLeave, previewCells } = useCanvasInteraction()
+  const tilesById = useMemo(
+    () => registryTiles.reduce<Record<number, (typeof registryTiles)[number]>>((result, tile) => {
+      result[tile.id] = tile
+      return result
+    }, {}),
+    [registryTiles],
+  )
+  const distinctTileColorMap = useMemo(() => createDistinctTileColorMap(registryTiles), [registryTiles])
+  const fallbackTile = registryTiles[0]
 
   return (
     <section className="flex min-w-0 flex-1 overflow-auto p-3 md:p-4">
@@ -35,9 +54,13 @@ function CanvasRegion() {
       >
         {grid.map((row, y) =>
           row.map((tileId, x) => {
-            const tile = TILES_BY_ID[tileId] ?? TILES_BY_ID[GRASS_TILE_ID]
-            const tileColor = getDisplayTileColor(tile, DISTINCT_TILE_COLOR_MAP, useDistinctColors)
-            const symbol = tile.category === 'trainer' ? (tile.direction ? directionIcons[tile.direction] : '▲') : tile.encounter ? '!' : null
+            const tile = tilesById[tileId] ?? fallbackTile
+            const tileColor = tile
+              ? getDisplayTileColor(tile, distinctTileColorMap, useDistinctColors)
+              : UNKNOWN_TILE_COLOR
+            const symbol = tile
+              ? (tile.category === 'trainer' ? (tile.direction ? directionIcons[tile.direction] : '▲') : tile.encounter ? '!' : null)
+              : null
 
             return (
               <button
@@ -50,7 +73,7 @@ function CanvasRegion() {
                   backgroundColor: tileColor,
                   cursor: 'crosshair',
                 }}
-                title={`${tile.name} (${x}, ${y})`}
+                title={`${tile?.name ?? 'Unknown Tile'} (${x}, ${y})`}
                 onMouseDown={(event) => onCellMouseDown(event, x, y)}
                 onMouseEnter={() => onCellMouseEnter(x, y)}
                 onContextMenu={(event) => event.preventDefault()}
@@ -61,8 +84,10 @@ function CanvasRegion() {
           }),
         )}
         {previewCells.map((cell, index) => {
-          const previewTile = TILES_BY_ID[cell.tileId] ?? TILES_BY_ID[GRASS_TILE_ID]
-          const previewColor = getDisplayTileColor(previewTile, DISTINCT_TILE_COLOR_MAP, useDistinctColors)
+          const previewTile = tilesById[cell.tileId] ?? fallbackTile
+          const previewColor = previewTile
+            ? getDisplayTileColor(previewTile, distinctTileColorMap, useDistinctColors)
+            : UNKNOWN_TILE_COLOR
 
           return (
             <div

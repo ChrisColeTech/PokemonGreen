@@ -6,6 +6,7 @@ export const selectCanvasState = (state: EditorStoreState) => ({
   drawMode: state.drawMode,
   selectedBuildingId: state.selectedBuildingId,
   buildingRotation: state.buildingRotation,
+  activeRegistry: state.activeRegistry,
 })
 
 export const selectCanvasActions = (state: EditorStoreState) => ({

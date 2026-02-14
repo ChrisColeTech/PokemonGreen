@@ -7,12 +7,14 @@ import { createHistorySlice } from './slices/historySlice'
 import { createIoSlice } from './slices/ioSlice'
 import { createMapSlice } from './slices/mapSlice'
 import { createPaintSlice } from './slices/paintSlice'
+import { createRegistrySlice } from './slices/registrySlice'
 import { partializeEditorStore, STORE_NAME } from './slices/shared'
 
 export const useEditorStore = create<EditorStoreState>()(
   persist(
     (...args) => ({
       ...createMapSlice(...args),
+      ...createRegistrySlice(...args),
       ...createPaintSlice(...args),
       ...createBuildingSlice(...args),
       ...createHistorySlice(...args),

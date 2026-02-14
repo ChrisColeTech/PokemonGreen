@@ -1,73 +1,104 @@
-# React + TypeScript + Vite
+# PokemonGreen Map Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript editor for PokemonGreen `.map.json` maps.
 
-Currently, two official plugins are available:
+It supports a dynamic, registry-driven palette so tile/building options come from exported game data instead of hardcoded UI lists.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quick Start
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Useful scripts:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run test
+npm run build
+npm run lint
 ```
+
+## Map Workflow
+
+1. Open map-editor and create/edit a map.
+2. Save/export `.map.json`.
+3. Run MapGen to convert JSON -> C# map classes.
+4. Run the game.
+
+MapGen command example:
+
+```bash
+# from src/PokemonGreen.MapGen
+dotnet run -- --input ../../Assets/Maps --output ../PokemonGreen.Core/Maps
+```
+
+## Registry Workflow (MapGen -> Editor)
+
+The editor default registry file is:
+
+`src/data/registries/default.json`
+
+Generate/update it from MapGen:
+
+```bash
+# from src/PokemonGreen.MapGen
+dotnet run -- export-registry --output ../../tools/map-editor/src/data/registries/default.json
+```
+
+If `--output` is omitted, MapGen writes to this default path automatically.
+
+## Dynamic Registry Behavior
+
+When the active registry changes, the existing UI updates in place:
+
+- Palette category tabs come from `registry.categories` where `showInPalette` is `true`.
+- Tile buttons come from `registry.tiles` filtered by selected category.
+- Building buttons come from `registry.buildings`.
+- Building preview/placement size is derived from each building footprint matrix (`tiles`).
+- Palette/canvas colors come from registry tile colors through `tileColorService` (including Distinct mode).
+
+Fallback rules on registry switch:
+
+- Missing category -> first visible category.
+- Missing tile -> first walkable terrain-like tile, then first walkable tile, then first tile.
+- Missing building -> building selection cleared.
+
+## Registry JSON Contract
+
+```json
+{
+  "metadata": {
+    "id": "default",
+    "name": "PokemonGreen Default",
+    "version": "1.0.0"
+  },
+  "categories": [
+    { "id": "terrain", "label": "Terrain", "showInPalette": true }
+  ],
+  "tiles": [
+    {
+      "id": 1,
+      "name": "Grass",
+      "color": "#2d5a27",
+      "walkable": true,
+      "category": "terrain"
+    }
+  ],
+  "buildings": [
+    {
+      "id": "house-small",
+      "name": "House Small",
+      "tiles": [[3, 3, 3], [3, 4, 3], [6, 4, 6]]
+    }
+  ]
+}
+```
+
+Validation rejects malformed payloads, duplicate IDs, unknown category references, and buildings that reference unknown tile IDs.
+
+## Important Notes
+
+- This project intentionally keeps the existing map-editor layout; registry integration is data-driven, not a UI redesign.
+- Building footprints are map data templates (placement logic), while visuals come from tile art at render time.
+- `PokemonGreen.Core` tile definitions are the source of truth; regenerate the registry after tile changes.

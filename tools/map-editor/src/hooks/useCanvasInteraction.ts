@@ -1,5 +1,4 @@
 import { type MouseEvent, useEffect, useMemo, useState } from 'react'
-import { BUILDINGS_BY_ID } from '../data/buildings'
 import { getPlacementCells } from '../services/buildingService'
 import { useEditorStore } from '../store/editorStore'
 import { selectCanvasActions, selectCanvasState } from '../store/selectors/canvasSelectors'
@@ -7,7 +6,7 @@ import type { GridPoint } from '../types/editor'
 import { useShallow } from 'zustand/react/shallow'
 
 export const useCanvasInteraction = () => {
-  const { mapWidth, mapHeight, drawMode, selectedBuildingId, buildingRotation } = useEditorStore(
+  const { mapWidth, mapHeight, drawMode, selectedBuildingId, buildingRotation, activeRegistry } = useEditorStore(
     useShallow(selectCanvasState),
   )
 
@@ -70,13 +69,13 @@ export const useCanvasInteraction = () => {
       return []
     }
 
-    const building = BUILDINGS_BY_ID[selectedBuildingId]
+    const building = activeRegistry.buildings.find((entry) => entry.id === selectedBuildingId)
     if (!building) {
       return []
     }
 
     return getPlacementCells(building, buildingRotation, hoverCell.x, hoverCell.y, mapWidth, mapHeight)
-  }, [buildingRotation, hoverCell, mapHeight, mapWidth, selectedBuildingId])
+  }, [activeRegistry.buildings, buildingRotation, hoverCell, mapHeight, mapWidth, selectedBuildingId])
 
   return {
     onCellMouseDown,

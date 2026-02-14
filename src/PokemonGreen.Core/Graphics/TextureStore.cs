@@ -27,6 +27,14 @@ public class TextureStore
     public Texture2D Pixel { get; set; } = null!;
     
     public Dictionary<int, Texture2D> Items { get; } = new();
+    
+    public Dictionary<int, Texture2D> NPCs { get; } = new();
+    public Texture2D TestPlayer { get; set; } = null!;
+    
+    public Texture2D TilesetOverworld { get; set; } = null!;
+    public Texture2D TilesetOverworldCollision { get; set; } = null!;
+    public Texture2D TilesetOverworldWater { get; set; } = null!;
+    public Texture2D TilesetCave { get; set; } = null!;
 
     public void Load(ContentManager content, GraphicsDevice graphicsDevice)
     {
@@ -58,6 +66,44 @@ public class TextureStore
         PlayerSpellcast = LoadTextureOrFallback(content, "Sprites/player_spellcast", PlayerWalk);
 
         LoadItems(content);
+        LoadNPCs(content);
+        LoadTilesets(content);
+    }
+
+    private void LoadNPCs(ContentManager content)
+    {
+        TestPlayer = LoadTextureOrFallback(content, "Sprites/NPCs/TestPlayer", Pixel);
+        
+        var npcFiles = new Dictionary<int, string>
+        {
+            [1] = "TestNPC1",
+            [2] = "TestNPC2",
+            [3] = "TestNPC3",
+            [4] = "TestNPC4",
+            [5] = "TestNPC5",
+            [6] = "TestNPC6",
+            [7] = "TestNPC7",
+            [8] = "TestNPC8",
+            [9] = "TestNPC9",
+        };
+
+        Console.WriteLine($"[TextureStore] Loading {npcFiles.Count} NPCs...");
+        
+        foreach (var (npcId, fileName) in npcFiles)
+        {
+            var texture = LoadTextureOrFallback(content, $"Sprites/NPCs/{fileName}", TestPlayer);
+            NPCs[npcId] = texture;
+        }
+    }
+
+    private void LoadTilesets(ContentManager content)
+    {
+        TilesetOverworld = LoadTextureOrFallback(content, "Tilesets/TestTilesO", Pixel);
+        TilesetOverworldCollision = LoadTextureOrFallback(content, "Tilesets/TestTilesO_C", TilesetOverworld);
+        TilesetOverworldWater = LoadTextureOrFallback(content, "Tilesets/TestTilesO_W", TilesetOverworld);
+        TilesetCave = LoadTextureOrFallback(content, "Tilesets/TestTilesCave", TilesetOverworld);
+        
+        Console.WriteLine("[TextureStore] Tilesets loaded");
     }
 
     private void LoadItems(ContentManager content)

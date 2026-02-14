@@ -10,6 +10,11 @@ if (args.Length > 0 && args[0].Equals("export", StringComparison.OrdinalIgnoreCa
     return RunExport(args.Skip(1).ToArray());
 }
 
+if (args.Length > 0 && args[0].Equals("export-registry", StringComparison.OrdinalIgnoreCase))
+{
+    return RunExportRegistry(args.Skip(1).ToArray());
+}
+
 return RunGenerate(args);
 
 static int RunExport(string[] args)
@@ -455,7 +460,7 @@ static Result<int[]> ParseTileLayer(
 
         for (var x = 0; x < width; x++)
         {
-            var tileId = cells[y].GetInt32();
+            var tileId = cells[x].GetInt32();
             var index = (y * width) + x;
 
             if (!knownTileIds.Contains(tileId))
@@ -717,6 +722,28 @@ static JsonSerializerOptions CreateSerializerOptions() => new()
     AllowTrailingCommas = true,
     ReadCommentHandling = JsonCommentHandling.Skip,
 };
+}
+
+static int RunExportRegistry(string[] args)
+{
+    string? outputPath = null;
+
+    for (var i = 0; i < args.Length; i++)
+    {
+        switch (args[i])
+        {
+            case "--output" when i + 1 < args.Length:
+                outputPath = Path.GetFullPath(args[++i]);
+                break;
+            default:
+                Console.Error.WriteLine($"Unknown argument: {args[i]}");
+                Console.Error.WriteLine("Usage: dotnet run -- export-registry [--output <path>]");
+                return 1;
+        }
+    }
+
+    outputPath ??= Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../tools/map-editor/src/data/registries/default.json"));
+    return ExportRegistryCommand.Execute(outputPath);
 }
 
 internal sealed record GeneratorOptions(string InputDirectory, string OutputDirectory, string GeneratedNamespace)

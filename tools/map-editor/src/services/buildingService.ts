@@ -1,5 +1,5 @@
-import { BUILDING_PREFAB_STAMPS_BY_ID } from '../data/buildings'
-import type { BuildingDefinition, BuildingPlacementCell, BuildingRotation, BuildingStampMatrix, TileGrid } from '../types/editor'
+import type { BuildingPlacementCell, BuildingRotation, BuildingStampMatrix, TileGrid } from '../types/editor'
+import type { EditorRegistryBuildingDefinition } from '../types/registry'
 
 interface BuildingFootprint {
   width: number
@@ -8,27 +8,36 @@ interface BuildingFootprint {
 }
 
 export const rotateBuildingFootprint = (
-  building: BuildingDefinition,
+  building: EditorRegistryBuildingDefinition,
   rotation: BuildingRotation,
 ): BuildingFootprint => {
-  const prefabStamp = BUILDING_PREFAB_STAMPS_BY_ID[building.id]?.[rotation]
-  if (!prefabStamp) {
-    return {
-      width: building.width,
-      height: building.height,
-      tiles: building.tiles.map((row) => [...row]),
+  let rotatedTiles = building.tiles.map((row) => [...row])
+
+  for (let step = 0; step < rotation; step += 1) {
+    const sourceHeight = rotatedTiles.length
+    const sourceWidth = rotatedTiles[0]?.length ?? 0
+    const nextTiles: BuildingStampMatrix = Array.from({ length: sourceWidth }, () =>
+      Array.from({ length: sourceHeight }, () => null),
+    )
+
+    for (let y = 0; y < sourceHeight; y += 1) {
+      for (let x = 0; x < sourceWidth; x += 1) {
+        nextTiles[x][sourceHeight - 1 - y] = rotatedTiles[y][x]
+      }
     }
+
+    rotatedTiles = nextTiles
   }
 
   return {
-    width: prefabStamp.width,
-    height: prefabStamp.height,
-    tiles: prefabStamp.tiles.map((row) => [...row]),
+    width: rotatedTiles[0]?.length ?? 0,
+    height: rotatedTiles.length,
+    tiles: rotatedTiles,
   }
 }
 
 export const getPlacementCells = (
-  building: BuildingDefinition,
+  building: EditorRegistryBuildingDefinition,
   rotation: BuildingRotation,
   startX: number,
   startY: number,
@@ -61,7 +70,7 @@ export const getPlacementCells = (
 
 export const placeBuildingFootprint = (
   grid: TileGrid,
-  building: BuildingDefinition,
+  building: EditorRegistryBuildingDefinition,
   rotation: BuildingRotation,
   startX: number,
   startY: number,

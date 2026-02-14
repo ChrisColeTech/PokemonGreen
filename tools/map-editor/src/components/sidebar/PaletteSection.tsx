@@ -1,13 +1,20 @@
-import { TILE_CATEGORIES, TILES } from '../../data/tiles'
+import { useMemo } from 'react'
 import { createDistinctTileColorMap, getDisplayTileColor } from '../../services/tileColorService'
 import SectionTitle from './SectionTitle'
 import type { SidebarControls } from './types'
 
-const DISTINCT_TILE_COLOR_MAP = createDistinctTileColorMap(TILES)
-
 type PaletteSectionProps = Pick<
   SidebarControls,
-  'selectedCategory' | 'selectedTileId' | 'selectedBuildingId' | 'visibleTiles' | 'buildings' | 'handleSelectCategory' | 'handleSelectTile' | 'handleToggleBuilding'
+  | 'selectedCategory'
+  | 'selectedTileId'
+  | 'selectedBuildingId'
+  | 'paletteCategories'
+  | 'registryTiles'
+  | 'visibleTiles'
+  | 'buildings'
+  | 'handleSelectCategory'
+  | 'handleSelectTile'
+  | 'handleToggleBuilding'
 > & {
   useDistinctColors: boolean
   setUseDistinctColors: (enabled: boolean) => void
@@ -17,6 +24,8 @@ function PaletteSection({
   selectedCategory,
   selectedTileId,
   selectedBuildingId,
+  paletteCategories,
+  registryTiles,
   visibleTiles,
   buildings,
   handleSelectCategory,
@@ -25,6 +34,8 @@ function PaletteSection({
   useDistinctColors,
   setUseDistinctColors,
 }: PaletteSectionProps) {
+  const distinctTileColorMap = useMemo(() => createDistinctTileColorMap(registryTiles), [registryTiles])
+
   return (
     <section className="space-y-2 rounded-md border border-[var(--border-soft)] bg-[var(--surface)] p-2.5">
       <div className="flex items-center justify-between">
@@ -40,7 +51,7 @@ function PaletteSection({
         </label>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {TILE_CATEGORIES.map((category) => (
+        {paletteCategories.map((category) => (
           <button
             type="button"
             key={category.id}
@@ -55,6 +66,21 @@ function PaletteSection({
             {category.label}
           </button>
         ))}
+        {buildings.length > 0 ? (
+          <button
+            type="button"
+            key="buildings"
+            onClick={() => handleSelectCategory('buildings')}
+            className={[
+              'inline-flex h-6 items-center rounded border px-2 text-[11px] font-semibold',
+              selectedCategory === 'buildings'
+                ? 'border-[var(--accent-strong)] bg-[var(--accent)] text-white'
+                : 'border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-main)]',
+            ].join(' ')}
+          >
+            Buildings
+          </button>
+        ) : null}
       </div>
       <div className="grid grid-cols-2 gap-1.5 rounded border border-[var(--border-soft)] bg-[var(--surface-muted)] p-1.5">
         {selectedCategory === 'buildings'
@@ -77,7 +103,7 @@ function PaletteSection({
               </button>
             ))
           : visibleTiles.map((tile) => {
-              const tileColor = getDisplayTileColor(tile, DISTINCT_TILE_COLOR_MAP, useDistinctColors)
+              const tileColor = getDisplayTileColor(tile, distinctTileColorMap, useDistinctColors)
 
               return (
                 <button

@@ -21,6 +21,8 @@ function SidebarBody() {
     heightInput,
     cellSize,
     visibleTiles,
+    paletteCategories,
+    registryTiles,
     buildings,
     selectedBuilding,
     rotatedBuilding,
@@ -74,6 +76,8 @@ function SidebarBody() {
         selectedCategory={selectedCategory}
         selectedTileId={selectedTileId}
         selectedBuildingId={selectedBuildingId}
+        paletteCategories={paletteCategories}
+        registryTiles={registryTiles}
         visibleTiles={visibleTiles}
         buildings={buildings}
         handleSelectCategory={handleSelectCategory}

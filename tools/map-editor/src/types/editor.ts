@@ -1,6 +1,20 @@
-export type TileCategory = 'terrain' | 'encounter' | 'interactive' | 'entity' | 'trainer'
+export type TileCategory = string
 
-export type PaletteCategory = TileCategory | 'buildings'
+export type PaletteCategory = string
+
+export type TileDirection =
+  | 'up'
+  | 'down'
+  | 'left'
+  | 'right'
+  | 'north'
+  | 'south'
+  | 'east'
+  | 'west'
+  | 'northeast'
+  | 'northwest'
+  | 'southeast'
+  | 'southwest'
 
 export interface TileDefinition {
   id: number
@@ -9,7 +23,7 @@ export interface TileDefinition {
   walkable: boolean
   category: TileCategory
   encounter?: string
-  direction?: 'up' | 'down' | 'left' | 'right'
+  direction?: TileDirection
   isOverlay?: boolean
 }
 
@@ -18,18 +32,7 @@ export type OverlayGrid = (number | null)[][]
 
 export type DrawMode = 'paint' | 'erase' | null
 
-export type BuildingId =
-  | 'pokecenter'
-  | 'pokemart'
-  | 'gym'
-  | 'house-small'
-  | 'house-large'
-  | 'lab'
-  | 'cave-entrance'
-  | 'gate'
-  | 'pond'
-  | 'fence-h'
-  | 'fence-v'
+export type BuildingId = string
 
 export type BuildingRotation = 0 | 1 | 2 | 3
 

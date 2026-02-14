@@ -14,6 +14,8 @@ public enum TileCategory
     Item
 }
 
+
+
 public readonly record struct TileDefinition(
     int Id,
     string Name,
@@ -35,10 +37,10 @@ public static class TileRegistry
     {
         var tiles = new Dictionary<int, TileDefinition>
         {
-            [0] = New(0, "Water", TileCategory.Terrain, TileVisualKind.AnimatedWater, false),
-            [1] = New(1, "Grass", TileCategory.Terrain, TileVisualKind.Grass, true),
-            [2] = New(2, "Path", TileCategory.Terrain, TileVisualKind.Path, true),
-            [3] = New(3, "Tree", TileCategory.Decoration, TileVisualKind.Tree, false),
+            [0] = New(0, "Water", TileCategory.Terrain, TileVisualKind.AnimatedWater, false, 92, 166, 232),
+            [1] = New(1, "Grass", TileCategory.Terrain, TileVisualKind.Grass, true, 116, 188, 94),
+            [2] = New(2, "Path", TileCategory.Terrain, TileVisualKind.Path, true, 224, 197, 146),
+            [3] = New(3, "Tree", TileCategory.Decoration, TileVisualKind.Tree, false, 82, 140, 78),
             [4] = New(4, "Door", TileCategory.Interactive, TileVisualKind.InteractiveObject, true, 139, 69, 19, TileOverlayKind.Door),
             [5] = New(5, "Bridge", TileCategory.Terrain, TileVisualKind.Path, true, 107, 68, 35),
             [6] = New(6, "Cave", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 85, 85, 85),
@@ -106,6 +108,39 @@ public static class TileRegistry
             [68] = New(68, "Mega Ring", TileCategory.Item, TileVisualKind.Item, true),
             [69] = New(69, "Master Ball", TileCategory.Item, TileVisualKind.Item, true),
             [70] = New(70, "Yellow Crystal", TileCategory.Item, TileVisualKind.Item, true),
+            [71] = New(71, "Ledge South", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [72] = New(72, "Ledge North", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [73] = New(73, "Ledge West", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [74] = New(74, "Ledge East", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [75] = New(75, "Ledge SW", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [76] = New(76, "Ledge SE", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [77] = New(77, "Ledge NW", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [78] = New(78, "Ledge NE", TileCategory.Terrain, TileVisualKind.Path, false, 139, 119, 101, TileOverlayKind.Ledge),
+            [79] = New(79, "Blocked South", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [80] = New(80, "Blocked North", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [81] = New(81, "Blocked West", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [82] = New(82, "Blocked East", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [83] = New(83, "Blocked SW", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [84] = New(84, "Blocked SE", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [85] = New(85, "Blocked NW", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [86] = New(86, "Blocked NE", TileCategory.Structure, TileVisualKind.Solid, false, 100, 100, 100),
+            [87] = New(87, "Spin South", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [88] = New(88, "Spin North", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [89] = New(89, "Spin West", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [90] = New(90, "Spin East", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [91] = New(91, "Spin SW", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [92] = New(92, "Spin SE", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [93] = New(93, "Spin NW", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [94] = New(94, "Spin NE", TileCategory.Interactive, TileVisualKind.InteractiveObject, false, 255, 165, 0),
+            [95] = New(95, "Stair West", TileCategory.Terrain, TileVisualKind.Path, true, 160, 140, 120),
+            [96] = New(96, "Stair East", TileCategory.Terrain, TileVisualKind.Path, true, 160, 140, 120),
+            [97] = New(97, "Waterfall", TileCategory.Terrain, TileVisualKind.AnimatedWater, false, 30, 100, 180),
+            [98] = New(98, "Headbutt Tree", TileCategory.Interactive, TileVisualKind.Tree, false, 34, 120, 50, TileOverlayKind.HeadbuttTree),
+            [99] = New(99, "Honey Tree", TileCategory.Interactive, TileVisualKind.Tree, false, 218, 165, 32, TileOverlayKind.HoneyTree),
+            [100] = New(100, "Elevation Change", TileCategory.Terrain, TileVisualKind.Path, true, 200, 200, 100),
+            [101] = New(101, "Dark Grass", TileCategory.Encounter, TileVisualKind.Grass, true, 50, 50, 50),
+            [102] = New(102, "Headbutt Encounter", TileCategory.Encounter, TileVisualKind.Tree, true, 60, 100, 40),
+            [103] = New(103, "Honey Tree Encounter", TileCategory.Encounter, TileVisualKind.Tree, true, 180, 140, 20),
         };
 
         All = new ReadOnlyDictionary<int, TileDefinition>(tiles);
@@ -128,4 +163,6 @@ public static class TileRegistry
 
     private static TileDefinition New(int id, string name, TileCategory category, TileVisualKind visualKind, bool walkable, byte red = 128, byte green = 128, byte blue = 128, TileOverlayKind overlayKind = TileOverlayKind.None)
         => new(id, name, category, visualKind, walkable, red, green, blue, overlayKind);
+
+    
 }

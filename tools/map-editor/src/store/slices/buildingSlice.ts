@@ -1,5 +1,3 @@
-import { BUILDINGS_BY_ID } from '../../data/buildings'
-import { TILES_BY_ID } from '../../data/tiles'
 import { placeBuildingFootprint } from '../../services/buildingService'
 import type { BuildingRotation } from '../../types/editor'
 import type { EditorStoreSlice } from '../editorStore.types'
@@ -26,7 +24,7 @@ export const createBuildingSlice: EditorStoreSlice<BuildingSlice> = (set) => ({
   setSelectedCategory: (category) => set({ selectedCategory: category }),
   setSelectedTileId: (tileId) =>
     set((state) => {
-      const tile = TILES_BY_ID[tileId]
+      const tile = state.activeRegistry.tiles.find((entry) => entry.id === tileId)
       if (!tile) {
         return state
       }
@@ -40,8 +38,7 @@ export const createBuildingSlice: EditorStoreSlice<BuildingSlice> = (set) => ({
     }),
   toggleSelectedBuilding: (buildingId) =>
     set((state) => {
-      const building = BUILDINGS_BY_ID[buildingId]
-      if (!building) {
+      if (!state.activeRegistry.buildings.some((building) => building.id === buildingId)) {
         return state
       }
 
@@ -75,7 +72,11 @@ export const createBuildingSlice: EditorStoreSlice<BuildingSlice> = (set) => ({
         return state
       }
 
-      const selectedBuilding = BUILDINGS_BY_ID[state.selectedBuildingId]
+      if (!state.activeRegistry.buildings.some((building) => building.id === state.selectedBuildingId)) {
+        return state
+      }
+
+      const selectedBuilding = state.activeRegistry.buildings.find((building) => building.id === state.selectedBuildingId)
       if (!selectedBuilding) {
         return state
       }
