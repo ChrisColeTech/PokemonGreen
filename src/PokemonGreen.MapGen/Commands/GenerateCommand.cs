@@ -7,11 +7,8 @@ public static class GenerateCommand
     /// <summary>
     /// Generates .g.cs files from .map.json files.
     /// </summary>
-    /// <param name="inputFolder">Folder containing .map.json files.</param>
-    /// <param name="outputFolder">Output folder for generated .g.cs files. Defaults to PokemonGreen.Core/Maps/.</param>
     public static void Run(string inputFolder, string? outputFolder = null)
     {
-        // Resolve paths
         inputFolder = Path.GetFullPath(inputFolder);
 
         if (!Directory.Exists(inputFolder))
@@ -20,22 +17,19 @@ public static class GenerateCommand
             Environment.Exit(1);
         }
 
-        // Default output folder is PokemonGreen.Core/Maps/ relative to the MapGen project
+        // Default output: PokemonGreen.Core/Maps/ relative to MapGen project
         outputFolder ??= Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "PokemonGreen.Core", "Maps"));
         outputFolder = Path.GetFullPath(outputFolder);
 
         if (!Directory.Exists(outputFolder))
-        {
             Directory.CreateDirectory(outputFolder);
-        }
 
         Console.WriteLine($"Input folder: {inputFolder}");
         Console.WriteLine($"Output folder: {outputFolder}");
         Console.WriteLine();
 
-        // Find all .map.json files
         var mapFiles = Directory.GetFiles(inputFolder, "*.map.json", SearchOption.AllDirectories);
 
         if (mapFiles.Length == 0)
@@ -54,22 +48,12 @@ public static class GenerateCommand
         {
             try
             {
-                // Parse the JSON file
                 var map = MapParser.ParseJsonFile(mapFile);
+                var className = ToPascalCase(map.MapId);
 
-                // Derive class name from file name (remove .map.json, convert to PascalCase)
-                var fileName = Path.GetFileNameWithoutExtension(mapFile);
-                if (fileName.EndsWith(".map", StringComparison.OrdinalIgnoreCase))
-                {
-                    fileName = fileName[..^4]; // Remove .map
-                }
-                var className = ToPascalCase(fileName);
-
-                // Generate the code
                 var code = CodeGenerator.GenerateMapClass(map, className);
 
-                // Write the output file
-                var outputFile = Path.Combine(outputFolder, $"{className}Map.g.cs");
+                var outputFile = Path.Combine(outputFolder, $"{className}.g.cs");
                 File.WriteAllText(outputFile, code);
 
                 Console.WriteLine($"Generated: {outputFile}");
@@ -86,9 +70,6 @@ public static class GenerateCommand
         Console.WriteLine($"Done. Generated {successCount} file(s), {errorCount} error(s).");
     }
 
-    /// <summary>
-    /// Converts a string to PascalCase.
-    /// </summary>
     private static string ToPascalCase(string input)
     {
         if (string.IsNullOrEmpty(input))

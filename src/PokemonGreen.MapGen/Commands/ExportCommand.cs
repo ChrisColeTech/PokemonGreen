@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using PokemonGreen.MapGen.Models;
 
@@ -9,17 +10,15 @@ public static partial class ExportCommand
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     /// <summary>
-    /// Exports .g.cs files back to .map.json format.
+    /// Exports .g.cs files back to schema v2 .map.json format.
     /// </summary>
-    /// <param name="inputFolder">Folder containing .g.cs files.</param>
-    /// <param name="outputFolder">Output folder for .map.json files.</param>
     public static void Run(string inputFolder, string? outputFolder = null)
     {
-        // Resolve paths
         inputFolder = Path.GetFullPath(inputFolder);
 
         if (!Directory.Exists(inputFolder))
@@ -28,29 +27,25 @@ public static partial class ExportCommand
             Environment.Exit(1);
         }
 
-        // Default output folder is the same as input
         outputFolder ??= inputFolder;
         outputFolder = Path.GetFullPath(outputFolder);
 
         if (!Directory.Exists(outputFolder))
-        {
             Directory.CreateDirectory(outputFolder);
-        }
 
         Console.WriteLine($"Input folder: {inputFolder}");
         Console.WriteLine($"Output folder: {outputFolder}");
         Console.WriteLine();
 
-        // Find all .g.cs files that look like map definitions
-        var csFiles = Directory.GetFiles(inputFolder, "*Map.g.cs", SearchOption.AllDirectories);
+        var csFiles = Directory.GetFiles(inputFolder, "*.g.cs", SearchOption.AllDirectories);
 
         if (csFiles.Length == 0)
         {
-            Console.WriteLine("No *Map.g.cs files found.");
+            Console.WriteLine("No *.g.cs files found.");
             return;
         }
 
-        Console.WriteLine($"Found {csFiles.Length} generated map file(s).");
+        Console.WriteLine($"Found {csFiles.Length} generated file(s).");
         Console.WriteLine();
 
         int successCount = 0;
@@ -61,8 +56,6 @@ public static partial class ExportCommand
             try
             {
                 var code = File.ReadAllText(csFile);
-
-                // Parse the generated C# file
                 var map = ParseGeneratedCode(code);
 
                 if (map == null)
@@ -71,10 +64,7 @@ public static partial class ExportCommand
                     continue;
                 }
 
-                // Derive output file name from the map name
-                var fileName = ToSnakeCase(map.Name.Replace(" ", ""));
-                var outputFile = Path.Combine(outputFolder, $"{fileName}.map.json");
-
+                var outputFile = Path.Combine(outputFolder, $"{map.MapId}.map.json");
                 var json = JsonSerializer.Serialize(map, JsonOptions);
                 File.WriteAllText(outputFile, json);
 
@@ -93,94 +83,95 @@ public static partial class ExportCommand
     }
 
     /// <summary>
-    /// Parses a generated C# map file and extracts the map data.
+    /// Parses the new flat-array .g.cs format and extracts a schema v2 model.
     /// </summary>
     private static MapJsonModel? ParseGeneratedCode(string code)
     {
-        // Extract Name property
-        var nameMatch = NameRegex().Match(code);
-        if (!nameMatch.Success)
+        // Extract constructor args: base("id", "name", width, height, tileSize, ...)
+        var ctorMatch = ConstructorRegex().Match(code);
+        if (!ctorMatch.Success)
             return null;
-        var name = nameMatch.Groups[1].Value;
 
-        // Extract Width property
-        var widthMatch = WidthRegex().Match(code);
-        if (!widthMatch.Success)
+        var mapId = ctorMatch.Groups[1].Value;
+        var displayName = ctorMatch.Groups[2].Value;
+        int width = int.Parse(ctorMatch.Groups[3].Value);
+        int height = int.Parse(ctorMatch.Groups[4].Value);
+        int tileSize = int.Parse(ctorMatch.Groups[5].Value);
+
+        // Extract BaseTileData array
+        var baseData = ExtractIntArray(code, "BaseTileData");
+        if (baseData == null || baseData.Length != width * height)
             return null;
-        var width = int.Parse(widthMatch.Groups[1].Value);
 
-        // Extract Height property
-        var heightMatch = HeightRegex().Match(code);
-        if (!heightMatch.Success)
-            return null;
-        var height = int.Parse(heightMatch.Groups[1].Value);
+        // Extract OverlayTileData array
+        var overlayData = ExtractNullableIntArray(code, "OverlayTileData");
 
-        // Initialize tiles array with zeros
-        var tiles = new int[height][];
+        // Convert flat arrays to 2D jagged arrays [y][x]
+        var baseTiles = new int[height][];
+        int?[][]? overlayTiles = overlayData != null ? new int?[height][] : null;
+
         for (int y = 0; y < height; y++)
         {
-            tiles[y] = new int[width];
-        }
+            baseTiles[y] = new int[width];
+            if (overlayTiles != null)
+                overlayTiles[y] = new int?[width];
 
-        // Extract all SetBaseTile calls
-        var tileMatches = SetBaseTileRegex().Matches(code);
-        foreach (Match match in tileMatches)
-        {
-            var x = int.Parse(match.Groups[1].Value);
-            var y = int.Parse(match.Groups[2].Value);
-            var tileId = int.Parse(match.Groups[3].Value);
-
-            if (y >= 0 && y < height && x >= 0 && x < width)
+            for (int x = 0; x < width; x++)
             {
-                tiles[y][x] = tileId;
+                int i = y * width + x;
+                baseTiles[y][x] = baseData[i];
+                if (overlayTiles != null && overlayData != null && i < overlayData.Length)
+                    overlayTiles[y][x] = overlayData[i];
             }
         }
 
         return new MapJsonModel
         {
-            Version = 1,
-            Name = name,
+            SchemaVersion = 2,
+            MapId = mapId,
+            DisplayName = displayName,
+            TileSize = tileSize,
             Width = width,
             Height = height,
-            Tiles = tiles
+            BaseTiles = baseTiles,
+            OverlayTiles = overlayTiles
         };
     }
 
     /// <summary>
-    /// Converts PascalCase to snake_case.
+    /// Extracts an int[] from a static readonly field declaration.
     /// </summary>
-    private static string ToSnakeCase(string input)
+    private static int[]? ExtractIntArray(string code, string fieldName)
     {
-        if (string.IsNullOrEmpty(input))
-            return input;
+        // Match: private static readonly int[] FieldName = [ ... ];
+        var pattern = $@"int\[\]\s+{Regex.Escape(fieldName)}\s*=\s*\[([\s\S]*?)\];";
+        var match = Regex.Match(code, pattern);
+        if (!match.Success)
+            return null;
 
-        var result = new System.Text.StringBuilder();
-        for (int i = 0; i < input.Length; i++)
-        {
-            var c = input[i];
-            if (char.IsUpper(c))
-            {
-                if (i > 0)
-                    result.Append('_');
-                result.Append(char.ToLowerInvariant(c));
-            }
-            else
-            {
-                result.Append(c);
-            }
-        }
-        return result.ToString();
+        var body = match.Groups[1].Value;
+        var numbers = Regex.Matches(body, @"-?\d+");
+        return numbers.Select(m => int.Parse(m.Value)).ToArray();
     }
 
-    [GeneratedRegex(@"override\s+string\s+Name\s*=>\s*""([^""]+)""")]
-    private static partial Regex NameRegex();
+    /// <summary>
+    /// Extracts an int?[] from a static readonly field declaration (handles "null" literals).
+    /// </summary>
+    private static int?[]? ExtractNullableIntArray(string code, string fieldName)
+    {
+        var pattern = $@"int\?\[\]\s+{Regex.Escape(fieldName)}\s*=\s*\[([\s\S]*?)\];";
+        var match = Regex.Match(code, pattern);
+        if (!match.Success)
+            return null;
 
-    [GeneratedRegex(@"override\s+int\s+Width\s*=>\s*(\d+)")]
-    private static partial Regex WidthRegex();
+        var body = match.Groups[1].Value;
+        var tokens = Regex.Matches(body, @"null|-?\d+");
+        return tokens.Select(m =>
+            m.Value == "null" ? (int?)null : int.Parse(m.Value)
+        ).ToArray();
+    }
 
-    [GeneratedRegex(@"override\s+int\s+Height\s*=>\s*(\d+)")]
-    private static partial Regex HeightRegex();
-
-    [GeneratedRegex(@"map\.SetBaseTile\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)")]
-    private static partial Regex SetBaseTileRegex();
+    // Matches: base("mapId", "displayName", width, height, tileSize, ...)
+    [GeneratedRegex(@"base\(\s*""([^""]*)""\s*,\s*""([^""]*)""\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,")]
+    private static partial Regex ConstructorRegex();
 }
