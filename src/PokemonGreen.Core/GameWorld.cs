@@ -329,18 +329,24 @@ public class GameWorld
 
     private bool IsEncounterTile(int x, int y)
     {
-        // Check overlay layer first (tall grass is typically placed as overlay)
-        int overlayTile = CurrentMap!.GetOverlayTile(x, y);
-        if (overlayTile >= 0)
+        // Check both the player's tile and their feet tile (y+1),
+        // matching the renderer's grass animation check.
+        for (int checkY = y; checkY <= y + 1 && checkY < CurrentMap!.Height; checkY++)
         {
-            var def = TileRegistry.GetTile(overlayTile);
-            if (def?.Category == TileCategory.Encounter)
+            int overlayTile = CurrentMap.GetOverlayTile(x, checkY);
+            if (overlayTile >= 0)
+            {
+                var def = TileRegistry.GetTile(overlayTile);
+                if (def?.Category == TileCategory.Encounter)
+                    return true;
+            }
+
+            var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, checkY));
+            if (baseDef?.Category == TileCategory.Encounter)
                 return true;
         }
 
-        // Also check base layer
-        var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, y));
-        return baseDef?.Category == TileCategory.Encounter;
+        return false;
     }
 
     // ── Camera / zoom helpers ─────────────────────────────────────────

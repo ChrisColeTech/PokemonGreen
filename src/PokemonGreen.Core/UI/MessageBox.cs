@@ -60,6 +60,8 @@ public class MessageBox
         _messages.Clear();
         _currentMessage = null;
         _visibleChars = 0f;
+        _blinkTimer = 0f;
+        OnFinished = null;
     }
 
     /// <summary>
@@ -99,16 +101,16 @@ public class MessageBox
             return;
 
         // Bordered panel
-        DrawPanel(spriteBatch, pixel, bounds);
+        UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
 
         // Visible portion of text
         int charCount = Math.Min((int)_visibleChars, _currentMessage.Length);
         string visibleText = _currentMessage[..charCount];
 
-        int padding = 12;
-        spriteBatch.DrawString(font, visibleText,
+        int padding = 16;
+        UIStyle.DrawShadowedText(spriteBatch, font, visibleText,
             new Vector2(bounds.X + padding, bounds.Y + padding),
-            Color.White);
+            UIStyle.TextNormal, UIStyle.TextNormalOutline);
 
         // Blinking advance prompt when fully revealed
         if (IsTextFullyRevealed)
@@ -116,13 +118,10 @@ public class MessageBox
             bool showPrompt = ((int)(_blinkTimer * PromptBlinkRate)) % 2 == 0;
             if (showPrompt)
             {
-                string prompt = "v";
-                var promptSize = font.MeasureString(prompt);
-                spriteBatch.DrawString(font, prompt,
-                    new Vector2(
-                        bounds.Right - promptSize.X - padding,
-                        bounds.Bottom - promptSize.Y - padding),
-                    Color.Gray);
+                int arrowSize = 10;
+                int ax = bounds.Right - arrowSize - padding;
+                int ay = bounds.Bottom - arrowSize - padding + 2;
+                UIStyle.DrawArrowDown(spriteBatch, pixel, ax, ay, arrowSize, UIStyle.TextPrompt);
             }
         }
     }
@@ -143,12 +142,4 @@ public class MessageBox
         }
     }
 
-    private static void DrawPanel(SpriteBatch spriteBatch, Texture2D pixel, Rectangle r)
-    {
-        spriteBatch.Draw(pixel, r, new Color(40, 40, 60));
-        spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y, r.Width, 2), Color.White);
-        spriteBatch.Draw(pixel, new Rectangle(r.X, r.Bottom - 2, r.Width, 2), Color.White);
-        spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y, 2, r.Height), Color.White);
-        spriteBatch.Draw(pixel, new Rectangle(r.Right - 2, r.Y, 2, r.Height), Color.White);
-    }
 }

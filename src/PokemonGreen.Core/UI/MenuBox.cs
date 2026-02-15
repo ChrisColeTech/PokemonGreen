@@ -86,15 +86,28 @@ public class MenuBox
         if (down && row < rows - 1 && SelectedIndex + Columns < _items.Count)
             SelectedIndex += Columns;
 
-        // Mouse hover → update selection
-        for (int i = 0; i < _items.Count; i++)
+        // Mouse hover → update selection (only if mouse is inside the panel)
+        if (mouseClicked && !LastBounds.IsEmpty && LastBounds.Contains(mousePosition))
         {
-            if (GetItemRect(i).Contains(mousePosition))
+            for (int i = 0; i < _items.Count; i++)
             {
-                SelectedIndex = i;
-                if (mouseClicked)
+                if (GetItemRect(i).Contains(mousePosition))
+                {
+                    SelectedIndex = i;
                     ConfirmSelection();
-                break;
+                    break;
+                }
+            }
+        }
+        else if (!LastBounds.IsEmpty && LastBounds.Contains(mousePosition))
+        {
+            for (int i = 0; i < _items.Count; i++)
+            {
+                if (GetItemRect(i).Contains(mousePosition))
+                {
+                    SelectedIndex = i;
+                    break;
+                }
             }
         }
 
@@ -118,7 +131,7 @@ public class MenuBox
         LastBounds = bounds;
 
         // Bordered panel
-        DrawPanel(spriteBatch, pixel, bounds);
+        UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
 
         int rows = (_items.Count + Columns - 1) / Columns;
         int itemW = bounds.Width / Columns;
@@ -135,21 +148,40 @@ public class MenuBox
 
             bool selected = i == SelectedIndex;
 
-            // Selection highlight
+            // Text colors based on state
+            Color textColor, outlineColor;
+            if (!item.Enabled)
+            {
+                textColor = UIStyle.TextDisabled;
+                outlineColor = UIStyle.TextDisabledOutline;
+            }
+            else if (selected)
+            {
+                textColor = UIStyle.TextSelected;
+                outlineColor = UIStyle.TextSelectedOutline;
+            }
+            else
+            {
+                textColor = UIStyle.TextNormal;
+                outlineColor = UIStyle.TextNormalOutline;
+            }
+
+            var textSize = font.MeasureString(item.Label);
+            int textX = ix + 20;
+            int textY = iy + (int)((itemH - textSize.Y) / 2);
+
+            // Draw arrow cursor for selected item
             if (selected)
-                spriteBatch.Draw(pixel, itemRect, new Color(70, 70, 110));
+            {
+                int arrowSize = 8;
+                int arrowX = ix + 6;
+                int arrowY = textY + (int)(textSize.Y / 2) - arrowSize / 2;
+                UIStyle.DrawArrowRight(spriteBatch, pixel, arrowX, arrowY, arrowSize, textColor);
+            }
 
-            // Text
-            string prefix = selected ? "> " : "  ";
-            string label = prefix + item.Label;
-            var textSize = font.MeasureString(label);
-            Color textColor = !item.Enabled ? Color.Gray
-                            : selected ? Color.Yellow
-                            : Color.White;
-
-            spriteBatch.DrawString(font, label,
-                new Vector2(ix + 8, iy + (itemH - textSize.Y) / 2),
-                textColor);
+            UIStyle.DrawShadowedText(spriteBatch, font, item.Label,
+                new Vector2(textX, textY),
+                textColor, outlineColor);
         }
     }
 
@@ -172,12 +204,4 @@ public class MenuBox
         return new Rectangle(LastBounds.X + col * itemW, LastBounds.Y + row * itemH, itemW, itemH);
     }
 
-    private static void DrawPanel(SpriteBatch spriteBatch, Texture2D pixel, Rectangle r)
-    {
-        spriteBatch.Draw(pixel, r, new Color(40, 40, 60));
-        spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y, r.Width, 2), Color.White);
-        spriteBatch.Draw(pixel, new Rectangle(r.X, r.Bottom - 2, r.Width, 2), Color.White);
-        spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y, 2, r.Height), Color.White);
-        spriteBatch.Draw(pixel, new Rectangle(r.Right - 2, r.Y, 2, r.Height), Color.White);
-    }
 }
