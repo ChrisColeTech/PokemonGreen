@@ -1,20 +1,19 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { EditorTileRegistry, EditorTileDefinition, EditorBuildingDefinition } from '../types/editor'
+import type { EditorTileRegistry, EditorTileDefinition } from '../types/editor'
 import {
   loadDefaultRegistry,
   buildTilesById,
   buildingWidth,
   buildingHeight,
   fallbackTileId,
-  fallbackCategoryId,
   parseCSharpMap,
   UNKNOWN_TILE,
 } from '../services/registryService'
 import { generateMapClass, exportRegistryCSharp } from '../services/codeGenService'
 
-function createGrid(width: number, height: number): number[][] {
-  return Array.from({ length: height }, () => Array(width).fill(1))
+function createGrid(width: number, height: number, fillTile = 1): number[][] {
+  return Array.from({ length: height }, () => Array(width).fill(fillTile))
 }
 
 function rotateMatrix(tiles: (number | null)[][], width: number, height: number) {
@@ -28,8 +27,61 @@ function rotateMatrix(tiles: (number | null)[][], width: number, height: number)
   return { tiles: rotated, width: height, height: width }
 }
 
-const defaultRegistry = loadDefaultRegistry()
-const defaultTilesById = buildTilesById(defaultRegistry)
+function detectBaseTile(mapData: number[][]): number {
+  const counts = new Map<number, number>()
+  for (const row of mapData) {
+    for (const id of row) {
+      counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
+  }
+  let maxId = mapData[0]?.[0] ?? 1
+  let maxCount = 0
+  for (const [id, count] of counts) {
+    if (count > maxCount) {
+      maxCount = count
+      maxId = id
+    }
+  }
+  return maxId
+}
+
+// --- Persistence ---
+
+const STORAGE_KEY = 'mapeditor'
+
+interface PersistedState {
+  registry: EditorTileRegistry
+  mapData: number[][]
+  mapWidth: number
+  mapHeight: number
+  cellSize: number
+  mapName: string
+  worldId: string
+  worldX: number
+  worldY: number
+  selectedTile: number
+  baseTile: number
+}
+
+function loadPersisted(): PersistedState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw) as PersistedState
+  } catch { /* ignore */ }
+  return null
+}
+
+function savePersisted(state: PersistedState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch { /* ignore */ }
+}
+
+const saved = loadPersisted()
+const defaultReg = loadDefaultRegistry()
+const initRegistry = saved?.registry ?? defaultReg
+const initTilesById = buildTilesById(initRegistry)
+const initBaseTile = saved?.mapData ? detectBaseTile(saved.mapData) : fallbackTileId(initRegistry)
 
 interface EditorState {
   // Registry
@@ -50,6 +102,7 @@ interface EditorState {
   selectedTile: number
   selectedBuilding: number | null
   buildingRotation: number
+  baseTile: number
 
   // Actions — registry
   setRegistry: (registry: EditorTileRegistry) => void
@@ -77,6 +130,7 @@ interface EditorState {
   selectTile: (id: number) => void
   selectBuilding: (idx: number) => void
   rotateBuilding: (direction: 1 | -1) => void
+  setBaseTile: (id: number) => void
 
   // Actions — building placement
   placeBuilding: (x: number, y: number) => void
@@ -85,37 +139,42 @@ interface EditorState {
 
 export const useEditorStore = create<EditorState>()(
   immer((set, get) => ({
-    registry: defaultRegistry,
-    tilesById: defaultTilesById,
+    registry: initRegistry,
+    tilesById: initTilesById,
 
-    mapData: createGrid(25, 18),
-    mapWidth: 25,
-    mapHeight: 18,
-    cellSize: 24,
-    mapName: 'Untitled Map',
-    worldId: 'default',
-    worldX: 0,
-    worldY: 0,
+    mapData: saved?.mapData ?? createGrid(25, 18, initBaseTile),
+    mapWidth: saved?.mapWidth ?? 25,
+    mapHeight: saved?.mapHeight ?? 18,
+    cellSize: saved?.cellSize ?? 24,
+    mapName: saved?.mapName ?? 'Untitled Map',
+    worldId: saved?.worldId ?? 'default',
+    worldX: saved?.worldX ?? 0,
+    worldY: saved?.worldY ?? 0,
 
-    selectedTile: 1,
+    selectedTile: saved?.selectedTile ?? fallbackTileId(initRegistry),
     selectedBuilding: null,
     buildingRotation: 0,
+    baseTile: initBaseTile,
 
-    setRegistry: (registry) => set(state => {
-      state.registry = registry as EditorTileRegistry
-      state.tilesById = buildTilesById(registry) as Map<number, EditorTileDefinition>
+    setRegistry: (registry) => {
+      set(state => {
+        state.registry = registry as EditorTileRegistry
+        state.tilesById = buildTilesById(registry) as Map<number, EditorTileDefinition>
 
-      // Fallback: if selected tile doesn't exist in new registry, reset
-      if (!registry.tiles.some(t => t.id === state.selectedTile)) {
-        state.selectedTile = fallbackTileId(registry)
-      }
+        if (!registry.tiles.some(t => t.id === state.selectedTile)) {
+          state.selectedTile = fallbackTileId(registry)
+        }
 
-      // Fallback: if selected building index out of range, clear
-      if (state.selectedBuilding !== null && state.selectedBuilding >= registry.buildings.length) {
-        state.selectedBuilding = null
-        state.buildingRotation = 0
-      }
-    }),
+        if (!registry.tiles.some(t => t.id === state.baseTile)) {
+          state.baseTile = fallbackTileId(registry)
+        }
+
+        if (state.selectedBuilding !== null && state.selectedBuilding >= registry.buildings.length) {
+          state.selectedBuilding = null
+          state.buildingRotation = 0
+        }
+      })
+    },
 
     getTile: (id) => {
       return get().tilesById.get(id) ?? UNKNOWN_TILE
@@ -125,7 +184,7 @@ export const useEditorStore = create<EditorState>()(
       const id = tileId ?? state.selectedTile
       if (y < 0 || y >= state.mapHeight || x < 0 || x >= state.mapWidth) return
       if (state.mapData[y][x] === id && tileId === undefined) {
-        state.mapData[y][x] = fallbackTileId(state.registry as EditorTileRegistry)
+        state.mapData[y][x] = state.baseTile
       } else {
         state.mapData[y][x] = id
       }
@@ -136,7 +195,7 @@ export const useEditorStore = create<EditorState>()(
       for (let y = 0; y < height; y++) {
         newMap[y] = []
         for (let x = 0; x < width; x++) {
-          newMap[y][x] = state.mapData[y]?.[x] ?? fallbackTileId(state.registry as EditorTileRegistry)
+          newMap[y][x] = state.mapData[y]?.[x] ?? state.baseTile
         }
       }
       state.mapData = newMap
@@ -145,7 +204,7 @@ export const useEditorStore = create<EditorState>()(
     }),
 
     clear: () => set(state => {
-      state.mapData = createGrid(25, 18)
+      state.mapData = createGrid(25, 18, state.baseTile)
       state.mapWidth = 25
       state.mapHeight = 18
       state.cellSize = 24
@@ -169,10 +228,8 @@ export const useEditorStore = create<EditorState>()(
         newMap[y] = []
         for (let x = 0; x < newW; x++) {
           if (direction === 1) {
-            // Clockwise: new[y][x] = old[oldH - 1 - x][y]
             newMap[y][x] = state.mapData[oldH - 1 - x][y]
           } else {
-            // Counter-clockwise: new[y][x] = old[x][oldW - 1 - y]
             newMap[y][x] = state.mapData[x][oldW - 1 - y]
           }
         }
@@ -238,6 +295,7 @@ export const useEditorStore = create<EditorState>()(
             if (data.worldId) state.worldId = data.worldId
             state.worldX = data.worldX ?? 0
             state.worldY = data.worldY ?? 0
+            state.baseTile = detectBaseTile(merged)
           })
           return
         }
@@ -249,6 +307,7 @@ export const useEditorStore = create<EditorState>()(
             state.mapWidth = data.width
             state.mapHeight = data.height
             state.mapName = data.name || 'Imported Map'
+            state.baseTile = detectBaseTile(data.tiles)
           })
           return
         }
@@ -269,6 +328,7 @@ export const useEditorStore = create<EditorState>()(
           state.worldId = parsed.worldId
           state.worldX = parsed.worldX
           state.worldY = parsed.worldY
+          state.baseTile = detectBaseTile(parsed.mapData)
         })
       } catch (err) {
         alert(`Invalid C# map: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -276,14 +336,27 @@ export const useEditorStore = create<EditorState>()(
     },
 
     exportCSharp: () => {
-      const { mapData, mapWidth, mapHeight, cellSize, mapName, worldId, worldX, worldY, tilesById } = get()
-      return generateMapClass(mapData, mapWidth, mapHeight, mapName, cellSize, tilesById as Map<number, EditorTileDefinition>, worldId, worldX, worldY)
+      const { mapData, mapWidth, mapHeight, cellSize, mapName, worldId, worldX, worldY, tilesById, baseTile } = get()
+      return generateMapClass(mapData, mapWidth, mapHeight, mapName, cellSize, tilesById as Map<number, EditorTileDefinition>, worldId, worldX, worldY, baseTile)
     },
 
     exportRegistryCSharp: () => {
       const { registry } = get()
       return exportRegistryCSharp(registry as EditorTileRegistry)
     },
+
+    setBaseTile: (id) => set(state => {
+      const oldBase = state.baseTile
+      state.baseTile = id
+      // Replace all old base tiles on the map with the new one
+      for (let y = 0; y < state.mapHeight; y++) {
+        for (let x = 0; x < state.mapWidth; x++) {
+          if (state.mapData[y][x] === oldBase) {
+            state.mapData[y][x] = id
+          }
+        }
+      }
+    }),
 
     selectTile: (id) => set(state => {
       state.selectedTile = id
@@ -347,3 +420,20 @@ export const useEditorStore = create<EditorState>()(
     },
   }))
 )
+
+// Auto-save to localStorage on every state change
+useEditorStore.subscribe((state) => {
+  savePersisted({
+    registry: state.registry,
+    mapData: state.mapData,
+    mapWidth: state.mapWidth,
+    mapHeight: state.mapHeight,
+    cellSize: state.cellSize,
+    mapName: state.mapName,
+    worldId: state.worldId,
+    worldX: state.worldX,
+    worldY: state.worldY,
+    selectedTile: state.selectedTile,
+    baseTile: state.baseTile,
+  })
+})

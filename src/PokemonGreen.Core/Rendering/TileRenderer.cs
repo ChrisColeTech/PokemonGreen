@@ -13,6 +13,7 @@ public static class TileRenderer
     private static readonly float _animFrameDuration = 0.3f;
     private static int _animFrame;
     private static AnimatedSprite? _singleGrassSprite;
+    private static AnimatedSprite? _singleFlamesSprite;
 
     private static readonly Dictionary<int, float> _visualScale = new()
     {
@@ -22,6 +23,8 @@ public static class TileRenderer
         [22] = 1.3f,
         [18] = 0.55f,
         [19] = 1.5f,
+        [123] = 1.2f,  // FireRock - same as Rock
+        [124] = 1.3f,  // FireBoulder - same as Boulder
     };
 
     private static readonly Dictionary<int, (int x, int y)> _visualOffset = new()
@@ -31,11 +34,11 @@ public static class TileRenderer
         [22] = (5, 8),
         [20] = (5, 6),
         [19] = (5, 8),
+        [123] = (8, 6),  // FireRock - same as Rock
+        [124] = (5, 8),  // FireBoulder - same as Boulder
     };
 
-    // Set of tile IDs that use scaled rendering anchored to fill the tile from the top down,
-    // so the visible content fills the tile and overflow extends below (hidden by Y-sort).
-    private static readonly HashSet<int> _scaledDecoration = new() { 16, 17, 19, 20, 22 };
+    private static readonly HashSet<int> _scaledDecoration = new() { 16, 17, 19, 20, 22, 123, 124 };
 
     public static void Update(float deltaTime)
     {
@@ -80,12 +83,15 @@ public static class TileRenderer
                 if (overlayId < 0)
                     continue;
                 
-                // Tall grass: skip player's feet tile (draws single layer in front)
-                if (overlayId == 72 && x == playerTileX && y == feetTileY)
+                // Tall grass or flames at player's feet: draw full behind player
+                if ((overlayId == 72 || overlayId == 121) && x == playerTileX && y == feetTileY)
+                {
+                    DrawTile(spriteBatch, overlayId, x, y, tileSize, useSingleGrass: false);
                     continue;
+                }
                 
                 // Other overlays: Y-sort (draw if tile is above player's feet)
-                if (overlayId != 72 && y >= feetTileY)
+                if (overlayId != 72 && overlayId != 121 && y >= feetTileY)
                     continue;
                     
                 DrawTile(spriteBatch, overlayId, x, y, tileSize, useSingleGrass: false);
@@ -103,11 +109,11 @@ public static class TileRenderer
     {
         int feetTileY = playerTileY + 1;
         
-        // Draw single grass at player's feet tile
+        // Draw single grass/flames at player's feet tile
         if (feetTileY < map.Height)
         {
             int feetOverlayId = map.GetOverlayTile(playerTileX, feetTileY);
-            if (feetOverlayId == 72)
+            if (feetOverlayId == 72 || feetOverlayId == 121)
             {
                 DrawTile(spriteBatch, feetOverlayId, playerTileX, feetTileY, tileSize, useSingleGrass: true);
             }
@@ -120,7 +126,7 @@ public static class TileRenderer
             for (int y = startY; y < endY; y++)
             {
                 int overlayId = map.GetOverlayTile(x, y);
-                if (overlayId < 0 || overlayId == 72)
+                if (overlayId < 0 || overlayId == 72 || overlayId == 121)
                     continue;
                 
                 if (y >= feetTileY)
@@ -158,9 +164,14 @@ public static class TileRenderer
             return;
 
         Texture2D? texture;
+      
         if (useSingleGrass && tileId == 72)
         {
-            texture = GetSingleGrassFrame();
+            texture = GetSingleGrassFrame();           
+        }
+        else if (useSingleGrass && tileId == 121)
+        {
+            texture = GetSingleFlamesFrame();           
         }
         else
         {
@@ -173,19 +184,23 @@ public static class TileRenderer
             var fallbackColor = TextureStore.ParseHexColor(tile.Color);
             texture = TextureStore.CreateColorTexture(fallbackColor);
         }
-
+ 
+   
         int worldX = tileX * tileSize;
         int worldY = tileY * tileSize;
-
-        // Tall grass: single layer at player's feet, double layer elsewhere
-        if (tileId == 72)
+        int objSize = tileSize - tileSize/3;
+    
+        // Tall grass or flames: single layer at player's feet, double layer elsewhere
+        if (tileId == 72 || tileId == 121)
         {
             if (useSingleGrass)
             {
-                // Single layer at player's feet (draws in front of player)
+                int halfTile = tileSize / 2;
+
+                // Single layer in front of player
                 spriteBatch.Draw(
                     texture,
-                    new Rectangle(worldX, worldY, tileSize, tileSize),
+                    new Rectangle(worldX + halfTile, worldY, objSize, objSize),
                     null,
                     Color.White);
             }
@@ -196,13 +211,13 @@ public static class TileRenderer
                 
                 spriteBatch.Draw(
                     texture,
-                    new Rectangle(worldX, worldY, tileSize, tileSize),
+                    new Rectangle(worldX, worldY, objSize, objSize),
                     null,
                     Color.White);
                 
                 spriteBatch.Draw(
                     texture,
-                    new Rectangle(worldX + halfTile, worldY - halfTile / 2, tileSize, tileSize),
+                    new Rectangle(worldX + halfTile, worldY - halfTile / 2, objSize, objSize),
                     null,
                     Color.White);
             }
@@ -311,10 +326,20 @@ public static class TileRenderer
         return _singleGrassSprite?.GetCurrentFrame() ?? TextureStore.GetTexture("tile_tall_grass_single");
     }
 
+    private static Texture2D? GetSingleFlamesFrame()
+    {
+        if (_singleFlamesSprite != null)
+            return _singleFlamesSprite.GetCurrentFrame();
+
+        _singleFlamesSprite = AnimatedSpriteCache.GetOrLoad("tile_flames_single");
+        return _singleFlamesSprite?.GetCurrentFrame() ?? TextureStore.GetTexture("tile_flames_single");
+    }
+
     public static void Clear()
     {
         _tileSprites.Clear();
         _singleGrassSprite = null;
+        _singleFlamesSprite = null;
         AnimatedSpriteCache.Clear();
     }
 }

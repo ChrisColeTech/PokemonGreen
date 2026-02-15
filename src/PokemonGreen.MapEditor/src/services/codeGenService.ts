@@ -34,7 +34,7 @@ public sealed class {{CLASS_NAME}} : MapDefinition
 
 // --- Helpers ---
 
-const DEFAULT_BASE_TILE_ID = 1 // Grass
+const FALLBACK_BASE_TILE_ID = 1 // Grass — used only if no baseTile provided
 
 export function toPascalCase(input: string): string {
   if (!input) return input
@@ -76,6 +76,7 @@ function formatBaseTiles(
   w: number,
   h: number,
   tilesById: Map<number, EditorTileDefinition>,
+  baseTileId: number,
 ): string {
   const parts: string[] = []
   for (let y = 0; y < h; y++) {
@@ -83,7 +84,7 @@ function formatBaseTiles(
     for (let x = 0; x < w; x++) {
       let tileId = mapData[y]?.[x] ?? 0
       if (!isTerrainTile(tileId, tilesById)) {
-        tileId = DEFAULT_BASE_TILE_ID
+        tileId = baseTileId
       }
       row += String(tileId)
       if (x < w - 1 || y < h - 1) row += ', '
@@ -140,6 +141,7 @@ function buildTileLegend(
   w: number,
   h: number,
   tilesById: Map<number, EditorTileDefinition>,
+  baseTileId: number,
 ): string {
   // Collect all unique tile IDs actually used in the map
   const usedIds = new Set<number>()
@@ -151,7 +153,7 @@ function buildTileLegend(
     }
   }
 
-  // Non-terrain overlay tiles also cause the default base tile to appear
+  // Non-terrain overlay tiles also cause the base tile to appear underneath
   let hasOverlay = false
   for (const id of usedIds) {
     if (!isTerrainTile(id, tilesById)) {
@@ -160,7 +162,7 @@ function buildTileLegend(
     }
   }
   if (hasOverlay) {
-    usedIds.add(DEFAULT_BASE_TILE_ID)
+    usedIds.add(baseTileId)
   }
 
   const sorted = [...usedIds].sort((a, b) => a - b)
@@ -197,6 +199,7 @@ export function generateMapClass(
   worldId: string = 'default',
   worldX: number = 0,
   worldY: number = 0,
+  baseTile: number = FALLBACK_BASE_TILE_ID,
 ): string {
   const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
   const className = toPascalCase(mapId) || 'UntitledMap'
@@ -218,7 +221,7 @@ export function generateMapClass(
     ? `, null, null, ${worldX}, ${worldY}`
     : ''
 
-  const tileLegend = buildTileLegend(mapData, mapWidth, mapHeight, tilesById)
+  const tileLegend = buildTileLegend(mapData, mapWidth, mapHeight, tilesById, baseTile)
 
   return MAP_CLASS_TEMPLATE
     .replace('{{TILE_LEGEND}}', tileLegend)
@@ -229,7 +232,7 @@ export function generateMapClass(
     .replace('{{WIDTH}}', String(mapWidth))
     .replace('{{HEIGHT}}', String(mapHeight))
     .replace('{{TILE_SIZE}}', String(cellSize))
-    .replace('{{BASE_TILE_DATA}}', formatBaseTiles(mapData, mapWidth, mapHeight, tilesById))
+    .replace('{{BASE_TILE_DATA}}', formatBaseTiles(mapData, mapWidth, mapHeight, tilesById, baseTile))
     .replace('{{OVERLAY_TILE_DATA}}', formatOverlayTiles(mapData, mapWidth, mapHeight, tilesById))
     .replace('{{WALKABLE_TILE_IDS}}', formatWalkableIds(walkableIds))
     .replace('{{EXTRA_CTOR_ARGS}}', extraCtorArgs)

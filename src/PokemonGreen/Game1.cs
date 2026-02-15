@@ -552,35 +552,60 @@ public class Game1 : Game
         int panelY = h - panelH - 20;
 
         // Info bars — foe appears after zoom-out, ally appears after "Go! <name>!"
-        int infoBarW = 220;
+        int infoBarW = 320;
+        int infoFontScale = 3;
         if (_battleIntroComplete && _foePokemon != null)
             BattleInfoBar.DrawFoeBar(_spriteBatch, _pixelTexture, _kermFontRenderer, _battleFont,
-                new Rectangle(20, 20, infoBarW, 50), _foePokemon);
+                new Rectangle(20, 20, infoBarW, 80), _foePokemon, infoFontScale);
 
         if (_allySentOut && _allyPokemon != null)
             BattleInfoBar.DrawAllyBar(_spriteBatch, _pixelTexture, _kermFontRenderer, _battleFont,
-                new Rectangle(w - infoBarW - 20, panelY - 70, infoBarW, 66), _allyPokemon, 0.5f);
+                new Rectangle(w - infoBarW - 20, panelY - 114, infoBarW, 108), _allyPokemon, 0.5f, infoFontScale);
 
         if (_activeBattleMenu.IsActive)
         {
-            // Menu (bottom-right) + message (bottom-left)
-            int menuW = 280;
-            int menuX = w - menuW - 20;
-            int textBoxW = w - menuW - 60;
+            bool isMoveMenu = _activeBattleMenu == _battleMoveMenu;
 
-            if (_kermFontRenderer != null && _kermFont != null)
+            if (isMoveMenu)
             {
-                _activeBattleMenu.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixelTexture,
-                    new Rectangle(menuX, panelY, menuW, panelH), 3);
-                _battleMessageBox.Draw(_spriteBatch, _kermFontRenderer, _pixelTexture,
-                    new Rectangle(20, panelY, textBoxW, panelH), 3);
+                // Move menu: full-width move list + small detail panel (Type / PP)
+                int detailW = 200;
+                int moveListW = w - detailW - 60; // 20px left margin + 20px gap + 20px right margin
+                int moveListX = detailW + 40; // after detail panel + gap
+                int detailX = 20;
+
+                // Draw the move list panel (right portion, full-width minus detail area)
+                if (_kermFontRenderer != null && _kermFont != null)
+                    _activeBattleMenu.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixelTexture,
+                        new Rectangle(moveListX, panelY, moveListW, panelH), 3);
+                else
+                    _activeBattleMenu.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                        new Rectangle(moveListX, panelY, moveListW, panelH));
+
+                // Draw the move detail panel (left portion: Type and PP)
+                DrawMoveDetailPanel(detailX, panelY, detailW, panelH);
             }
             else
             {
-                _activeBattleMenu.Draw(_spriteBatch, _battleFont, _pixelTexture,
-                    new Rectangle(menuX, panelY, menuW, panelH));
-                _battleMessageBox.Draw(_spriteBatch, _battleFont, _pixelTexture,
-                    new Rectangle(20, panelY, textBoxW, panelH));
+                // Main menu (Fight/Bag/Pokemon/Run): message box left + menu right
+                int menuW = 280;
+                int menuX = w - menuW - 20;
+                int textBoxW = w - menuW - 60;
+
+                if (_kermFontRenderer != null && _kermFont != null)
+                {
+                    _activeBattleMenu.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixelTexture,
+                        new Rectangle(menuX, panelY, menuW, panelH), 3);
+                    _battleMessageBox.Draw(_spriteBatch, _kermFontRenderer, _pixelTexture,
+                        new Rectangle(20, panelY, textBoxW, panelH), 3);
+                }
+                else
+                {
+                    _activeBattleMenu.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                        new Rectangle(menuX, panelY, menuW, panelH));
+                    _battleMessageBox.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                        new Rectangle(20, panelY, textBoxW, panelH));
+                }
             }
         }
         else if (_battleMessageBox.IsActive)
@@ -596,6 +621,67 @@ public class Game1 : Game
         }
 
         _spriteBatch.End();
+    }
+
+    /// <summary>
+    /// Draw the move detail panel showing Type and PP for the currently selected move.
+    /// Matches classic Pokemon games: a small box in the bottom-left showing
+    /// the highlighted move's type and remaining PP.
+    /// </summary>
+    private void DrawMoveDetailPanel(int x, int y, int width, int height)
+    {
+        int fontScale = 3;
+
+        // Draw panel background
+        UIStyle.DrawBattlePanel(_spriteBatch, _pixelTexture, new Rectangle(x, y, width, height));
+
+        // Get the currently selected move's data
+        if (_allyPokemon == null || _battleMoveMenu.SelectedIndex < 0
+            || _battleMoveMenu.SelectedIndex >= _allyPokemon.Moves.Length)
+            return;
+
+        var battleMove = _allyPokemon.Moves[_battleMoveMenu.SelectedIndex];
+        var moveData = MoveRegistry.GetMove(battleMove.MoveId);
+
+        int padding = 16;
+        int textX = x + padding;
+
+        // Line 1: TYPE/<type name>
+        string typeName = moveData?.Type.ToString().ToUpper() ?? "???";
+        string typeLabel = $"TYPE/{typeName}";
+
+        // Line 2: PP <current>/<max>
+        string ppLabel = $"PP  {battleMove.CurrentPP,2}/{battleMove.MaxPP,2}";
+
+        if (_kermFontRenderer != null && _kermFont != null)
+        {
+            int fontH = _kermFont.FontHeight * fontScale;
+            int lineSpacing = 8;
+
+            // Center the two lines vertically in the panel
+            int totalTextH = fontH * 2 + lineSpacing;
+            int startY = y + (height - totalTextH) / 2;
+
+            _kermFontRenderer.DrawString(_spriteBatch, typeLabel,
+                new Vector2(textX, startY), fontScale, Color.White);
+            _kermFontRenderer.DrawString(_spriteBatch, ppLabel,
+                new Vector2(textX, startY + fontH + lineSpacing), fontScale, Color.White);
+        }
+        else
+        {
+            var typeSize = _battleFont.MeasureString(typeLabel);
+            int lineSpacing = 6;
+
+            int totalTextH = (int)(typeSize.Y * 2) + lineSpacing;
+            int startY = y + (height - totalTextH) / 2;
+
+            UIStyle.DrawShadowedText(_spriteBatch, _battleFont, typeLabel,
+                new Vector2(textX, startY),
+                UIStyle.TextNormal, UIStyle.TextNormalOutline);
+            UIStyle.DrawShadowedText(_spriteBatch, _battleFont, ppLabel,
+                new Vector2(textX, startY + (int)typeSize.Y + lineSpacing),
+                UIStyle.TextNormal, UIStyle.TextNormalOutline);
+        }
     }
 
     private void DrawBattle3D()
@@ -688,7 +774,13 @@ public class Game1 : Game
     private void OpenFightMenu()
     {
         BuildMoveMenu();
-        SwitchBattleMenu(_battleMoveMenu, "Choose a move!");
+        // Switch to move menu without showing a message box — the move detail
+        // panel (Type/PP) replaces the message box in the fight sub-menu.
+        _activeBattleMenu.IsActive = false;
+        _activeBattleMenu = _battleMoveMenu;
+        _activeBattleMenu.SelectedIndex = 0;
+        _activeBattleMenu.IsActive = true;
+        _battleMessageBox.Clear();
     }
 
     private void BuildMoveMenu()
@@ -700,7 +792,7 @@ public class Game1 : Game
             var bm = moves[i];
             var data = MoveRegistry.GetMove(bm.MoveId);
             string name = data?.Name ?? $"Move#{bm.MoveId}";
-            string label = $"{name,-12} {bm.CurrentPP}/{bm.MaxPP}";
+            string label = name;
             bool enabled = bm.CurrentPP > 0;
             int moveIndex = i;
             items[i] = new MenuItem(label, () => SelectMove(moveIndex), enabled);

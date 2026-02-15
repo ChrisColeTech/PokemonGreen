@@ -182,6 +182,8 @@ function ControlsSection() {
   const worldY = useEditorStore(s => s.worldY)
   const setWorldY = useEditorStore(s => s.setWorldY)
   const registry = useEditorStore(s => s.registry)
+  const baseTile = useEditorStore(s => s.baseTile)
+  const setBaseTile = useEditorStore(s => s.setBaseTile)
   const mapWidth = useEditorStore(s => s.mapWidth)
   const mapHeight = useEditorStore(s => s.mapHeight)
   const cellSize = useEditorStore(s => s.cellSize)
@@ -311,6 +313,22 @@ function ControlsSection() {
           <input type="number" min={8} max={64} value={cellSize} onChange={e => setCellSize(+e.target.value)} style={inputStyle} />
         </label>
       </div>
+      {/* Base tile */}
+      <label style={{ fontSize: 10, color: '#808080' }}>
+        Base Tile
+        <select
+          value={baseTile}
+          onChange={e => setBaseTile(+e.target.value)}
+          style={{ ...inputStyle, display: 'block', marginTop: 2 }}
+        >
+          {registry.tiles
+            .filter(t => t.category === 'terrain')
+            .map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+        </select>
+      </label>
+
       <div style={{ display: 'flex', gap: 4 }}>
         <button onClick={() => resize(w, h)} style={btnStyle}>Resize</button>
         <button onClick={clear} style={{ ...btnStyle, color: '#f48771' }}>Clear All</button>

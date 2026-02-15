@@ -144,6 +144,18 @@ public static class TileRegistry
         [118] = new TileDefinition(118, "FlowerYellow", true, "#ffd700", TileCategory.Decoration, SpriteName: "tile_flower_yellow", AnimationFrames: 5),
         [119] = new TileDefinition(119, "FlowerWhite", true, "#ffffff", TileCategory.Decoration, SpriteName: "tile_flower_white", AnimationFrames: 5),
         [120] = new TileDefinition(120, "FlowerPurple", true, "#9b59b6", TileCategory.Decoration, SpriteName: "tile_flower_purple", AnimationFrames: 5),
+
+        // Flames encounter
+        [121] = new TileDefinition(121, "Flames", true, "#ff5500", TileCategory.Encounter, "fire_encounter", SpriteName: "tile_flames", AnimationFrames: 5),
+
+        // Fire terrain
+        [122] = new TileDefinition(122, "FireGround", true, "#8b3a3a", TileCategory.Terrain, SpriteName: "tile_fire_ground"),
+
+        // Fire decorations (123-126)
+        [123] = new TileDefinition(123, "FireRock", false, "#6b4040", TileCategory.Decoration, SpriteName: "tile_fire_rock"),
+        [124] = new TileDefinition(124, "FireBoulder", false, "#5a3838", TileCategory.Decoration, SpriteName: "tile_fire_boulder"),
+        [125] = new TileDefinition(125, "LavaSplatter", false, "#ff4400", TileCategory.Decoration, SpriteName: "tile_lava_splatter"),
+        [126] = new TileDefinition(126, "LavaPool", false, "#ff3300", TileCategory.Terrain, SpriteName: "tile_lava_pool", AnimationFrames: 4),
     };
 
     public static TileDefinition? GetTile(int id) =>

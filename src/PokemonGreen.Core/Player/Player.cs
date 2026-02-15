@@ -161,11 +161,14 @@ public class Player
 
     private static (float x, float y) GetObjectCollisionInsets(int tileId) => tileId switch
     {
-        16 => (0.3f, 0.2f),   // Tree - smaller Y inset = taller hitbox
+        16 => (0.3f, 0.2f),   // Tree
         17 => (0.25f, 0.25f), // Rock
         20 => (0.25f, 0.25f), // Bush
         22 => (0.25f, 0.25f), // Boulder
         19 => (0.2f, 0.2f),   // Statue
+        123 => (0.25f, 0.25f), // FireRock - same as Rock
+        124 => (0.25f, 0.25f), // FireBoulder - same as Boulder
+        125 => (0.25f, 0.25f), // LavaSplatter
         _ => (0f, 0f)
     };
 

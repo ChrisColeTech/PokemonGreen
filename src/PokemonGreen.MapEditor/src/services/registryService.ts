@@ -66,7 +66,7 @@ export function parseCSharpRegistry(source: string): EditorTileRegistry {
   // Match lines like: [0] = new TileDefinition(0, "Water", false, "#3890f8", TileCategory.Terrain),
   // or with optional overlay: [8] = new TileDefinition(8, "Ice", true, "#b0e0f8", TileCategory.Terrain, "slippery"),
   // or with optional EntityId: [48] = new TileDefinition(48, "Villager", false, "#ffd700", TileCategory.Entity, "npc", EntityId: 506),
-  const tilePattern = /\[(\d+)\]\s*=\s*new\s+TileDefinition\(\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*(true|false)\s*,\s*"([^"]+)"\s*,\s*TileCategory\.(\w+)(?:\s*,\s*"([^"]+)")?(?:\s*,\s*EntityId:\s*(\d+))?\s*\)/g
+  const tilePattern = /\[(\d+)\]\s*=\s*new\s+TileDefinition\(\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*(true|false)\s*,\s*"([^"]+)"\s*,\s*TileCategory\.(\w+)(?:\s*,\s*"([^"]+)")?(?:\s*,\s*EntityId:\s*(\d+))?[^)]*\)/g
 
   const tiles: EditorTileDefinition[] = []
   const categorySet = new Set<string>()
