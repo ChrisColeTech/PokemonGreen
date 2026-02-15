@@ -278,7 +278,7 @@ Game1.Draw()
 1. **Encounter detection** — Add the tile check after `Player.Update()` in `GameWorld.Update()`. ~20 lines. Uses existing `TileCategory.Encounter` and `TileRegistry.GetTile()`. Doesn't need the battle screen to exist — just log "encounter triggered" to console to verify it works.
 2. **Game state branching** — Add a `GameState` enum and an `if` check in `Update()` and `Draw()`. ~10 lines each. Everything else stays the same when in Overworld state.
 3. **Reuse fade system** — The existing `TransitionState`/`FadeAlpha` system already fades to black and back. Extend it with a battle callback instead of a map-load callback. ~15 lines.
-4. **Placeholder battle screen** — Draw a colored background, two colored rectangles for "Pokemon", and text saying "BATTLE" to prove the state switch works. Can be built out into the real UI incrementally.
+4. **Battle screen layout** — The battle screen has a fixed layout: background fills the screen, wild Pokemon sprite top-right, player's Pokemon sprite bottom-left, HP bars next to each Pokemon showing name/level/health, text box across the bottom showing battle messages, and an action menu (Fight/Run) that appears over the text box when it's the player's turn.
 
 ### New Feature Ideas
 
