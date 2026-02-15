@@ -114,7 +114,6 @@ public class GameWorld
                 if (edge.HasValue)
                 {
                     int baseTile = CurrentMapDefinition.GetBaseTile(Player.TileX, Player.TileY);
-                    Console.WriteLine($"[EDGE] pos=({Player.TileX},{Player.TileY}) target=({targetX},{targetY}) edge={edge} baseTile={baseTile}");
                     if (IsTransitionTileForEdge(baseTile, edge.Value) && TryEdgeTransition(edge.Value, Player.TileX, Player.TileY))
                     {
                         return;
