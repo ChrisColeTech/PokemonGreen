@@ -337,3 +337,384 @@ For anyone picking this up, these are the key files to study in `D:\Projects\Pok
 
 ### Recommendation
 Start with Option B for the prototype — get the battle screen working with simple damage math. Once the screen, menus, and flow are solid, evaluate whether to plug in PBE for the battle engine or keep building our own. The rendering and UI work is the same either way.
+
+---
+
+## 10. Proof of Concept — How to Build the Battle Screen
+
+This section explains exactly how to construct a working battle screen proof of concept using MonoGame, step by step. Each step builds on the previous one.
+
+### What We Have to Work With
+
+MonoGame gives us `SpriteBatch` which can draw two things:
+1. **Textures** — any image (PNG, sprite sheet) drawn at a position, with optional scaling, rotation, and color tinting
+2. **Rectangles** — by stretching a 1x1 white pixel texture to any size and tinting it any color
+
+`Game1.cs` already creates a 1x1 white pixel texture (`_pixelTexture`) on line 69-70. This is the tool for drawing HP bars, backgrounds, text boxes, and menu panels — stretch it to the size you need and tint it the color you want.
+
+MonoGame also has `SpriteFont` for text rendering. A `.spritefont` file defines which font to use (name, size, style). The MonoGame Content Pipeline compiles it into a bitmap font. Then `SpriteBatch.DrawString(font, "text", position, color)` draws text on screen. No `.spritefont` file exists in the project yet — one must be created.
+
+### POC Step 1: Create a SpriteFont for Text
+
+The battle screen needs text for Pokemon names, levels, HP numbers, move names, and battle messages. MonoGame requires a `.spritefont` XML file processed through the Content Pipeline.
+
+1. Create `Content/Content.mgcb` if it doesn't exist (MonoGame content pipeline project)
+2. Create `Content/Fonts/BattleFont.spritefont` — an XML file like this:
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
+     <Asset Type="Graphics:FontDescription">
+       <FontName>Arial</FontName>
+       <Size>12</Size>
+       <Spacing>0</Spacing>
+       <UseKerning>true</UseKerning>
+       <Style>Bold</Style>
+       <CharacterRegions>
+         <CharacterRegion>
+           <Start>&#32;</Start>
+           <End>&#126;</End>
+         </CharacterRegion>
+       </CharacterRegions>
+     </Asset>
+   </XnaContent>
+   ```
+3. Add the font to the content pipeline so it gets built
+4. Load it in `Game1.LoadContent()`: `_battleFont = Content.Load<SpriteFont>("Fonts/BattleFont")`
+5. Now `_spriteBatch.DrawString(_battleFont, "Hello", new Vector2(10, 10), Color.White)` draws text
+
+**Alternative if the Content Pipeline is not set up:** Use a bitmap font library like MonoGame.Extended or load a pre-rendered font texture manually. Or generate a `Texture2D` font atlas at runtime from system fonts using `System.Drawing`.
+
+### POC Step 2: Create the Game State Switch
+
+Before building any battle UI, the game needs to know when it's in a battle vs on the overworld.
+
+1. Add to `GameWorld.cs`:
+   ```csharp
+   public enum GameState { Overworld, Battle }
+   public GameState State { get; private set; } = GameState.Overworld;
+   ```
+
+2. In `GameWorld.Update()`, wrap the entire existing overworld logic in:
+   ```csharp
+   if (State == GameState.Overworld)
+   {
+       // ... existing update code ...
+   }
+   else if (State == GameState.Battle)
+   {
+       UpdateBattle(deltaTime);
+   }
+   ```
+
+3. In `Game1.Draw()`, branch the rendering:
+   ```csharp
+   if (_gameWorld.State == GameWorld.GameState.Overworld)
+   {
+       // ... existing tile/player drawing code ...
+   }
+   else if (_gameWorld.State == GameWorld.GameState.Battle)
+   {
+       DrawBattle();
+   }
+   ```
+
+4. Add a temporary debug key (e.g., B key) that toggles `State` between Overworld and Battle so you can test the switch without needing encounter detection yet
+
+### POC Step 3: Draw the Battle Background
+
+The battle screen draws without the camera transform — it uses raw screen coordinates.
+
+1. In `Game1.DrawBattle()`, start a new SpriteBatch without the camera matrix:
+   ```csharp
+   private void DrawBattle()
+   {
+       _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, SamplerState.PointClamp);
+
+       int screenW = Window.ClientBounds.Width;
+       int screenH = Window.ClientBounds.Height;
+
+       // Background — fill the screen with a color (light green for grass battle)
+       _spriteBatch.Draw(_pixelTexture, new Rectangle(0, 0, screenW, screenH), new Color(144, 200, 96));
+
+       _spriteBatch.End();
+   }
+   ```
+
+2. Press B to switch to battle state — the screen should fill with solid green. Press B again to go back to the overworld. This proves the state switch and battle rendering path work.
+
+3. Later, replace the solid color with a sprite image (a grass field background PNG).
+
+### POC Step 4: Draw the Battle Layout Zones
+
+The screen is divided into fixed zones. Everything is positioned as a percentage of screen size so it scales with the window. Define these layout constants:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                                                       │
+│   [Enemy Info Bar]              [Enemy Sprite]       │  Top third
+│   Name  Lv.5                   (Pokemon image)       │
+│   ████████░░░░ HP                                    │
+│                                                       │
+│                                                       │  Middle
+│                                                       │
+│   [Player Sprite]              [Player Info Bar]     │  Bottom third
+│   (Pokemon image)              Name  Lv.5            │
+│                                ████████░░░░ HP       │
+│                                42 / 50                │
+│                                                       │
+│ ┌───────────────────────────────────────────────────┐ │
+│ │ A wild Rattata appeared!                          │ │  Text Box
+│ │                                                   │ │  (bottom 20%)
+│ │              [FIGHT]   [RUN]                      │ │
+│ └───────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────┘
+```
+
+Draw each zone as a colored rectangle to verify positioning:
+
+```csharp
+// Enemy info bar area (top-left)
+int infoW = screenW * 45 / 100;
+int infoH = screenH * 10 / 100;
+_spriteBatch.Draw(_pixelTexture, new Rectangle(8, screenH * 8 / 100, infoW, infoH), Color.Black * 0.5f);
+
+// Enemy sprite area (top-right)
+int spriteSize = screenH * 30 / 100;
+_spriteBatch.Draw(_pixelTexture, new Rectangle(screenW * 60 / 100, screenH * 5 / 100, spriteSize, spriteSize), Color.Red * 0.3f);
+
+// Player sprite area (bottom-left)
+_spriteBatch.Draw(_pixelTexture, new Rectangle(screenW * 5 / 100, screenH * 40 / 100, spriteSize, spriteSize), Color.Blue * 0.3f);
+
+// Player info bar area (bottom-right)
+_spriteBatch.Draw(_pixelTexture, new Rectangle(screenW * 52 / 100, screenH * 52 / 100, infoW, infoH + screenH * 5 / 100), Color.Black * 0.5f);
+
+// Text box (bottom 20% of screen)
+int textBoxY = screenH * 78 / 100;
+int textBoxH = screenH * 20 / 100;
+_spriteBatch.Draw(_pixelTexture, new Rectangle(0, textBoxY, screenW, textBoxH), Color.Black * 0.85f);
+
+// Border line on text box
+_spriteBatch.Draw(_pixelTexture, new Rectangle(0, textBoxY, screenW, 2), Color.White * 0.5f);
+```
+
+This gives you the full layout with colored placeholder zones. Resize the window and everything scales proportionally.
+
+### POC Step 5: Draw HP Bars
+
+An HP bar is three layered rectangles drawn on top of each other:
+
+1. **Border** — dark gray rectangle, full width
+2. **Background** — black rectangle, 1px smaller on each side (the "empty" portion)
+3. **Fill** — colored rectangle, width proportional to current HP / max HP
+
+The fill color changes based on HP percentage:
+- Above 50%: green (`Color(0, 200, 72)`)
+- 20% to 50%: yellow/orange (`Color(248, 176, 0)`)
+- Below 20%: red (`Color(240, 48, 48)`)
+
+```csharp
+void DrawHPBar(int x, int y, int width, int height, float hpPercent)
+{
+    // Border
+    _spriteBatch.Draw(_pixelTexture, new Rectangle(x, y, width, height), new Color(64, 64, 64));
+    // Background (empty bar)
+    _spriteBatch.Draw(_pixelTexture, new Rectangle(x + 1, y + 1, width - 2, height - 2), new Color(32, 32, 32));
+    // Fill (current HP)
+    Color hpColor = hpPercent > 0.5f ? new Color(0, 200, 72)
+                  : hpPercent > 0.2f ? new Color(248, 176, 0)
+                  : new Color(240, 48, 48);
+    int fillWidth = (int)((width - 2) * hpPercent);
+    _spriteBatch.Draw(_pixelTexture, new Rectangle(x + 1, y + 1, fillWidth, height - 2), hpColor);
+}
+```
+
+Call this for both Pokemon, passing their current HP percentage.
+
+### POC Step 6: Draw the Text Box and Messages
+
+The text box is a dark semi-transparent panel at the bottom of the screen. Battle messages are drawn on top of it using the SpriteFont.
+
+```csharp
+// Text box background
+int textBoxY = screenH * 78 / 100;
+_spriteBatch.Draw(_pixelTexture, new Rectangle(0, textBoxY, screenW, screenH - textBoxY), Color.Black * 0.85f);
+_spriteBatch.Draw(_pixelTexture, new Rectangle(0, textBoxY, screenW, 2), Color.White * 0.4f);
+
+// Battle message text
+string message = "A wild Rattata appeared!";
+Vector2 textPos = new Vector2(16, textBoxY + 12);
+_spriteBatch.DrawString(_battleFont, message, textPos, Color.White);
+```
+
+For the character-by-character typewriter effect (text appearing one letter at a time):
+- Track a `_visibleChars` counter that starts at 0 and increments over time
+- Draw `message.Substring(0, _visibleChars)` instead of the full message
+- Increment `_visibleChars` by `charsPerSecond * deltaTime` each frame
+- When the player presses a button, instantly set `_visibleChars = message.Length`
+
+### POC Step 7: Draw the Action Menu
+
+The action menu appears inside the text box area when it's the player's turn. It shows Fight and Run as selectable options.
+
+```csharp
+// Menu items
+string[] menuItems = { "FIGHT", "RUN" };
+int selectedIndex = 0;  // Track with up/down input
+
+int menuX = screenW * 55 / 100;
+int menuY = textBoxY + 10;
+int lineHeight = 24;
+
+for (int i = 0; i < menuItems.Length; i++)
+{
+    Color textColor = (i == selectedIndex) ? Color.Yellow : Color.White;
+    string prefix = (i == selectedIndex) ? "> " : "  ";
+    _spriteBatch.DrawString(_battleFont, prefix + menuItems[i], new Vector2(menuX, menuY + i * lineHeight), textColor);
+}
+```
+
+Input handling in `UpdateBattle()`:
+- Up/Down arrows move `selectedIndex`
+- Enter/E confirms the selection
+- If "FIGHT" selected → switch to move selection menu (same pattern, 4 move names)
+- If "RUN" selected → end the battle, return to overworld
+
+### POC Step 8: Draw the Move Selection Menu
+
+When the player selects FIGHT, replace the action menu with a 2x2 grid of moves:
+
+```
+┌─────────────────────────────────────┐
+│ > Tackle        Growl               │
+│   Vine Whip     Leech Seed          │
+│                          PP: 25/25  │
+└─────────────────────────────────────┘
+```
+
+Same drawing technique — `DrawString` for each move name, highlight the selected one in yellow, show PP for the currently highlighted move. Navigate with arrow keys in a 2x2 grid (up/down/left/right).
+
+### POC Step 9: Draw Pokemon Sprites
+
+For the proof of concept, Pokemon sprites can be simple colored squares with the Pokemon name drawn on them. For a more complete version:
+
+1. Create or download front/back Pokemon sprite PNGs (standard size is 96x96 pixels)
+2. Place them in the Content folder or load them directly as `Texture2D`
+3. Draw the enemy's front sprite in the top-right zone
+4. Draw the player's Pokemon back sprite in the bottom-left zone
+
+Loading a PNG directly without the content pipeline:
+```csharp
+using var stream = File.OpenRead("Assets/Sprites/rattata_front.png");
+Texture2D rattatSprite = Texture2D.FromStream(GraphicsDevice, stream);
+```
+
+Draw with scaling to fit the zone:
+```csharp
+_spriteBatch.Draw(rattatSprite, new Rectangle(spriteX, spriteY, spriteSize, spriteSize), Color.White);
+```
+
+### POC Step 10: Wire Up the Battle State Machine
+
+The battle screen cycles through phases. Each phase controls what's drawn and what input does:
+
+```
+Intro → PlayerChoice → MoveSelect → ExecuteTurn → CheckResult → (loop or end)
+```
+
+```csharp
+public enum BattlePhase
+{
+    Intro,           // "A wild Rattata appeared!" — wait for button press
+    PlayerChoice,    // Show Fight/Run menu — wait for selection
+    MoveSelect,      // Show 4 moves — wait for selection
+    EnemyTurn,       // "Rattata used Tackle!" — auto-advance after delay
+    PlayerTurn,      // "Bulbasaur used Vine Whip!" — auto-advance after delay
+    DamageResult,    // "It's super effective!" — auto-advance after delay
+    CheckFaint,      // Did anyone faint? If yes → Victory or Defeat
+    Victory,         // "You won!" — wait for button press → fade out
+    Defeat,          // "You blacked out!" — wait for button press → fade out
+    FadeOut          // Fading back to overworld
+}
+```
+
+In `UpdateBattle(float deltaTime)`:
+- Each phase checks input or advances a timer
+- Phase transitions happen by setting the next phase
+- Drawing code checks the current phase to decide what to show
+
+### POC Step 11: Simple Damage Calculation
+
+For the proof of concept, use a simplified version of the Gen 1 damage formula:
+
+```csharp
+int CalculateDamage(BattlePokemon attacker, BattlePokemon defender, Move move)
+{
+    // Base damage: ((2 * Level / 5 + 2) * Power * Attack / Defense) / 50 + 2
+    float base = ((2f * attacker.Level / 5f + 2f) * move.Power * attacker.Attack) / (float)defender.Defense / 50f + 2f;
+
+    // Random multiplier: 85% to 100%
+    float random = Random.Shared.Next(85, 101) / 100f;
+
+    // Type effectiveness: 2.0 (super effective), 0.5 (not very effective), 0.0 (immune)
+    float typeMultiplier = TypeChart.GetEffectiveness(move.Type, defender.Type);
+
+    return Math.Max(1, (int)(base * random * typeMultiplier));
+}
+```
+
+### POC Step 12: Create Test Data
+
+Hardcode a few Pokemon and moves to test with:
+
+```csharp
+// Player's starter
+var bulbasaur = new BattlePokemon("Bulbasaur", PokemonType.Grass, level: 5,
+    hp: 45, attack: 49, defense: 49, speed: 45,
+    moves: new[] {
+        new Move("Tackle", PokemonType.Normal, power: 40, accuracy: 100, pp: 35),
+        new Move("Growl", PokemonType.Normal, power: 0, accuracy: 100, pp: 40),
+        new Move("Vine Whip", PokemonType.Grass, power: 45, accuracy: 100, pp: 25),
+        new Move("Leech Seed", PokemonType.Grass, power: 0, accuracy: 90, pp: 10),
+    });
+
+// Wild encounter
+var rattata = new BattlePokemon("Rattata", PokemonType.Normal, level: 3,
+    hp: 30, attack: 56, defense: 35, speed: 72,
+    moves: new[] {
+        new Move("Tackle", PokemonType.Normal, power: 40, accuracy: 100, pp: 35),
+        new Move("Tail Whip", PokemonType.Normal, power: 0, accuracy: 100, pp: 30),
+    });
+```
+
+### POC Step 13: End-to-End Test
+
+With all pieces in place, the full flow works like this:
+
+1. Player walks on grass → random encounter triggers → screen fades to black
+2. Battle screen appears → "A wild Rattata appeared!" prints character by character
+3. Player presses button → Fight/Run menu appears
+4. Player selects Fight → move list appears (Tackle, Growl, Vine Whip, Leech Seed)
+5. Player picks Vine Whip → compare speeds → faster Pokemon attacks first
+6. "Bulbasaur used Vine Whip!" → damage calculated → Rattata HP bar shrinks → "It's super effective!"
+7. "Rattata used Tackle!" → damage calculated → Bulbasaur HP bar shrinks
+8. Back to step 3 — repeat until one side faints
+9. "Rattata fainted!" → "You won!" → player presses button → fade to black → overworld resumes
+
+### POC Milestone Checklist
+
+These are in order — each one is testable on its own:
+
+- [ ] SpriteFont loads and can draw text on screen
+- [ ] GameState enum switches between Overworld and Battle (debug key)
+- [ ] Battle screen draws a colored background (no overworld visible)
+- [ ] Layout zones are visible (colored placeholder areas for sprites, info bars, text box)
+- [ ] HP bars draw with correct colors at different percentages
+- [ ] Text box shows a message with typewriter effect
+- [ ] Action menu (Fight/Run) navigates with arrow keys and highlights selection
+- [ ] Move menu shows 4 moves in a 2x2 grid with PP display
+- [ ] Pokemon data structures exist (name, HP, attack, defense, speed, type, moves)
+- [ ] Damage formula calculates a number and subtracts from HP
+- [ ] Turn flow works: player picks move → both sides attack → HP bars update
+- [ ] Fainting detected → victory/defeat message shown
+- [ ] Battle ends → fade to black → overworld resumes on same tile
+- [ ] Encounter detection triggers battle from grass tile (replaces debug key)
