@@ -18,18 +18,44 @@ public static class TextureStore
         AssetLoader.Initialize(graphicsDevice);
     }
 
-    public static Texture2D? GetTileTexture(int tileId, string tileName)
-    {
-        if (_tileCache.TryGetValue(tileId, out var cached))
-            return cached;
+public static Texture2D? GetTileTexture(int tileId, string tileName)
+{
+    if (_tileCache.TryGetValue(tileId, out var cached))
+        return cached;
 
-        var texture = LoadTileSprite(tileName);
-        if (texture != null)
-        {
-            _tileCache[tileId] = texture;
-        }
-        return texture;
+    var texture = LoadTileSprite(tileName);
+    if (texture != null)
+    {
+        _tileCache[tileId] = texture;
     }
+    return texture;
+}
+
+public static Texture2D? GetItemTexture(int itemId, string spriteName)
+{
+    string cacheKey = $"item_{itemId}";
+    if (_cache.TryGetValue(cacheKey, out var cached))
+        return cached;
+
+    var texture = AssetLoader.LoadItemSprite(spriteName);
+    if (texture != null)
+        _cache[cacheKey] = texture;
+
+    return texture;
+}
+
+public static Texture2D? GetNPCTexture(int npcId, string spriteName)
+{
+    string cacheKey = $"npc_{npcId}";
+    if (_cache.TryGetValue(cacheKey, out var cached))
+        return cached;
+
+    var texture = AssetLoader.LoadNPCSprite(spriteName);
+    if (texture != null)
+        _cache[cacheKey] = texture;
+
+    return texture;
+}
 
     public static Texture2D? GetAnimatedTileFrame(int tileId, string baseName, int frameIndex)
     {

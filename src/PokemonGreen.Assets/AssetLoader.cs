@@ -18,55 +18,116 @@ public static class AssetLoader
         _graphicsDevice = graphicsDevice;
     }
 
-    public static Stream? GetSpriteStream(string name)
-    {
-        var assembly = typeof(AssetLoader).Assembly;
-        var resourceName = $"PokemonGreen.Assets.Sprites.{name}.png";
-        return assembly.GetManifestResourceStream(resourceName);
-    }
+public static Stream? GetSpriteStream(string name)
+{
+    var assembly = typeof(AssetLoader).Assembly;
+    var resourceName = $"PokemonGreen.Assets.Sprites.{name}.png";
+    return assembly.GetManifestResourceStream(resourceName);
+}
 
-    public static Stream? GetPlayerSpriteStream(string name)
-    {
-        var assembly = typeof(AssetLoader).Assembly;
-        var resourceName = $"PokemonGreen.Assets.Player.{name}.png";
-        return assembly.GetManifestResourceStream(resourceName);
-    }
+public static Stream? GetItemSpriteStream(string name)
+{
+    var assembly = typeof(AssetLoader).Assembly;
+    var resourceName = $"PokemonGreen.Assets.Items.{name}.png";
+    return assembly.GetManifestResourceStream(resourceName);
+}
 
-    public static Texture2D? LoadSprite(string name)
-    {
-        if (_graphicsDevice == null)
-            throw new InvalidOperationException("AssetLoader must be initialized with a GraphicsDevice first.");
+public static Stream? GetPlayerSpriteStream(string name)
+{
+    var assembly = typeof(AssetLoader).Assembly;
+    var resourceName = $"PokemonGreen.Assets.Player.{name}.png";
+    return assembly.GetManifestResourceStream(resourceName);
+}
 
-        using var stream = GetSpriteStream(name);
-        if (stream == null)
-            return null;
+public static Stream? GetNPCSpriteStream(string name)
+{
+    var assembly = typeof(AssetLoader).Assembly;
+    var resourceName = $"PokemonGreen.Assets.NPCs.{name}.png";
+    return assembly.GetManifestResourceStream(resourceName);
+}
 
-        using var memStream = new MemoryStream();
-        stream.CopyTo(memStream);
-        memStream.Position = 0;
+public static string? LoadNPCJson(string name)
+{
+    var assembly = typeof(AssetLoader).Assembly;
+    var resourceName = $"PokemonGreen.Assets.NPCs.{name}.json";
+    using var stream = assembly.GetManifestResourceStream(resourceName);
+    if (stream == null)
+        return null;
+    using var reader = new StreamReader(stream);
+    return reader.ReadToEnd();
+}
 
-        var texture = LoadTextureFromPngStream(memStream, _graphicsDevice, $"Sprites.{name}");
-        LogTextureDiagnostics($"Sprites.{name}", texture);
-        return texture;
-    }
+public static Texture2D? LoadSprite(string name)
+{
+    if (_graphicsDevice == null)
+        throw new InvalidOperationException("AssetLoader must be initialized with a GraphicsDevice first.");
 
-    public static Texture2D? LoadPlayerSprite(string name)
-    {
-        if (_graphicsDevice == null)
-            throw new InvalidOperationException("AssetLoader must be initialized with a GraphicsDevice first.");
+    using var stream = GetSpriteStream(name);
+    if (stream == null)
+        return null;
 
-        using var stream = GetPlayerSpriteStream(name);
-        if (stream == null)
-            return null;
+    using var memStream = new MemoryStream();
+    stream.CopyTo(memStream);
+    memStream.Position = 0;
 
-        using var memStream = new MemoryStream();
-        stream.CopyTo(memStream);
-        memStream.Position = 0;
+    var texture = LoadTextureFromPngStream(memStream, _graphicsDevice, $"Sprites.{name}");
+    LogTextureDiagnostics($"Sprites.{name}", texture);
+    return texture;
+}
 
-        var texture = LoadTextureFromPngStream(memStream, _graphicsDevice, $"Player.{name}");
-        LogTextureDiagnostics($"Player.{name}", texture);
-        return texture;
-    }
+public static Texture2D? LoadItemSprite(string name)
+{
+    if (_graphicsDevice == null)
+        throw new InvalidOperationException("AssetLoader must be initialized with a GraphicsDevice first.");
+
+    using var stream = GetItemSpriteStream(name);
+    if (stream == null)
+        return null;
+
+    using var memStream = new MemoryStream();
+    stream.CopyTo(memStream);
+    memStream.Position = 0;
+
+    var texture = LoadTextureFromPngStream(memStream, _graphicsDevice, $"Items.{name}");
+    LogTextureDiagnostics($"Items.{name}", texture);
+    return texture;
+}
+
+public static Texture2D? LoadPlayerSprite(string name)
+{
+    if (_graphicsDevice == null)
+        throw new InvalidOperationException("AssetLoader must be initialized with a GraphicsDevice first.");
+
+    using var stream = GetPlayerSpriteStream(name);
+    if (stream == null)
+        return null;
+
+    using var memStream = new MemoryStream();
+    stream.CopyTo(memStream);
+    memStream.Position = 0;
+
+    var texture = LoadTextureFromPngStream(memStream, _graphicsDevice, $"Player.{name}");
+    LogTextureDiagnostics($"Player.{name}", texture);
+    return texture;
+}
+
+public static Texture2D? LoadNPCSprite(string name)
+{
+    if (_graphicsDevice == null)
+        throw new InvalidOperationException("AssetLoader must be initialized with a GraphicsDevice first.");
+
+    using var stream = GetNPCSpriteStream(name);
+    if (stream == null)
+        return null;
+
+    using var memStream = new MemoryStream();
+    stream.CopyTo(memStream);
+    memStream.Position = 0;
+
+    var texture = LoadTextureFromPngStream(memStream, _graphicsDevice, $"NPCs.{name}");
+    LogTextureDiagnostics($"NPCs.{name}", texture);
+    return texture;
+}
 
     private static Texture2D LoadTextureFromPngStream(Stream stream, GraphicsDevice graphicsDevice, string label)
     {
