@@ -1,8 +1,5 @@
 namespace PokemonGreen.Core.Maps;
 
-/// <summary>
-/// Static registry containing all tile definitions for the game.
-/// </summary>
 public static class TileRegistry
 {
     private static readonly Dictionary<int, TileDefinition> _tiles = new()
@@ -61,33 +58,33 @@ public static class TileRegistry
         [46] = new TileDefinition(46, "ItemBall", true, "#ff0000", TileCategory.Interactive, "item_ball"),
         [47] = new TileDefinition(47, "Teleporter", true, "#00ffff", TileCategory.Interactive, "teleport"),
 
-        // Entity (48-55)
-        [48] = new TileDefinition(48, "NPC", false, "#ffd700", TileCategory.Entity, "npc"),
-        [49] = new TileDefinition(49, "ServiceNPC", false, "#ffa500", TileCategory.Entity, "service_npc"),
-        [50] = new TileDefinition(50, "Nurse", false, "#ffb6c1", TileCategory.Entity, "nurse"),
-        [51] = new TileDefinition(51, "Clerk", false, "#87ceeb", TileCategory.Entity, "clerk"),
-        [52] = new TileDefinition(52, "GymGuide", false, "#98fb98", TileCategory.Entity, "gym_guide"),
-        [53] = new TileDefinition(53, "Rival", false, "#ff4500", TileCategory.Entity, "rival"),
-        [54] = new TileDefinition(54, "Professor", false, "#f5f5dc", TileCategory.Entity, "professor"),
-        [55] = new TileDefinition(55, "Mom", false, "#ffb6c1", TileCategory.Entity, "mom"),
+        // Entity NPCs (48-55) → NPCRegistry IDs
+        [48] = new TileDefinition(48, "Villager", false, "#ffd700", TileCategory.Entity, "npc", EntityId: 506),
+        [49] = new TileDefinition(49, "Clerk", false, "#ffa500", TileCategory.Entity, "service_npc", EntityId: 103),
+        [50] = new TileDefinition(50, "Nurse", false, "#ffb6c1", TileCategory.Entity, "nurse", EntityId: 100),
+        [51] = new TileDefinition(51, "ShopClerk", false, "#87ceeb", TileCategory.Entity, "clerk", EntityId: 102),
+        [52] = new TileDefinition(52, "GymLeader", false, "#98fb98", TileCategory.Entity, "gym_guide", EntityId: 300),
+        [53] = new TileDefinition(53, "Rival", false, "#ff4500", TileCategory.Entity, "rival", EntityId: 202),
+        [54] = new TileDefinition(54, "Professor", false, "#f5f5dc", TileCategory.Entity, "professor", EntityId: 200),
+        [55] = new TileDefinition(55, "Mom", false, "#ffb6c1", TileCategory.Entity, "mom", EntityId: 205),
 
-        // Trainer (56-71)
-        [56] = new TileDefinition(56, "TrainerUp", false, "#dc143c", TileCategory.Trainer, "trainer_up"),
-        [57] = new TileDefinition(57, "TrainerDown", false, "#dc143c", TileCategory.Trainer, "trainer_down"),
-        [58] = new TileDefinition(58, "TrainerLeft", false, "#dc143c", TileCategory.Trainer, "trainer_left"),
-        [59] = new TileDefinition(59, "TrainerRight", false, "#dc143c", TileCategory.Trainer, "trainer_right"),
-        [60] = new TileDefinition(60, "GymTrainer", false, "#b22222", TileCategory.Trainer, "gym_trainer"),
-        [61] = new TileDefinition(61, "GymLeader", false, "#8b0000", TileCategory.Trainer, "gym_leader"),
-        [62] = new TileDefinition(62, "EliteFour", false, "#4b0082", TileCategory.Trainer, "elite_four"),
-        [63] = new TileDefinition(63, "Champion", false, "#ffd700", TileCategory.Trainer, "champion"),
-        [64] = new TileDefinition(64, "Rocket", false, "#2f4f4f", TileCategory.Trainer, "team_rocket"),
-        [65] = new TileDefinition(65, "Aqua", false, "#00bfff", TileCategory.Trainer, "team_aqua"),
-        [66] = new TileDefinition(66, "Magma", false, "#ff4500", TileCategory.Trainer, "team_magma"),
-        [67] = new TileDefinition(67, "Galactic", false, "#483d8b", TileCategory.Trainer, "team_galactic"),
-        [68] = new TileDefinition(68, "Plasma", false, "#87cefa", TileCategory.Trainer, "team_plasma"),
-        [69] = new TileDefinition(69, "Flare", false, "#ff6347", TileCategory.Trainer, "team_flare"),
-        [70] = new TileDefinition(70, "Skull", false, "#2f2f2f", TileCategory.Trainer, "team_skull"),
-        [71] = new TileDefinition(71, "Yell", false, "#ff1493", TileCategory.Trainer, "team_yell"),
+        // Trainers (56-71) → NPCRegistry IDs
+        [56] = new TileDefinition(56, "Youngster", false, "#dc143c", TileCategory.Trainer, "trainer", EntityId: 0),
+        [57] = new TileDefinition(57, "BugCatcher", false, "#dc143c", TileCategory.Trainer, "trainer", EntityId: 10),
+        [58] = new TileDefinition(58, "Camper", false, "#dc143c", TileCategory.Trainer, "trainer", EntityId: 12),
+        [59] = new TileDefinition(59, "Hiker", false, "#dc143c", TileCategory.Trainer, "trainer", EntityId: 13),
+        [60] = new TileDefinition(60, "Lass", false, "#b22222", TileCategory.Trainer, "trainer", EntityId: 15),
+        [61] = new TileDefinition(61, "GymLeaderA", false, "#8b0000", TileCategory.Trainer, "gym_leader", EntityId: 300),
+        [62] = new TileDefinition(62, "EliteTrainer", false, "#4b0082", TileCategory.Trainer, "elite_four", EntityId: 302),
+        [63] = new TileDefinition(63, "Champion", false, "#ffd700", TileCategory.Trainer, "champion", EntityId: 303),
+        [64] = new TileDefinition(64, "VillainGrunt", false, "#2f4f4f", TileCategory.Trainer, "team_rocket", EntityId: 400),
+        [65] = new TileDefinition(65, "VillainGruntB", false, "#00bfff", TileCategory.Trainer, "team_aqua", EntityId: 401),
+        [66] = new TileDefinition(66, "VillainBoss", false, "#ff4500", TileCategory.Trainer, "team_magma", EntityId: 402),
+        [67] = new TileDefinition(67, "Scientist", false, "#483d8b", TileCategory.Trainer, "team_galactic", EntityId: 105),
+        [68] = new TileDefinition(68, "Ranger", false, "#87cefa", TileCategory.Trainer, "team_plasma", EntityId: 109),
+        [69] = new TileDefinition(69, "Fisher", false, "#ff6347", TileCategory.Trainer, "team_flare", EntityId: 107),
+        [70] = new TileDefinition(70, "Child", false, "#2f2f2f", TileCategory.Trainer, "team_skull", EntityId: 500),
+        [71] = new TileDefinition(71, "Elder", false, "#ff1493", TileCategory.Trainer, "team_yell", EntityId: 502),
 
         // Encounter (72-79)
         [72] = new TileDefinition(72, "TallGrass", true, "#5a9c3a", TileCategory.Encounter, "wild_encounter"),
@@ -117,44 +114,32 @@ public static class TileRegistry
         [94] = new TileDefinition(94, "Waterfall", false, "#4090ff", TileCategory.Structure, "waterfall_hm"),
         [95] = new TileDefinition(95, "Whirlpool", false, "#3080e8", TileCategory.Structure, "whirlpool_hm"),
 
-        // Item (96-103)
-        [96] = new TileDefinition(96, "Pokeball", true, "#ff0000", TileCategory.Item, "item_pokeball"),
-        [97] = new TileDefinition(97, "Potion", true, "#9370db", TileCategory.Item, "item_potion"),
-        [98] = new TileDefinition(98, "Revive", true, "#ffd700", TileCategory.Item, "item_revive"),
-        [99] = new TileDefinition(99, "RareCandy", true, "#00ffff", TileCategory.Item, "item_rare_candy"),
-        [100] = new TileDefinition(100, "TM", true, "#cd853f", TileCategory.Item, "item_tm"),
-        [101] = new TileDefinition(101, "HM", true, "#daa520", TileCategory.Item, "item_hm"),
-        [102] = new TileDefinition(102, "KeyItem", true, "#ffa500", TileCategory.Item, "item_key"),
-        [103] = new TileDefinition(103, "Berry", true, "#ff6b6b", TileCategory.Item, "item_berry"),
+        // Items (96-111) → ItemRegistry IDs
+        [96] = new TileDefinition(96, "Pokeball", true, "#ff0000", TileCategory.Item, "item", EntityId: 0),
+        [97] = new TileDefinition(97, "GreatBall", true, "#ff0000", TileCategory.Item, "item", EntityId: 1),
+        [98] = new TileDefinition(98, "UltraBall", true, "#ff0000", TileCategory.Item, "item", EntityId: 2),
+        [99] = new TileDefinition(99, "MasterBall", true, "#ff0000", TileCategory.Item, "item", EntityId: 3),
+        [100] = new TileDefinition(100, "Potion", true, "#9370db", TileCategory.Item, "item", EntityId: 100),
+        [101] = new TileDefinition(101, "SuperPotion", true, "#9370db", TileCategory.Item, "item", EntityId: 101),
+        [102] = new TileDefinition(102, "HyperPotion", true, "#9370db", TileCategory.Item, "item", EntityId: 102),
+        [103] = new TileDefinition(103, "FullRestore", true, "#9370db", TileCategory.Item, "item", EntityId: 104),
+        [104] = new TileDefinition(104, "FireStone", true, "#ffa500", TileCategory.Item, "item", EntityId: 300),
+        [105] = new TileDefinition(105, "WaterStone", true, "#00bfff", TileCategory.Item, "item", EntityId: 301),
+        [106] = new TileDefinition(106, "ThunderStone", true, "#ffff00", TileCategory.Item, "item", EntityId: 302),
+        [107] = new TileDefinition(107, "LeafStone", true, "#00ff00", TileCategory.Item, "item", EntityId: 303),
+        [108] = new TileDefinition(108, "MoonStone", true, "#c0c0c0", TileCategory.Item, "item", EntityId: 304),
+        [109] = new TileDefinition(109, "SunStone", true, "#ffd700", TileCategory.Item, "item", EntityId: 305),
+        [110] = new TileDefinition(110, "Berry", true, "#ff6b6b", TileCategory.Item, "item", EntityId: 200),
+        [111] = new TileDefinition(111, "Apple", true, "#ff0000", TileCategory.Item, "item", EntityId: 500),
     };
 
-    /// <summary>
-    /// Gets a tile definition by its ID.
-    /// </summary>
-    /// <param name="id">The tile ID.</param>
-    /// <returns>The tile definition, or null if not found.</returns>
-    public static TileDefinition? GetTile(int id)
-    {
-        return _tiles.TryGetValue(id, out var tile) ? tile : null;
-    }
+    public static TileDefinition? GetTile(int id) =>
+        _tiles.TryGetValue(id, out var tile) ? tile : null;
 
-    /// <summary>
-    /// Gets all tile definitions belonging to a specific category.
-    /// </summary>
-    /// <param name="category">The category to filter by.</param>
-    /// <returns>An enumerable of matching tile definitions.</returns>
-    public static IEnumerable<TileDefinition> GetTilesByCategory(TileCategory category)
-    {
-        return _tiles.Values.Where(t => t.Category == category);
-    }
+    public static IEnumerable<TileDefinition> GetTilesByCategory(TileCategory category) =>
+        _tiles.Values.Where(t => t.Category == category);
 
-    /// <summary>
-    /// Gets all registered tile definitions.
-    /// </summary>
     public static IEnumerable<TileDefinition> AllTiles => _tiles.Values;
 
-    /// <summary>
-    /// Gets the total number of registered tiles.
-    /// </summary>
     public static int Count => _tiles.Count;
 }

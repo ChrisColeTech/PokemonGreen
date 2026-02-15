@@ -11,6 +11,7 @@ import {
   parseCSharpMap,
   UNKNOWN_TILE,
 } from '../services/registryService'
+import { generateMapClass, exportRegistryJson } from '../services/codeGenService'
 
 function createGrid(width: number, height: number): number[][] {
   return Array.from({ length: height }, () => Array(width).fill(1))
@@ -64,6 +65,8 @@ interface EditorState {
   importJson: (json: string) => void
   importCSharpMap: (source: string) => void
   exportJson: () => string
+  exportCSharp: () => string
+  exportRegistryJson: () => string
 
   // Actions — selection
   selectTile: (id: number) => void
@@ -261,6 +264,16 @@ export const useEditorStore = create<EditorState>()(
       }
 
       return JSON.stringify(data, null, 2)
+    },
+
+    exportCSharp: () => {
+      const { mapData, mapWidth, mapHeight, cellSize, mapName, tilesById } = get()
+      return generateMapClass(mapData, mapWidth, mapHeight, mapName, cellSize, tilesById as Map<number, EditorTileDefinition>)
+    },
+
+    exportRegistryJson: () => {
+      const { registry } = get()
+      return exportRegistryJson(registry as EditorTileRegistry)
     },
 
     selectTile: (id) => set(state => {

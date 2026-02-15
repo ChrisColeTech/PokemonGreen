@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { parseRegistryJson, parseCSharpRegistry } from '../../services/registryService'
+import { toPascalCase } from '../../services/codeGenService'
 
 interface MenuItem {
   label: string
@@ -17,7 +18,7 @@ interface MenuDefinition {
 }
 
 function downloadFile(filename: string, content: string) {
-  const blob = new Blob([content], { type: 'application/json' })
+  const blob = new Blob([content], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -38,6 +39,8 @@ export function MenuBar() {
   const importJson = useEditorStore(s => s.importJson)
   const exportJson = useEditorStore(s => s.exportJson)
   const importCSharpMap = useEditorStore(s => s.importCSharpMap)
+  const exportCSharp = useEditorStore(s => s.exportCSharp)
+  const exportRegistryJson = useEditorStore(s => s.exportRegistryJson)
   const clear = useEditorStore(s => s.clear)
   const setRegistry = useEditorStore(s => s.setRegistry)
 
@@ -85,6 +88,18 @@ export function MenuBar() {
     const json = exportJson()
     const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
     downloadFile(`${mapId}.map.json`, json)
+  }
+
+  function handleExportCSharp() {
+    const code = exportCSharp()
+    const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    const className = toPascalCase(mapId) || 'UntitledMap'
+    downloadFile(`${className}.g.cs`, code)
+  }
+
+  function handleExportRegistryJson() {
+    const json = exportRegistryJson()
+    downloadFile('tile-registry.json', json)
   }
 
   function handleLoadRegistry() {
@@ -135,10 +150,12 @@ export function MenuBar() {
         { separator: true, label: '' },
         { label: 'Import Map (JSON)...', onClick: handleImport },
         { label: 'Import Map (C#)...', onClick: handleImportCSharp },
-        { label: 'Export JSON', onClick: handleExportJson },
+        { label: 'Export Map (JSON)', onClick: handleExportJson },
+        { label: 'Export Map (C#)', onClick: handleExportCSharp },
         { separator: true, label: '' },
         { label: 'Load Registry (JSON)...', onClick: handleLoadRegistry },
         { label: 'Load Registry (C#)...', onClick: handleLoadCSharpRegistry },
+        { label: 'Export Registry (JSON)', onClick: handleExportRegistryJson },
       ],
     },
     {

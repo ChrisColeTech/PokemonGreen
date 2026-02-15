@@ -196,7 +196,7 @@ public static class TileRenderer
         // NPCs and Trainers (48-71)
         if (TileSpriteMapping.IsNPCTile(tileId))
         {
-            var spriteName = TileSpriteMapping.GetNPCSprite(tileId);
+            var spriteName = TileSpriteMapping.GetSpriteName(tileId);
             if (spriteName != null)
             {
                 var npcTexture = TextureStore.GetTexture(spriteName);
@@ -212,10 +212,10 @@ public static class TileRenderer
             return;
         }
 
-        // Items (96-103)
+        // Items (96-111)
         if (TileSpriteMapping.IsItemTile(tileId))
         {
-            var spriteName = TileSpriteMapping.GetItemSprite(tileId);
+            var spriteName = TileSpriteMapping.GetSpriteName(tileId);
             if (spriteName != null)
             {
                 var itemTexture = TextureStore.GetTexture(spriteName);
