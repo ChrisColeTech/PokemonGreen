@@ -53,7 +53,7 @@ export default function InfoBar() {
         <input
           type="file"
           multiple
-          accept=".dae,.obj,.mtl,.png,.jpg,.jpeg,.bmp"
+          accept=".dae,.obj,.fbx,.mtl,.png,.jpg,.jpeg,.bmp"
           onChange={handleFileInput}
           style={{ display: 'none' }}
         />

@@ -50,12 +50,12 @@ public class BattleModelData : IDisposable
     public Vector3 BoundsMin { get; set; } = new(float.MaxValue);
     public Vector3 BoundsMax { get; set; } = new(float.MinValue);
 
-    public void Draw(GraphicsDevice device, BasicEffect effect)
+    public void Draw(GraphicsDevice device, Effect effect)
     {
         foreach (var mesh in Meshes)
         {
             if (mesh.Texture != null)
-                effect.Texture = mesh.Texture;
+                effect.Parameters["Texture"]?.SetValue(mesh.Texture);
 
             device.SetVertexBuffer(mesh.VertexBuffer);
             device.Indices = mesh.IndexBuffer;
@@ -89,7 +89,8 @@ public static class BattleModelLoader
         var scene = importer.ImportFile(daeFilePath,
             PostProcessSteps.Triangulate |
             PostProcessSteps.GenerateSmoothNormals |
-            PostProcessSteps.FlipUVs);
+            PostProcessSteps.FlipUVs |
+            PostProcessSteps.PreTransformVertices);
 
         if (scene == null || scene.SceneFlags.HasFlag(SceneFlags.Incomplete))
             throw new InvalidOperationException($"Failed to load model: {daeFilePath}");

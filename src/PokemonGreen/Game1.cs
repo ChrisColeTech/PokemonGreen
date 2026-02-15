@@ -57,11 +57,13 @@ public class Game1 : Game
     // Pause menu
     private readonly MenuBox _pauseMenuBox = new() { Columns = 1, UseStandardStyle = true };
 
-    // Battle 3D scene
-    private BattleModelData? _battleBG;
-    private BattleModelData? _battlePlatformAlly;
-    private BattleModelData? _battlePlatformFoe;
-    private BasicEffect? _battleEffect;
+    // Battle 3D scene — all loaded background sets keyed by enum
+    private readonly Dictionary<BattleBackground, (BattleModelData bg, BattleModelData ally, BattleModelData foe)>
+        _battleScenes = new();
+    private BattleModelData? _activeBattleBG;
+    private BattleModelData? _activePlatformAlly;
+    private BattleModelData? _activePlatformFoe;
+    private AlphaTestEffect? _battleEffect;
 
     // Battle camera animation
     private static readonly Vector3 BattleCamFoe = new(6.9f, 7f, 4.6f);   // zoomed on foe
@@ -82,7 +84,7 @@ public class Game1 : Game
     private bool _windowResized;
 
     // Set to true to launch directly into the battle screen for debugging.
-    private const bool DebugStartInBattle = true;
+    private const bool DebugStartInBattle = false;
 
     public Game1()
     {
@@ -199,26 +201,60 @@ public class Game1 : Game
 
         try
         {
-            string bgPath = Path.Combine(basePath, "Grass", "Grass.dae");
-            _battleBG = BattleModelLoader.Load(bgPath, GraphicsDevice);
-            LogModelBounds("Grass.dae", _battleBG);
+            // Cache models that are reused across sets to avoid double-loading
+            var modelCache = new Dictionary<string, BattleModelData>();
 
-            string allyPath = Path.Combine(basePath, "PlatformGrassAlly", "GrassAlly.dae");
-            _battlePlatformAlly = BattleModelLoader.Load(allyPath, GraphicsDevice);
-            LogModelBounds("GrassAlly.dae", _battlePlatformAlly);
-
-            string foePath = Path.Combine(basePath, "PlatformGrassFoe", "GrassFoe.dae");
-            _battlePlatformFoe = BattleModelLoader.Load(foePath, GraphicsDevice);
-            LogModelBounds("GrassFoe.dae", _battlePlatformFoe);
-
-            // Set up the 3D effect
-            _battleEffect = new BasicEffect(GraphicsDevice)
+            BattleModelData LoadModel(string relativePath)
             {
-                TextureEnabled = true,
-                LightingEnabled = true,
-                AmbientLightColor = new Vector3(0.85f, 0.85f, 0.85f),
+                if (modelCache.TryGetValue(relativePath, out var cached))
+                    return cached;
+                var model = BattleModelLoader.Load(Path.Combine(basePath, relativePath), GraphicsDevice);
+                LogModelBounds(relativePath, model);
+                modelCache[relativePath] = model;
+                return model;
+            }
+
+            // Grass background + Grass platforms
+            _battleScenes[BattleBackground.Grass] = (
+                LoadModel("Grass/Grass.dae"),
+                LoadModel("PlatformGrassAlly/GrassAlly.dae"),
+                LoadModel("PlatformGrassFoe/GrassFoe.dae"));
+
+            // TallGrass shares the Grass background, different platforms
+            _battleScenes[BattleBackground.TallGrass] = (
+                LoadModel("Grass/Grass.dae"),
+                LoadModel("PlatformTallGrassAlly/TallGrassAlly.dae"),
+                LoadModel("PlatformTallGrassFoe/TallGrassFoe.dae"));
+
+            // Cave background + Cave platforms
+            _battleScenes[BattleBackground.Cave] = (
+                LoadModel("Cave/Cave.dae"),
+                LoadModel("PlatformCaveAlly/CaveAlly.dae"),
+                LoadModel("PlatformCaveFoe/CaveFoe.dae"));
+
+            // Dark background + Dark platform (same model for both ally and foe)
+            _battleScenes[BattleBackground.Dark] = (
+                LoadModel("Dark/Dark.dae"),
+                LoadModel("PlatformDark/Dark.dae"),
+                LoadModel("PlatformDark/Dark.dae"));
+
+            // Default active set to Grass
+            if (_battleScenes.TryGetValue(BattleBackground.Grass, out var grass))
+            {
+                _activeBattleBG = grass.bg;
+                _activePlatformAlly = grass.ally;
+                _activePlatformFoe = grass.foe;
+            }
+
+            // Set up the 3D effect — AlphaTestEffect discards transparent pixels
+            // before depth-write, fixing leaf/shadow overlays on TallGrass etc.
+            _battleEffect = new AlphaTestEffect(GraphicsDevice)
+            {
+                VertexColorEnabled = false,
+                Alpha = 1f,
+                ReferenceAlpha = 128,
+                AlphaFunction = CompareFunction.GreaterEqual,
             };
-            _battleEffect.EnableDefaultLighting();
         }
         catch (Exception ex)
         {
@@ -527,7 +563,7 @@ public class Game1 : Game
     private void DrawBattlePlaceholder()
     {
         // ── 3D scene (actual viewport resolution) ──
-        if (_battleEffect != null && _battleBG != null)
+        if (_battleEffect != null && _activeBattleBG != null)
         {
             DrawBattle3D();
         }
@@ -710,28 +746,26 @@ public class Game1 : Game
 
         _battleEffect!.View = view;
         _battleEffect.Projection = projection;
-        _battleEffect.TextureEnabled = true;
-        _battleEffect.LightingEnabled = false;
         _battleEffect.VertexColorEnabled = false;
         _battleEffect.Alpha = 1f;
+        _battleEffect.DiffuseColor = Vector3.One;
 
         // Background at origin
         _battleEffect.World = Matrix.Identity;
-        _battleEffect.DiffuseColor = Vector3.One;
-        _battleBG!.Draw(device, _battleEffect);
+        _activeBattleBG!.Draw(device, _battleEffect);
 
         // Foe platform at (0, -0.20, -15)
-        if (_battlePlatformFoe != null)
+        if (_activePlatformFoe != null)
         {
             _battleEffect.World = Matrix.CreateTranslation(0f, -0.20f, -15f);
-            _battlePlatformFoe.Draw(device, _battleEffect);
+            _activePlatformFoe.Draw(device, _battleEffect);
         }
 
         // Ally platform at (0, -0.20, 3)
-        if (_battlePlatformAlly != null)
+        if (_activePlatformAlly != null)
         {
             _battleEffect.World = Matrix.CreateTranslation(0f, -0.20f, 3f);
-            _battlePlatformAlly.Draw(device, _battleEffect);
+            _activePlatformAlly.Draw(device, _battleEffect);
         }
 
         // Reset state for 2D rendering
@@ -838,6 +872,15 @@ public class Game1 : Game
                 _battleMessageBox.Show("What will you do?");
             },
             exitBattle: () => _gameWorld.ExitBattle());
+
+        // Select the battle background set based on encounter type
+        var bgType = _gameWorld.CurrentBattleBackground;
+        if (_battleScenes.TryGetValue(bgType, out var scene))
+        {
+            _activeBattleBG = scene.bg;
+            _activePlatformAlly = scene.ally;
+            _activePlatformFoe = scene.foe;
+        }
 
         _battleCamPos = BattleCamFoe;
         _battleCamLerp = 1f;

@@ -54,7 +54,7 @@ export default function DropZone() {
       ) : (
         <>
           <span style={{ color: '#888', fontSize: 16 }}>
-            Drop a folder or files here (.dae / .obj + textures)
+            Drop a folder or files here (.dae / .obj / .fbx + textures)
           </span>
           <span style={{ color: '#555', fontSize: 12 }}>or</span>
           <label
@@ -71,7 +71,7 @@ export default function DropZone() {
             <input
               type="file"
               multiple
-              accept=".dae,.obj,.mtl,.png,.jpg,.jpeg,.bmp"
+              accept=".dae,.obj,.fbx,.mtl,.png,.jpg,.jpeg,.bmp"
               onChange={handleFileInput}
               style={{ display: 'none' }}
             />

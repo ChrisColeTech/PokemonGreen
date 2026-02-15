@@ -1,3 +1,4 @@
+using PokemonGreen.Core.Battle;
 using PokemonGreen.Core.Maps;
 using PokemonGreen.Core.Systems;
 using PlayerDirection = PokemonGreen.Core.Player.Direction;
@@ -29,6 +30,7 @@ public class GameWorld
     public float FadeAlpha { get; private set; }
     public float FadeWhiteAlpha { get; private set; }
     public bool IsTransitioning => _transitionState != TransitionState.None;
+    public BattleBackground CurrentBattleBackground { get; private set; }
 
     // ── Transition internals ──────────────────────────────────────────
     private enum TransitionState { None, FadingOut, FadingIn, FlashWhite, FadingToBattle, FadingFromBattle }
@@ -321,8 +323,30 @@ public class GameWorld
 
     private void BeginBattleTransition()
     {
+        CurrentBattleBackground = BattleBackgroundResolver.FromOverlayBehavior(
+            GetEncounterBehavior(Player.TileX, Player.TileY));
         _transitionState = TransitionState.FlashWhite;
         _fadeTimer = 0f;
+    }
+
+    private string? GetEncounterBehavior(int x, int y)
+    {
+        for (int checkY = y; checkY <= y + 1 && checkY < CurrentMap!.Height; checkY++)
+        {
+            int overlayTile = CurrentMap.GetOverlayTile(x, checkY);
+            if (overlayTile >= 0)
+            {
+                var def = TileRegistry.GetTile(overlayTile);
+                if (def?.Category == TileCategory.Encounter)
+                    return def.OverlayBehavior;
+            }
+
+            var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, checkY));
+            if (baseDef?.Category == TileCategory.Encounter)
+                return baseDef.OverlayBehavior;
+        }
+
+        return null;
     }
 
     /// <summary>

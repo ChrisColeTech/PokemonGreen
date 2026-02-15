@@ -188,7 +188,7 @@ public static class TileRenderer
    
         int worldX = tileX * tileSize;
         int worldY = tileY * tileSize;
-        int objSize = tileSize - tileSize/3;
+        int objSize = tileSize - tileSize/2;
     
         // Tall grass or flames: single layer at player's feet, double layer elsewhere
         if (tileId == 72 || tileId == 121)

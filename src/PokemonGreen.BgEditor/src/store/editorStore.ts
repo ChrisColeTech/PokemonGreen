@@ -33,7 +33,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   loadFiles: async (files: File[]) => {
     set({ loading: true, error: null })
     try {
-      const modelFile = files.find(f => f.name.endsWith('.dae') || f.name.endsWith('.obj'))
+      const modelFile = files.find(f => /\.(dae|obj|fbx)$/i.test(f.name))
       const result = await loadSceneFromFiles(files)
       set({
         scene: result.scene,
