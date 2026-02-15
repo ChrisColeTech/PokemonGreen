@@ -232,6 +232,64 @@ public class GameWorld
 
     // ── Edge transition logic ─────────────────────────────────────────
 
+    // Transition tile IDs (must match tile registry)
+    private const int TransitionNorthId = 112;
+    private const int TransitionSouthId = 113;
+    private const int TransitionWestId  = 114;
+    private const int TransitionEastId  = 115;
+
+    private static bool IsTransitionTileForEdge(int tileId, MapEdge edge) => edge switch
+    {
+        MapEdge.North => tileId == TransitionNorthId,
+        MapEdge.South => tileId == TransitionSouthId,
+        MapEdge.West  => tileId == TransitionWestId,
+        MapEdge.East  => tileId == TransitionEastId,
+        _ => false
+    };
+
+    // Get the receiving transition tile ID for the opposite edge
+    private static int ReceivingTileId(MapEdge sourceEdge) => sourceEdge switch
+    {
+        MapEdge.North => TransitionSouthId,  // crossing north → land on south transition
+        MapEdge.South => TransitionNorthId,
+        MapEdge.West  => TransitionEastId,
+        MapEdge.East  => TransitionWestId,
+        _ => -1
+    };
+
+    private static bool TryFindReceivingTransition(MapDefinition target, MapEdge sourceEdge, out int tx, out int ty)
+    {
+        int receivingId = ReceivingTileId(sourceEdge);
+        tx = 0; ty = 0;
+
+        // Scan the target's opposite edge for the receiving transition tile,
+        // then spawn the player one tile inward so they aren't right on the edge.
+        switch (sourceEdge)
+        {
+            case MapEdge.North: // scan target's south edge, spawn one tile up
+                for (int x = 0; x < target.Width; x++)
+                    if (target.GetBaseTile(x, target.Height - 1) == receivingId)
+                    { tx = x; ty = target.Height - 2; return true; }
+                break;
+            case MapEdge.South: // scan target's north edge, spawn one tile down
+                for (int x = 0; x < target.Width; x++)
+                    if (target.GetBaseTile(x, 0) == receivingId)
+                    { tx = x; ty = 1; return true; }
+                break;
+            case MapEdge.West: // scan target's east edge, spawn one tile left
+                for (int y = 0; y < target.Height; y++)
+                    if (target.GetBaseTile(target.Width - 1, y) == receivingId)
+                    { tx = target.Width - 2; ty = y; return true; }
+                break;
+            case MapEdge.East: // scan target's west edge, spawn one tile right
+                for (int y = 0; y < target.Height; y++)
+                    if (target.GetBaseTile(0, y) == receivingId)
+                    { tx = 1; ty = y; return true; }
+                break;
+        }
+        return false;
+    }
+
     private bool IsAtMapEdge(MapEdge edge)
     {
         return edge switch
@@ -246,21 +304,29 @@ public class GameWorld
 
     private bool TryEdgeTransition(MapEdge edge, int playerX, int playerY)
     {
-        MapDefinition? target = null;
+        // Check if player is on a transition tile matching this edge direction
+        int baseTile = CurrentMapDefinition!.GetBaseTile(playerX, playerY);
+        if (!IsTransitionTileForEdge(baseTile, edge))
+            return false;
 
-        // Check explicit per-map connection first.
-        var conn = CurrentMapDefinition!.GetConnection(edge);
+        // Find the neighbor map
+        MapDefinition? target = null;
+        var conn = CurrentMapDefinition.GetConnection(edge);
         if (conn != null)
             MapCatalog.TryGetMap(conn.TargetMapId, out target);
-
-        // Fall back to auto-neighbor from world grid position.
         target ??= MapCatalog.GetNeighbor(CurrentMapDefinition, edge);
-
         if (target == null)
             return false;
 
+        // Find the receiving transition tile on the target's opposite edge
+        if (TryFindReceivingTransition(target, edge, out int tx, out int ty))
+        {
+            BeginTransition(new WarpConnection(0, 0, target.Id, tx, ty));
+            return true;
+        }
+
+        // Fallback: mirror position (backward compat)
         int offset = conn?.Offset ?? 0;
-        int tx, ty;
         switch (edge)
         {
             case MapEdge.North: tx = playerX + offset; ty = target.Height - 1; break;
@@ -269,10 +335,8 @@ public class GameWorld
             case MapEdge.East:  tx = 0;                  ty = playerY + offset; break;
             default: return false;
         }
-
         tx = Math.Clamp(tx, 0, target.Width - 1);
         ty = Math.Clamp(ty, 0, target.Height - 1);
-
         BeginTransition(new WarpConnection(0, 0, target.Id, tx, ty));
         return true;
     }

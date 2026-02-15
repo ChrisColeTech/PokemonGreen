@@ -96,7 +96,7 @@ export function parseCSharpRegistry(source: string): EditorTileRegistry {
   }
 
   // Derive categories from what we found, preserving enum order
-  const categoryOrder = ['terrain', 'decoration', 'interactive', 'entity', 'trainer', 'encounter', 'structure', 'item']
+  const categoryOrder = ['terrain', 'decoration', 'interactive', 'entity', 'trainer', 'encounter', 'structure', 'item', 'transition']
   const categories: EditorCategoryDefinition[] = categoryOrder
     .filter(c => categorySet.has(c))
     .map(c => ({
@@ -131,6 +131,8 @@ export interface ParsedCSharpMap {
   width: number
   height: number
   tileSize: number
+  worldX: number
+  worldY: number
   mapData: number[][]
 }
 
@@ -196,7 +198,17 @@ export function parseCSharpMap(source: string): ParsedCSharpMap {
     }
   }
 
-  return { worldId, mapId, displayName, width, height, tileSize, mapData }
+  // Extract worldX/worldY from constructor: ..., null, null, worldX, worldY)
+  let worldX = 0
+  let worldY = 0
+  const worldPosPattern = /WalkableTileIds\s*,\s*null\s*,\s*null\s*,\s*(-?\d+)\s*,\s*(-?\d+)/
+  const worldPosMatch = worldPosPattern.exec(source)
+  if (worldPosMatch) {
+    worldX = parseInt(worldPosMatch[1])
+    worldY = parseInt(worldPosMatch[2])
+  }
+
+  return { worldId, mapId, displayName, width, height, tileSize, worldX, worldY, mapData }
 }
 
 // --- Derived lookups ---

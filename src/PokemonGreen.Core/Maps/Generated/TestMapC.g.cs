@@ -6,7 +6,7 @@ public sealed class TestMapC : MapDefinition
 {
     private static readonly int[] BaseTileData =
     [
-        0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 
+        0, 0, 1, 1, 1, 1, 1, 1, 112, 1, 1, 1, 1, 1, 0, 0,
         0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
         0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
         0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
@@ -26,10 +26,10 @@ public sealed class TestMapC : MapDefinition
 
     private static readonly int?[] OverlayTileData =
     [
-        null, null,   80, null, null,   23, null, null, null, null, null, null, null,   80, null, null, 
-        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
-        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
-        null, null,   80, null,   16, null, null, null, null, null, null, null, null,   80, null, null, 
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null,
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null,
+        null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null,
+        null, null,   80, null,   16, null, null, null, null, null, null, null, null,   80, null, null,
         null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
         null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
         null, null,   80, null, null, null, null, null, null, null, null, null, null,   80, null, null, 
@@ -46,7 +46,7 @@ public sealed class TestMapC : MapDefinition
 
     private static readonly int[] WalkableTileIds =
     [
-        1, 2, 18
+        1, 2, 18, 112
     ];
 
     public static TestMapC Instance { get; } = new();

@@ -178,6 +178,7 @@ function toCSharpCategory(category: string): string {
     encounter: 'Encounter',
     structure: 'Structure',
     item: 'Item',
+    transition: 'Transition',
   }
   return map[category] ?? 'Terrain'
 }

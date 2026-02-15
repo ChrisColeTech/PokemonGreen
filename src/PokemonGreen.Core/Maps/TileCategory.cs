@@ -27,5 +27,8 @@ public enum TileCategory
     Structure,
 
     /// <summary>Item pickup tiles.</summary>
-    Item
+    Item,
+
+    /// <summary>Transition tiles for map edge crossings.</summary>
+    Transition
 }

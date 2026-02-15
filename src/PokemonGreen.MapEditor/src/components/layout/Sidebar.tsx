@@ -13,6 +13,14 @@ import { useEditorStore } from '../../store/editorStore'
 import { paletteCategories, tilesForCategory, buildingWidth, buildingHeight } from '../../services/registryService'
 import { MAP_TEMPLATES, TEMPLATE_CATEGORIES, loadTemplate, type MapTemplate } from '../../data/templates'
 
+const GRID_POSITIONS = [
+  { id: 'center', label: 'Center',  x:  0, y:  0 },
+  { id: 'up',     label: 'Up',      x:  0, y: -1 },
+  { id: 'down',   label: 'Down',    x:  0, y:  1 },
+  { id: 'left',   label: 'Left',    x: -1, y:  0 },
+  { id: 'right',  label: 'Right',   x:  1, y:  0 },
+]
+
 type SectionId = 'palette' | 'controls'
 
 function SectionHeader({
@@ -255,13 +263,31 @@ function ControlsSection() {
           style={{ ...inputStyle, display: 'block', marginTop: 2 }}
         />
       </label>
+      <label style={{ fontSize: 10, color: '#808080' }}>
+        Grid Position
+        <select
+          value={GRID_POSITIONS.find(p => p.x === worldX && p.y === worldY)?.id ?? 'custom'}
+          onChange={e => {
+            const pos = GRID_POSITIONS.find(p => p.id === e.target.value)
+            if (pos) { setWorldX(pos.x); setWorldY(pos.y) }
+          }}
+          style={{ ...inputStyle, display: 'block', marginTop: 2 }}
+        >
+          {GRID_POSITIONS.map(p => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
+          {!GRID_POSITIONS.some(p => p.x === worldX && p.y === worldY) && (
+            <option value="custom">Custom ({worldX}, {worldY})</option>
+          )}
+        </select>
+      </label>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
         <label style={{ fontSize: 10, color: '#808080' }}>
-          World X
+          X
           <input type="number" value={worldX} onChange={e => setWorldX(+e.target.value)} style={inputStyle} />
         </label>
         <label style={{ fontSize: 10, color: '#808080' }}>
-          World Y
+          Y
           <input type="number" value={worldY} onChange={e => setWorldY(+e.target.value)} style={inputStyle} />
         </label>
       </div>

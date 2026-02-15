@@ -267,6 +267,8 @@ export const useEditorStore = create<EditorState>()(
           state.mapName = parsed.displayName
           state.cellSize = parsed.tileSize
           state.worldId = parsed.worldId
+          state.worldX = parsed.worldX
+          state.worldY = parsed.worldY
         })
       } catch (err) {
         alert(`Invalid C# map: ${err instanceof Error ? err.message : 'Unknown error'}`)

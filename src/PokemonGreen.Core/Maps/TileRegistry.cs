@@ -131,6 +131,12 @@ public static class TileRegistry
         [109] = new TileDefinition(109, "SunStone", true, "#ffd700", TileCategory.Item, "item", EntityId: 305),
         [110] = new TileDefinition(110, "Berry", true, "#ff6b6b", TileCategory.Item, "item", EntityId: 200),
         [111] = new TileDefinition(111, "Apple", true, "#ff0000", TileCategory.Item, "item", EntityId: 500),
+
+        // Transition (112-115)
+        [112] = new TileDefinition(112, "Transition North", true, "#00cc88", TileCategory.Terrain),
+        [113] = new TileDefinition(113, "Transition South", true, "#00aaff", TileCategory.Terrain),
+        [114] = new TileDefinition(114, "Transition West", true, "#ff8800", TileCategory.Terrain),
+        [115] = new TileDefinition(115, "Transition East", true, "#cc44ff", TileCategory.Terrain),
     };
 
     public static TileDefinition? GetTile(int id) =>
