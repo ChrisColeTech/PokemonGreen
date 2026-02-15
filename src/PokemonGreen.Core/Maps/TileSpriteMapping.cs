@@ -5,32 +5,32 @@ public static class TileSpriteMapping
     private static readonly Dictionary<int, string> _npcSprites = new()
     {
         // Entity NPCs (48-55)
-        [48] = "npc_youngster",
-        [49] = "npc_nurse",
-        [50] = "npc_nurse",
-        [51] = "npc_youngster",
-        [52] = "npc_hiker",
-        [53] = "npc_youngster",
-        [54] = "npc_youngster",
-        [55] = "npc_nurse",
+        [48] = "pokemon_civilian_villager_a",
+        [49] = "pokemon_specialist_clerk_a",
+        [50] = "pokemon_specialist_nurse_a",
+        [51] = "pokemon_shop_clerk",
+        [52] = "pokemon_story_gym_leader_a",
+        [53] = "pokemon_story_rival_a",
+        [54] = "pokemon_story_professor_a",
+        [55] = "pokemon_story_mom_a",
         
         // Trainers (56-71)
-        [56] = "npc_youngster",
-        [57] = "npc_youngster",
-        [58] = "npc_youngster",
-        [59] = "npc_youngster",
-        [60] = "npc_hiker",
-        [61] = "npc_hiker",
-        [62] = "npc_youngster",
-        [63] = "npc_youngster",
-        [64] = "npc_youngster",
-        [65] = "npc_youngster",
-        [66] = "npc_hiker",
-        [67] = "npc_youngster",
-        [68] = "npc_youngster",
-        [69] = "npc_hiker",
-        [70] = "npc_youngster",
-        [71] = "npc_youngster",
+        [56] = "pokemon_trainer_youngster_a",
+        [57] = "pokemon_trainer_youngster_a",
+        [58] = "pokemon_trainer_youngster_a",
+        [59] = "pokemon_trainer_youngster_a",
+        [60] = "pokemon_trainer_hiker_a",
+        [61] = "pokemon_story_gym_leader_a",
+        [62] = "pokemon_story_elite_trainer_a",
+        [63] = "pokemon_story_champion_a",
+        [64] = "pokemon_story_villain_grunt_a",
+        [65] = "pokemon_story_villain_grunt_a",
+        [66] = "pokemon_story_villain_grunt_a",
+        [67] = "pokemon_story_villain_grunt_a",
+        [68] = "pokemon_story_villain_grunt_a",
+        [69] = "pokemon_story_villain_grunt_a",
+        [70] = "pokemon_story_villain_grunt_a",
+        [71] = "pokemon_story_villain_grunt_a",
     };
     
     private static readonly Dictionary<int, string> _itemSprites = new()
@@ -44,6 +44,16 @@ public static class TileSpriteMapping
         [101] = "megastone_red",
         [102] = "megaring",
         [103] = "berry_red",
+        
+        // Additional item tiles (104-111) - extend as needed
+        [104] = "greatball",
+        [105] = "ultraball",
+        [106] = "masterball",
+        [107] = "superpotion",
+        [108] = "hyperpotion",
+        [109] = "maxpotion",
+        [110] = "fullheal",
+        [111] = "stone_fire",
     };
     
     public static string? GetNPCSprite(int tileId) =>
@@ -53,5 +63,5 @@ public static class TileSpriteMapping
         _itemSprites.TryGetValue(tileId, out var name) ? name : null;
     
     public static bool IsNPCTile(int tileId) => tileId >= 48 && tileId <= 71;
-    public static bool IsItemTile(int tileId) => tileId >= 96 && tileId <= 103;
+    public static bool IsItemTile(int tileId) => tileId >= 96 && tileId <= 111;
 }
