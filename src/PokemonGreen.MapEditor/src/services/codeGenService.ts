@@ -3,7 +3,7 @@ import type { EditorTileRegistry, EditorTileDefinition } from '../types/editor'
 // --- C# class template (from MapClass.tpl) ---
 
 const MAP_CLASS_TEMPLATE = `#nullable enable
-
+{{TILE_LEGEND}}
 namespace PokemonGreen.Core.Maps;
 
 public sealed class {{CLASS_NAME}} : MapDefinition
@@ -66,7 +66,7 @@ function escapeString(input: string): string {
 function isTerrainTile(tileId: number, tilesById: Map<number, EditorTileDefinition>): boolean {
   const tile = tilesById.get(tileId)
   if (!tile) return true
-  return tile.category === 'terrain'
+  return tile.category === 'terrain' || tile.category === 'structure'
 }
 
 // --- Array formatters (matching C# CodeGenerator exactly) ---
@@ -118,6 +118,73 @@ function formatWalkableIds(ids: number[]): string {
   return '        ' + ids.join(', ')
 }
 
+// --- Tile legend ---
+
+function categoryLabel(category: string): string {
+  const map: Record<string, string> = {
+    terrain: 'Terrain',
+    decoration: 'Decoration',
+    interactive: 'Interactive',
+    entity: 'Entity',
+    trainer: 'Trainer',
+    encounter: 'Encounter',
+    structure: 'Structure',
+    item: 'Item',
+    transition: 'Transition',
+  }
+  return map[category] ?? category.charAt(0).toUpperCase() + category.slice(1)
+}
+
+function buildTileLegend(
+  mapData: number[][],
+  w: number,
+  h: number,
+  tilesById: Map<number, EditorTileDefinition>,
+): string {
+  // Collect all unique tile IDs actually used in the map
+  const usedIds = new Set<number>()
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const tileId = mapData[y]?.[x] ?? 0
+      usedIds.add(tileId)
+    }
+  }
+
+  // Non-terrain overlay tiles also cause the default base tile to appear
+  let hasOverlay = false
+  for (const id of usedIds) {
+    if (!isTerrainTile(id, tilesById)) {
+      hasOverlay = true
+      break
+    }
+  }
+  if (hasOverlay) {
+    usedIds.add(DEFAULT_BASE_TILE_ID)
+  }
+
+  const sorted = [...usedIds].sort((a, b) => a - b)
+
+  // Find max width of "ID = Name" portion for alignment
+  const entries = sorted.map(id => {
+    const tile = tilesById.get(id)
+    const name = tile ? tile.name : 'Unknown'
+    const cat = tile ? categoryLabel(tile.category) : 'Unknown'
+    return { id, name, cat }
+  })
+
+  const maxIdWidth = Math.max(...entries.map(e => String(e.id).length))
+
+  const lines: string[] = []
+  lines.push('// Tile Legend:')
+  for (const entry of entries) {
+    const idStr = String(entry.id).padStart(maxIdWidth)
+    lines.push(`//   ${idStr} = ${entry.name} (${entry.cat})`)
+  }
+
+  return '\n' + lines.join('\n')
+}
+
 // --- Main code generator ---
 
 export function generateMapClass(
@@ -151,7 +218,10 @@ export function generateMapClass(
     ? `, null, null, ${worldX}, ${worldY}`
     : ''
 
+  const tileLegend = buildTileLegend(mapData, mapWidth, mapHeight, tilesById)
+
   return MAP_CLASS_TEMPLATE
+    .replace('{{TILE_LEGEND}}', tileLegend)
     .replace(/\{\{CLASS_NAME\}\}/g, className)
     .replace('{{WORLD_ID}}', escapeString(worldId))
     .replace('{{MAP_ID}}', escapeString(mapId))

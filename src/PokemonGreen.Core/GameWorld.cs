@@ -10,7 +10,13 @@ public class GameWorld
     // ── Constants ──────────────────────────────────────────────────────
     public const int TileSize = 16;
     public const float FadeDuration = 0.3f;
+    public const float FlashDuration = 0.15f;
     public const int VisibleTilesY = 5;
+    private const int EncounterChance = 10; // 1 in N chance per step
+
+    // ── Game state ──────────────────────────────────────────────────
+    public enum GameState { Overworld, Battle }
+    public GameState State { get; private set; } = GameState.Overworld;
 
     // ── Public state ──────────────────────────────────────────────────
     public TileMap? CurrentMap { get; private set; }
@@ -21,14 +27,18 @@ public class GameWorld
     public InputManager Input { get; }
     public bool IsInitialized => CurrentMap != null;
     public float FadeAlpha { get; private set; }
+    public float FadeWhiteAlpha { get; private set; }
     public bool IsTransitioning => _transitionState != TransitionState.None;
 
     // ── Transition internals ──────────────────────────────────────────
-    private enum TransitionState { None, FadingOut, FadingIn }
+    private enum TransitionState { None, FadingOut, FadingIn, FlashWhite, FadingToBattle, FadingFromBattle }
 
     private TransitionState _transitionState;
     private float _fadeTimer;
     private WarpConnection? _pendingWarp;
+    private bool _exitingBattle;
+    private int _prevTileX, _prevTileY;
+    private static readonly Random _encounterRandom = new();
 
     // ── Constructor ───────────────────────────────────────────────────
 
@@ -55,6 +65,8 @@ public class GameWorld
         float px = spawnX ?? CurrentMap.Width / 2f;
         float py = spawnY ?? CurrentMap.Height / 2f;
         Player.SetPosition(px, py);
+        _prevTileX = Player.TileX;
+        _prevTileY = Player.TileY;
 
         SnapCamera(px, py);
     }
@@ -67,6 +79,8 @@ public class GameWorld
         float px = map.Width / 2f;
         float py = map.Height / 2f;
         Player.SetPosition(px, py);
+        _prevTileX = Player.TileX;
+        _prevTileY = Player.TileY;
 
         SnapCamera(px, py);
     }
@@ -78,12 +92,16 @@ public class GameWorld
         if (CurrentMap == null)
             return;
 
-        // 1. If fading between maps, advance the fade and return.
+        // 1. If fading/transitioning, advance and return.
         if (_transitionState != TransitionState.None)
         {
             UpdateTransition(deltaTime);
             return;
         }
+
+        // 1b. In battle state, wait for Game1 to call ExitBattle().
+        if (State == GameState.Battle)
+            return;
 
         // 2. Read input.
         Input.Update();
@@ -135,6 +153,20 @@ public class GameWorld
         // 7. Update player.
         Player.Update(deltaTime, CurrentMap);
 
+        // 7b. Encounter check — only when player steps onto a new tile.
+        if (Player.TileX != _prevTileX || Player.TileY != _prevTileY)
+        {
+            _prevTileX = Player.TileX;
+            _prevTileY = Player.TileY;
+
+            if (IsEncounterTile(Player.TileX, Player.TileY)
+                && _encounterRandom.Next(EncounterChance) == 0)
+            {
+                BeginBattleTransition();
+                return;
+            }
+        }
+
         // 8. Check if player is on a step warp tile.
         if (CurrentMapDefinition != null)
         {
@@ -179,6 +211,12 @@ public class GameWorld
         Player.SetPosition(x, y);
     }
 
+    /// <summary>Debug: immediately enter battle state (no transition).</summary>
+    public void DebugEnterBattle()
+    {
+        State = GameState.Battle;
+    }
+
     // ── Transition logic ──────────────────────────────────────────────
 
     private void BeginTransition(WarpConnection warp)
@@ -198,13 +236,20 @@ public class GameWorld
 
             if (_fadeTimer >= FadeDuration)
             {
-                // Load the target map at full black.
+                // Load the target map at full black (map warp).
                 if (_pendingWarp != null)
                 {
                     if (MapCatalog.TryGetMap(_pendingWarp.TargetMapId, out var targetMap) && targetMap != null)
                         LoadMap(targetMap, _pendingWarp.TargetX, _pendingWarp.TargetY);
 
                     _pendingWarp = null;
+                }
+
+                // Switch back to overworld when exiting battle.
+                if (_exitingBattle)
+                {
+                    State = GameState.Overworld;
+                    _exitingBattle = false;
                 }
 
                 _transitionState = TransitionState.FadingIn;
@@ -221,6 +266,81 @@ public class GameWorld
                 _transitionState = TransitionState.None;
             }
         }
+        else if (_transitionState == TransitionState.FlashWhite)
+        {
+            // White flash: ramp up over FlashDuration
+            FadeWhiteAlpha = Math.Min(_fadeTimer / FlashDuration, 1f);
+
+            if (_fadeTimer >= FlashDuration)
+            {
+                _transitionState = TransitionState.FadingToBattle;
+                _fadeTimer = 0f;
+            }
+        }
+        else if (_transitionState == TransitionState.FadingToBattle)
+        {
+            // Fade to black while white flash fades out
+            FadeAlpha = Math.Min(_fadeTimer / FadeDuration, 1f);
+            FadeWhiteAlpha = Math.Max(1f - _fadeTimer / (FadeDuration * 0.5f), 0f);
+
+            if (_fadeTimer >= FadeDuration)
+            {
+                FadeWhiteAlpha = 0f;
+                FadeAlpha = 1f;
+                State = GameState.Battle;
+                _transitionState = TransitionState.FadingFromBattle;
+                _fadeTimer = 0f;
+            }
+        }
+        else if (_transitionState == TransitionState.FadingFromBattle)
+        {
+            // Fade in the battle screen from black
+            FadeAlpha = 1f - Math.Min(_fadeTimer / FadeDuration, 1f);
+
+            if (_fadeTimer >= FadeDuration)
+            {
+                FadeAlpha = 0f;
+                _transitionState = TransitionState.None;
+            }
+        }
+    }
+
+    // ── Battle transition ─────────────────────────────────────────────
+
+    private void BeginBattleTransition()
+    {
+        _transitionState = TransitionState.FlashWhite;
+        _fadeTimer = 0f;
+    }
+
+    /// <summary>
+    /// Called by Game1 when the player clicks the Back button on the battle screen.
+    /// Fades to black, switches back to overworld, fades in.
+    /// </summary>
+    public void ExitBattle()
+    {
+        if (State != GameState.Battle || _transitionState != TransitionState.None)
+            return;
+
+        _exitingBattle = true;
+        _transitionState = TransitionState.FadingOut;
+        _fadeTimer = 0f;
+    }
+
+    private bool IsEncounterTile(int x, int y)
+    {
+        // Check overlay layer first (tall grass is typically placed as overlay)
+        int overlayTile = CurrentMap!.GetOverlayTile(x, y);
+        if (overlayTile >= 0)
+        {
+            var def = TileRegistry.GetTile(overlayTile);
+            if (def?.Category == TileCategory.Encounter)
+                return true;
+        }
+
+        // Also check base layer
+        var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, y));
+        return baseDef?.Category == TileCategory.Encounter;
     }
 
     // ── Camera / zoom helpers ─────────────────────────────────────────
