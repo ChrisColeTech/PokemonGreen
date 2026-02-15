@@ -21,7 +21,7 @@ public static class WorldRegistry
     /// </summary>
     public static void Initialize()
     {
-        Register(new WorldDefinition("small_world", "Small World", "test_map_center", 8, 8));
+        Register(new WorldDefinition("small_world", "Small World", "test_map_b", 8, 8));
     }
 
     /// <summary>

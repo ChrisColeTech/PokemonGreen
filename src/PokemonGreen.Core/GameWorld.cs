@@ -40,6 +40,8 @@ public class GameWorld
     private WarpConnection? _pendingWarp;
     private bool _exitingBattle;
     private int _prevTileX, _prevTileY;
+    private bool _encounterCheckPending;
+    private int _pendingEncTileX, _pendingEncTileY;
     private static readonly Random _encounterRandom = new();
 
     // ── Constructor ───────────────────────────────────────────────────
@@ -155,17 +157,42 @@ public class GameWorld
         // 7. Update player.
         Player.Update(deltaTime, CurrentMap);
 
-        // 7b. Encounter check — only when player steps onto a new tile.
+        // 7b. Encounter check — mark pending when entering an encounter tile,
+        // then trigger only once the player reaches the center of the tile.
         if (Player.TileX != _prevTileX || Player.TileY != _prevTileY)
         {
             _prevTileX = Player.TileX;
             _prevTileY = Player.TileY;
 
-            if (IsEncounterTile(Player.TileX, Player.TileY)
-                && _encounterRandom.Next(EncounterChance) == 0)
+            if (IsEncounterTile(Player.TileX, Player.TileY))
             {
-                BeginBattleTransition();
-                return;
+                _encounterCheckPending = true;
+                _pendingEncTileX = Player.TileX;
+                _pendingEncTileY = Player.TileY;
+            }
+            else
+            {
+                _encounterCheckPending = false;
+            }
+        }
+
+        if (_encounterCheckPending
+            && Player.TileX == _pendingEncTileX
+            && Player.TileY == _pendingEncTileY)
+        {
+            float localX = Player.X - Player.TileX;
+            float localY = Player.Y - Player.TileY;
+
+            // Hitbox matches the visible flame sprite area (upper portion of tile).
+            if (localX >= 0.15f && localX <= 0.85f
+                && localY >= 0.0f && localY <= 0.5f)
+            {
+                _encounterCheckPending = false;
+                if (_encounterRandom.Next(EncounterChance) == 0)
+                {
+                    BeginBattleTransition();
+                    return;
+                }
             }
         }
 
@@ -331,20 +358,17 @@ public class GameWorld
 
     private string? GetEncounterBehavior(int x, int y)
     {
-        for (int checkY = y; checkY <= y + 1 && checkY < CurrentMap!.Height; checkY++)
+        int overlayTile = CurrentMap!.GetOverlayTile(x, y);
+        if (overlayTile >= 0)
         {
-            int overlayTile = CurrentMap.GetOverlayTile(x, checkY);
-            if (overlayTile >= 0)
-            {
-                var def = TileRegistry.GetTile(overlayTile);
-                if (def?.Category == TileCategory.Encounter)
-                    return def.OverlayBehavior;
-            }
-
-            var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, checkY));
-            if (baseDef?.Category == TileCategory.Encounter)
-                return baseDef.OverlayBehavior;
+            var def = TileRegistry.GetTile(overlayTile);
+            if (def?.Category == TileCategory.Encounter)
+                return def.OverlayBehavior;
         }
+
+        var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, y));
+        if (baseDef?.Category == TileCategory.Encounter)
+            return baseDef.OverlayBehavior;
 
         return null;
     }
@@ -365,22 +389,18 @@ public class GameWorld
 
     private bool IsEncounterTile(int x, int y)
     {
-        // Check both the player's tile and their feet tile (y+1),
-        // matching the renderer's grass animation check.
-        for (int checkY = y; checkY <= y + 1 && checkY < CurrentMap!.Height; checkY++)
+        // Check only the player's actual tile position.
+        int overlayTile = CurrentMap!.GetOverlayTile(x, y);
+        if (overlayTile >= 0)
         {
-            int overlayTile = CurrentMap.GetOverlayTile(x, checkY);
-            if (overlayTile >= 0)
-            {
-                var def = TileRegistry.GetTile(overlayTile);
-                if (def?.Category == TileCategory.Encounter)
-                    return true;
-            }
-
-            var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, checkY));
-            if (baseDef?.Category == TileCategory.Encounter)
+            var def = TileRegistry.GetTile(overlayTile);
+            if (def?.Category == TileCategory.Encounter)
                 return true;
         }
+
+        var baseDef = TileRegistry.GetTile(CurrentMap.GetBaseTile(x, y));
+        if (baseDef?.Category == TileCategory.Encounter)
+            return true;
 
         return false;
     }

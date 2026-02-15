@@ -36,21 +36,21 @@ public sealed class TestMapB : MapDefinition
 
     private static readonly int?[] OverlayTileData =
     [
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null,  125, null, null, null, null,  125, null, null, null, null, null,  125, null, null, 
-        null, null, null, null, null,  123, null, null, null, null, null, null,  116, null, null, null, 
-        null, null, null,  116, null, null, null, null, null,  121, null, null, null, null, null, null, 
-        null, null, null, null, null, null,  121,  121,  121,  121,  121, null, null, null, null, null, 
-        null, null, null, null, null,  121,  121,  121,  121,  121, null, null, null, null, null, null, 
-        null, null, null,  121,  121,  121, null,  121, null, null, null, null, null, null, null, null, 
-        null, null, null, null,  124, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null,  116, null, null,  116, null,  123, null, null,  125, null, 
-        null, null, null,  125, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null,  125, null, null, null, null,  125, null, null, null, null, null,  125, null, null,
+        null, null, null, null, null,  123, null, null, null, null, null, null,  116, null, null, null,
+        null, null, null,  116, null, null, null, null, null,  121, null, null, null, null, null, null,
+        null, null, null, null, null, null,  121,  121,  121,  121,  121, null, null, null, null, null,
+        null, null, null, null, null,  121,  121,  121,  121,  121, null, null, null, null, null, null,
+        null, null, null,  121,  121,  121, null,  121, null, null, null, null, null, null, null, null,
+        null, null, null, null,  124, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null,  116, null, null,  116, null,  123, null, null,  125, null,
+        null, null, null,  125, null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
         null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null
     ];
 

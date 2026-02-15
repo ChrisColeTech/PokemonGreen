@@ -67,11 +67,11 @@ export default function DropZone() {
               fontSize: 13,
             }}
           >
-            Browse Files
+            Browse Folder
+            {/* @ts-expect-error webkitdirectory is non-standard but widely supported */}
             <input
               type="file"
-              multiple
-              accept=".dae,.obj,.fbx,.mtl,.png,.jpg,.jpeg,.bmp"
+              webkitdirectory=""
               onChange={handleFileInput}
               style={{ display: 'none' }}
             />
