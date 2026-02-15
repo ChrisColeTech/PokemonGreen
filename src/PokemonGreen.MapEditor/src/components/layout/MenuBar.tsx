@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useEditorStore } from '../../store/editorStore'
-import { parseRegistryJson } from '../../services/registryService'
+import { parseRegistryJson, parseCSharpRegistry } from '../../services/registryService'
 
 interface MenuItem {
   label: string
@@ -30,11 +30,14 @@ export function MenuBar() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const csMapInputRef = useRef<HTMLInputElement>(null)
   const registryInputRef = useRef<HTMLInputElement>(null)
+  const csRegistryInputRef = useRef<HTMLInputElement>(null)
 
   const mapName = useEditorStore(s => s.mapName)
   const importJson = useEditorStore(s => s.importJson)
   const exportJson = useEditorStore(s => s.exportJson)
+  const importCSharpMap = useEditorStore(s => s.importCSharpMap)
   const clear = useEditorStore(s => s.clear)
   const setRegistry = useEditorStore(s => s.setRegistry)
 
@@ -58,6 +61,21 @@ export function MenuBar() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       importJson(ev.target?.result as string)
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  function handleImportCSharp() {
+    csMapInputRef.current?.click()
+  }
+
+  function handleCSharpMapChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      importCSharpMap(ev.target?.result as string)
     }
     reader.readAsText(file)
     e.target.value = ''
@@ -89,16 +107,38 @@ export function MenuBar() {
     e.target.value = ''
   }
 
+  function handleLoadCSharpRegistry() {
+    csRegistryInputRef.current?.click()
+  }
+
+  function handleCSharpRegistryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const registry = parseCSharpRegistry(ev.target?.result as string)
+        setRegistry(registry)
+      } catch (err) {
+        alert(`Invalid C# registry: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
   const menus: MenuDefinition[] = [
     {
       label: 'File',
       items: [
         { label: 'New Map', shortcut: 'Ctrl+N', onClick: clear },
         { separator: true, label: '' },
-        { label: 'Import JSON...', onClick: handleImport },
+        { label: 'Import Map (JSON)...', onClick: handleImport },
+        { label: 'Import Map (C#)...', onClick: handleImportCSharp },
         { label: 'Export JSON', onClick: handleExportJson },
         { separator: true, label: '' },
-        { label: 'Load Registry...', onClick: handleLoadRegistry },
+        { label: 'Load Registry (JSON)...', onClick: handleLoadRegistry },
+        { label: 'Load Registry (C#)...', onClick: handleLoadCSharpRegistry },
       ],
     },
     {
@@ -174,11 +214,25 @@ export function MenuBar() {
         onChange={handleFileChange}
       />
       <input
+        ref={csMapInputRef}
+        type="file"
+        accept=".cs"
+        className="hidden"
+        onChange={handleCSharpMapChange}
+      />
+      <input
         ref={registryInputRef}
         type="file"
         accept=".json"
         className="hidden"
         onChange={handleRegistryChange}
+      />
+      <input
+        ref={csRegistryInputRef}
+        type="file"
+        accept=".cs"
+        className="hidden"
+        onChange={handleCSharpRegistryChange}
       />
     </div>
   )

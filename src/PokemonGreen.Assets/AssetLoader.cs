@@ -309,8 +309,19 @@ public static Texture2D? LoadNPCSprite(string name)
             $"[AssetLoader] Loaded {label}: {texture.Width}x{texture.Height}, firstPixel=R:{p.R} G:{p.G} B:{p.B} A:{p.A}, alphaMin={minA}, alphaMax={maxA}, alphaZero={transparent}");
     }
 
-    public static string[] GetEmbeddedResourceNames()
-    {
-        return typeof(AssetLoader).Assembly.GetManifestResourceNames();
-    }
+public static string[] GetEmbeddedResourceNames()
+{
+    return typeof(AssetLoader).Assembly.GetManifestResourceNames();
+}
+
+public static string? LoadDataJson(string name)
+{
+    var assembly = typeof(AssetLoader).Assembly;
+    var resourceName = $"PokemonGreen.Assets.Data.{name}.json";
+    using var stream = assembly.GetManifestResourceStream(resourceName);
+    if (stream == null)
+        return null;
+    using var reader = new StreamReader(stream);
+    return reader.ReadToEnd();
+}
 }

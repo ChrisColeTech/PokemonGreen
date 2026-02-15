@@ -1,32 +1,88 @@
 using System.Collections.Generic;
-using PokemonGreen.Core.Items;
+using System.Text.Json;
 
 namespace PokemonGreen.Core.Items;
 
 public static class ItemRegistry
 {
-    private static readonly Dictionary<int, ItemDefinition> _items = new()
+    private static Dictionary<int, ItemDefinition>? _items;
+    private static readonly object _lock = new();
+    
+    public static void Initialize(string jsonData)
     {
-        // Pokeballs (0-99)
-        [0] = new ItemDefinition(0, "Poke Ball", "pokeball", ItemCategory.Pokeball, 200, 100, false, false, "catch_rate_1.0"),
-        [1] = new ItemDefinition(1, "Great Ball", "greatball", ItemCategory.Pokeball, 600, 300, false, false, "catch_rate_1.5"),
-        [2] = new ItemDefinition(2, "Ultra Ball", "ultraball", ItemCategory.Pokeball, 1200, 600, false, false, "catch_rate_2.0"),
-        [3] = new ItemDefinition(3, "Master Ball", "masterball", ItemCategory.Pokeball, 0, 0, false, false, "catch_rate_infinite"),
-
-        // Medicine (100-199)
-        [100] = new ItemDefinition(100, "Potion", "potion", ItemCategory.Medicine, 300, 150, true, true, "heal_hp_20"),
-        [101] = new ItemDefinition(101, "Super Potion", "superpotion", ItemCategory.Medicine, 700, 350, true, true, "heal_hp_50"),
-        [102] = new ItemDefinition(102, "Hyper Potion", "hyperpotion", ItemCategory.Medicine, 1200, 600, true, true, "heal_hp_200"),
-        [103] = new ItemDefinition(103, "Max Potion", "maxpotion", ItemCategory.Medicine, 2500, 1250, true, true, "heal_hp_full"),
-        [104] = new ItemDefinition(104, "Full Restore", "fullrestore", ItemCategory.Medicine, 3000, 1500, true, true, "heal_full_status"),
-
-        // Continue with more as needed...
+        lock (_lock)
+        {
+            var items = JsonSerializer.Deserialize<ItemData[]>(jsonData);
+            _items = new Dictionary<int, ItemDefinition>();
+            
+            if (items != null)
+            {
+                foreach (var data in items)
+                {
+                    var category = ParseCategory(data.Category);
+                    var definition = new ItemDefinition(
+                        data.Id,
+                        data.Name,
+                        data.Sprite,
+                        category,
+                        data.BuyPrice,
+                        data.SellPrice,
+                        data.UsableInBattle,
+                        data.UsableOverworld,
+                        data.Effect
+                    );
+                    _items[data.Id] = definition;
+                }
+            }
+        }
+    }
+    
+    private static void EnsureInitialized()
+    {
+        if (_items == null)
+        {
+            var json = PokemonGreen.Assets.AssetLoader.LoadDataJson("items");
+            if (json != null)
+                Initialize(json);
+            else
+                _items = new Dictionary<int, ItemDefinition>();
+        }
+    }
+    
+    private static ItemCategory ParseCategory(string category) => category switch
+    {
+        "Pokeball" => ItemCategory.Pokeball,
+        "Medicine" => ItemCategory.Medicine,
+        "Battle" => ItemCategory.Battle,
+        "Berry" => ItemCategory.Berry,
+        "KeyItem" => ItemCategory.KeyItem,
+        "TM" => ItemCategory.TM,
+        "HM" => ItemCategory.HM,
+        "EvolutionStone" => ItemCategory.EvolutionStone,
+        "HeldItem" => ItemCategory.HeldItem,
+        "Valuable" => ItemCategory.Valuable,
+        "Mail" => ItemCategory.Mail,
+        _ => ItemCategory.Valuable
     };
+    
+    public static ItemDefinition? GetItem(int id)
+    {
+        EnsureInitialized();
+        return _items!.TryGetValue(id, out var item) ? item : null;
+    }
 
-    public static ItemDefinition? GetItem(int id) => _items.TryGetValue(id, out var item) ? item : null;
+    public static IEnumerable<ItemDefinition> GetItemsByCategory(ItemCategory category)
+    {
+        EnsureInitialized();
+        return _items!.Values.Where(i => i.Category == category);
+    }
 
-    public static IEnumerable<ItemDefinition> GetItemsByCategory(ItemCategory category) => 
-        _items.Values.Where(i => i.Category == category);
-
-    public static IEnumerable<ItemDefinition> AllItems => _items.Values;
+    public static IEnumerable<ItemDefinition> AllItems
+    {
+        get
+        {
+            EnsureInitialized();
+            return _items!.Values;
+        }
+    }
 }

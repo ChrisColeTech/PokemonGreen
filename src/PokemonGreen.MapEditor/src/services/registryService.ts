@@ -60,6 +60,128 @@ export function loadDefaultRegistry(): EditorTileRegistry {
   return defaultRegistry as EditorTileRegistry
 }
 
+// --- C# TileRegistry.cs parser ---
+
+export function parseCSharpRegistry(source: string): EditorTileRegistry {
+  // Match lines like: [0] = new TileDefinition(0, "Water", false, "#3890f8", TileCategory.Terrain),
+  // or with optional overlay: [8] = new TileDefinition(8, "Ice", true, "#b0e0f8", TileCategory.Terrain, "slippery"),
+  const tilePattern = /\[(\d+)\]\s*=\s*new\s+TileDefinition\(\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*(true|false)\s*,\s*"([^"]+)"\s*,\s*TileCategory\.(\w+)(?:\s*,\s*"([^"]+)")?\s*\)/g
+
+  const tiles: EditorTileDefinition[] = []
+  const categorySet = new Set<string>()
+  let match: RegExpExecArray | null
+
+  while ((match = tilePattern.exec(source)) !== null) {
+    const [, , idStr, name, walkableStr, color, category, overlay] = match
+    const categoryId = category.toLowerCase()
+    categorySet.add(categoryId)
+
+    const tile: EditorTileDefinition = {
+      id: parseInt(idStr),
+      name,
+      walkable: walkableStr === 'true',
+      color,
+      category: categoryId,
+    }
+
+    if (overlay) {
+      tile.encounter = overlay
+    }
+
+    tiles.push(tile)
+  }
+
+  if (tiles.length === 0) {
+    throw new Error('No TileDefinition entries found in C# source')
+  }
+
+  // Derive categories from what we found, preserving enum order
+  const categoryOrder = ['terrain', 'decoration', 'interactive', 'entity', 'trainer', 'encounter', 'structure', 'item']
+  const categories: EditorCategoryDefinition[] = categoryOrder
+    .filter(c => categorySet.has(c))
+    .map(c => ({
+      id: c,
+      label: c.charAt(0).toUpperCase() + c.slice(1),
+      showInPalette: true,
+    }))
+
+  // Add any categories not in the predefined order
+  for (const c of categorySet) {
+    if (!categoryOrder.includes(c)) {
+      categories.push({ id: c, label: c.charAt(0).toUpperCase() + c.slice(1), showInPalette: true })
+    }
+  }
+
+  return {
+    id: 'csharp-tile-registry',
+    name: 'C# TileRegistry',
+    version: '1.0.0',
+    categories,
+    tiles,
+    buildings: [],
+  }
+}
+
+// --- C# generated map (.g.cs) parser ---
+
+export interface ParsedCSharpMap {
+  mapId: string
+  displayName: string
+  width: number
+  height: number
+  tileSize: number
+  mapData: number[][]
+}
+
+export function parseCSharpMap(source: string): ParsedCSharpMap {
+  // Extract constructor: base("map_id", "Display Name", width, height, tileSize, ...)
+  const ctorPattern = /base\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/
+  const ctorMatch = ctorPattern.exec(source)
+  if (!ctorMatch) {
+    throw new Error('Could not find MapDefinition constructor call')
+  }
+  const [, mapId, displayName, widthStr, heightStr, tileSizeStr] = ctorMatch
+  const width = parseInt(widthStr)
+  const height = parseInt(heightStr)
+  const tileSize = parseInt(tileSizeStr)
+
+  // Extract BaseTileData = [ ... ];
+  const basePattern = /BaseTileData\s*=\s*\[([\s\S]*?)\];/
+  const baseMatch = basePattern.exec(source)
+  if (!baseMatch) {
+    throw new Error('Could not find BaseTileData array')
+  }
+  const baseValues = baseMatch[1].match(/-?\d+/g)?.map(Number)
+  if (!baseValues || baseValues.length !== width * height) {
+    throw new Error(`BaseTileData has ${baseValues?.length ?? 0} values, expected ${width * height}`)
+  }
+
+  // Extract OverlayTileData = [ ... ]; (optional)
+  const overlayPattern = /OverlayTileData\s*=\s*\[([\s\S]*?)\];/
+  const overlayMatch = overlayPattern.exec(source)
+  let overlayValues: (number | null)[] | null = null
+  if (overlayMatch) {
+    overlayValues = overlayMatch[1]
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .map(s => s === 'null' ? null : parseInt(s))
+  }
+
+  // Build 2D map, merging overlay over base
+  const mapData: number[][] = []
+  for (let y = 0; y < height; y++) {
+    mapData[y] = []
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const ov = overlayValues?.[idx]
+      mapData[y][x] = ov != null ? ov : baseValues[idx]
+    }
+  }
+
+  return { mapId, displayName, width, height, tileSize, mapData }
+}
+
 // --- Derived lookups ---
 
 export function buildTilesById(registry: EditorTileRegistry): Map<number, EditorTileDefinition> {

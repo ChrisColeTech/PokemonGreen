@@ -8,6 +8,7 @@ import {
   buildingHeight,
   fallbackTileId,
   fallbackCategoryId,
+  parseCSharpMap,
   UNKNOWN_TILE,
 } from '../services/registryService'
 
@@ -61,6 +62,7 @@ interface EditorState {
 
   // Actions — IO
   importJson: (json: string) => void
+  importCSharpMap: (source: string) => void
   exportJson: () => string
 
   // Actions — selection
@@ -223,6 +225,21 @@ export const useEditorStore = create<EditorState>()(
         }
       } catch {
         alert('Invalid JSON file')
+      }
+    },
+
+    importCSharpMap: (source) => {
+      try {
+        const parsed = parseCSharpMap(source)
+        set(state => {
+          state.mapData = parsed.mapData
+          state.mapWidth = parsed.width
+          state.mapHeight = parsed.height
+          state.mapName = parsed.displayName
+          state.cellSize = parsed.tileSize
+        })
+      } catch (err) {
+        alert(`Invalid C# map: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     },
 
