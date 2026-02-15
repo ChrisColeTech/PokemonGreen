@@ -43,14 +43,19 @@
 
 ## 2. What Work Remains
 
-### Bug: Edge Boundary System (Not Working)
-The transition tile gate works (only transitions on the correct tile), but the player can walk freely to any edge tile on the map. On non-transition edge tiles, the player walks to the very edge of the last tile and gets stuck. The out-of-bounds collision prevents them from leaving the map, but visually they appear to walk off.
+### Bug 1: Transitions Not Triggering Consistently
+Walking on or near the transition tile does not always fire the transition. Walking down the center of the tile or on either side of it sometimes fails to trigger. The player can walk onto the transition tile and nothing happens, or walks right past it off the map edge.
 
-**Two specific bugs that were identified but not properly fixed:**
-1. **Gap next to transition tiles** — When invisible walls were added to edge tiles, one tile adjacent to each transition tile remained unblocked, letting the player slip through
-2. **Walls blocking interior movement** — The invisible walls blocked the entire edge row/column, so after spawning on a transition tile, the player couldn't move sideways even though grass was there
+### Bug 2: Player Walks Off the Map
+At non-transition edge tiles, the player walks to the very edge and off the map. There needs to be an invisible wall or boundary at non-transition edges to prevent this.
 
-**Root cause:** The first implementation blocked ALL edge tiles (the outermost row/column) that weren't transition tiles. This was too broad — it turned the entire edge into a wall, trapping the player after spawning. The invisible wall system needs to block movement OFF the map at non-transition edge tiles without preventing the player from walking ON those edge tiles. The walls were applied to the wrong layer — they should prevent outward movement, not block the tile itself.
+### Bug 3: Gap Next to Transition Tiles (from invisible wall attempt)
+When invisible walls were added, one edge tile adjacent to each transition tile in every direction remained unblocked, letting the player slip through the gap next to the transition tile.
+
+### Bug 4: Invisible Walls Extending Into Walkable Areas (from invisible wall attempt)
+After spawning on a transition tile, turning left or right hit an invisible wall even though there was grass there. The invisible walls were blocking walkable tiles inside the map, not just preventing outward movement off the edge.
+
+**Root cause of bugs 3 & 4:** The invisible wall implementation blocked entire edge tiles instead of just preventing outward movement. This both missed some tiles (gaps) and over-blocked others (trapping the player on the spawn tile). The invisible walls should prevent movement OFF the map without blocking any tiles ON the map — they must not take up tiles inside the map.
 
 ### Missing: Transition tile category in editor palette
 The transition tiles are category `terrain` so they show up mixed in with grass/water/path. They should either be their own palette section or clearly visually distinct.
@@ -79,10 +84,10 @@ Currently only `category === 'terrain'` goes to the base layer. Transition tiles
 ## 4. Step-by-Step to Get Fully Working
 
 ### Phase 1: Fix the invisible wall system
-1. Add `TileMap.BlockCell()` and `_blockedCells` HashSet back to `TileMap.cs`
-2. In `GameWorld.LoadMap()`, call `BlockNonTransitionEdges()` after creating the TileMap
-3. Fix bug #1 (gap): Ensure every non-transition edge tile is blocked — check that the loop covers all edge positions including corners and tiles adjacent to transition tiles
-4. Fix bug #2 (over-blocking): Only block the OUTWARD direction from edge tiles, not the tiles themselves. One approach: instead of blocking the edge tile, block the hypothetical out-of-bounds tile so the player's sub-tile movement is clamped at the inner edge of the tile rather than the outer edge. Another approach: add a directional check in `GameWorld.Update()` — if the player is on a non-transition edge tile and pressing toward the edge, cancel the movement input before it reaches `Player.Move()`
+1. In `GameWorld.Update()`, add a directional check BEFORE `Player.Move()` — between reading input (step 2) and passing movement to the player (step 4)
+2. The check: if the player is on a non-transition edge tile and the input direction points outward (off the map), cancel/nullify that movement direction so it never reaches `Player.Move()`
+3. This fixes bug #1 (gap): Every non-transition edge tile is covered because the check applies to ALL edge positions — no tiles are skipped, no gaps possible
+4. This fixes bug #2 (over-blocking): No tiles are blocked at all. The player can freely walk ON edge tiles and ALONG the edge. Only the outward direction is cancelled. No changes to `TileMap` needed — the invisible wall is purely a movement direction filter in `GameWorld.Update()`
 
 ### Phase 2: Clean up transition tile category
 1. Update `isTerrainTile()` in `codeGenService.ts` to also return `true` for `'transition'` category
@@ -138,21 +143,27 @@ Both must pass with 0 errors. Currently clean.
 
 ## 6. Known Issues + Strategies
 
-### Issue 1: Player can walk to non-transition edge tiles and appears to walk off the map
-**Current state:** Player walks to edge, gets stuck at the far side of the last tile. No transition fires. Visually the player appears to walk off the map because their sub-tile position reaches the very edge.
-**Strategy A — Pre-movement direction cancellation:** In `GameWorld.Update()`, before calling `Player.Move()`, check if the player is on a non-transition edge tile and the input direction points outward. If so, cancel that movement direction. Player can still walk along the edge freely, just not outward. Cleanest approach.
-**Strategy B — Edge tile position clamping:** After `Player.Update()`, if the player is on a non-transition edge tile, clamp their sub-tile position so they don't drift past the center of the tile toward the edge. Prevents the visual "walking off" without blocking the tile.
-**Strategy C — Invisible wall via BlockCell:** Re-add the `BlockCell` system to `TileMap` but only block tiles that are ONE ROW INSIDE the edge (y=1, y=h-2, x=1, x=w-2), with gaps at the transition tile columns/rows. The player can't reach edge tiles at all except through the transition gap. Downside: blocks interior grass tiles.
+### Issue 1: Transitions not triggering consistently
+**Current state:** Walking on or near the transition tile does not always fire the transition. Walking down the center or on either side of the tile sometimes fails to trigger. The player can walk onto the transition tile and nothing happens.
+**Strategy A — Widen the trigger zone:** The edge transition check in `GameWorld.Update()` only fires when `IsAtMapEdge()` is true AND the player is on the exact transition tile AND moving outward — all in the same frame. If the player's sub-tile position hasn't fully reached the edge row/column, the check doesn't fire. Consider triggering the transition as soon as the player steps onto a transition tile that is on an edge, regardless of whether they've reached the absolute edge pixel.
+**Strategy B — Check transition tiles during Player.Update:** Instead of checking only in the edge-transition block at step 8, also check after `Player.Update()` if the player's tile changed to a transition tile on an edge. This catches cases where the player arrives at the tile mid-frame.
+**Strategy C — Expand edge detection:** `IsAtMapEdge()` uses `Player.TileY <= 0` etc. If `TileY` is calculated from a rounded/truncated float position, the player might be visually on the edge tile but `TileY` hasn't updated yet. Verify that `TileY`/`TileX` update before the edge check runs.
 
-### Issue 2: Transition tile category confusion
+### Issue 2: Player walks off the map at non-transition edges
+**Current state:** At non-transition edge tiles, the player walks to the very edge and off the map. There is no boundary preventing this.
+**Strategy A — Pre-movement direction cancellation:** In `GameWorld.Update()`, before calling `Player.Move()`, check if the player is on a non-transition edge tile and the input direction points outward. If so, cancel that movement direction. Player can still walk along the edge freely, just not outward. No tiles blocked, no interior impact. Cleanest approach.
+**Strategy B — Edge tile position clamping:** After `Player.Update()`, if the player is on a non-transition edge tile, clamp their sub-tile position so they don't drift past the center of the tile toward the edge. Prevents the visual "walking off" without blocking any tile.
+**Strategy C — Out-of-bounds walkability override:** Override `TileMap.IsWalkable()` to reject movement into out-of-bounds tiles from non-transition edge tiles. When `IsWalkable(x, y)` is called for an out-of-bounds coordinate, check if the source tile is a transition tile — if not, return false. Keeps all map tiles fully walkable. Requires passing source tile context into the walkability check.
+
+### Issue 3: Transition tile category confusion
 **Current state:** Transition tiles are `TileCategory.Terrain` in C# and `category: "terrain"` in JSON, mixed in with grass/water/path in the editor palette.
 **Strategy:** Create a proper `transition` base-layer category. Update `isTerrainTile()` to treat transition as base-layer. Tiles get their own palette section.
 
-### Issue 3: Hardcoded transition tile IDs
+### Issue 4: Hardcoded transition tile IDs
 **Current state:** `GameWorld.cs` has `private const int TransitionNorthId = 112;` etc.
 **Strategy:** At game startup, query `TileRegistry` for tiles with `TileCategory.Transition` and build the ID mapping dynamically. Or use a naming convention and look up by name.
 
-### Issue 4: Single transition tile per edge
+### Issue 5: Single transition tile per edge
 **Current state:** `TryFindReceivingTransition()` finds the FIRST matching tile and stops. Only supports one transition point per edge per map.
 **Strategy:** Support multiple transition tiles per edge. Match source→target by relative position along the edge (e.g., 3rd transition tile on source's north edge maps to 3rd transition tile on target's south edge).
 
@@ -185,10 +196,11 @@ Edge transition flow:
 ```
 
 ### Quick Wins
-1. **Fix invisible walls** — Implement Strategy A from Issue 1 (pre-movement direction cancellation). ~15 lines in `GameWorld.Update()`. No TileMap changes needed. Player walks freely on edge tiles but can't move outward unless on a transition tile.
-2. **Transition palette section** — Change `isTerrainTile()` to include `'transition'`, flip tile category to `"transition"`. ~5 lines changed, tiles get their own editor section.
-3. **Remove fallback mirror code** — Delete the fallback position-mirroring in `TryEdgeTransition()`. All maps should use transition tiles. Simplifies the method.
-4. **Cache transition positions** — In `MapDefinition` constructor, scan edges once and store transition tile positions in a dictionary. Eliminates per-frame scanning.
+1. **Fix transition triggering** — Investigate why transitions don't fire consistently (Issue 1). Check if `IsAtMapEdge()` + `TileY`/`TileX` timing is causing missed triggers. May need to trigger on tile arrival rather than requiring all conditions in one frame.
+2. **Fix edge boundaries** — Implement Strategy A from Issue 2 (pre-movement direction cancellation). ~15 lines in `GameWorld.Update()`. No TileMap changes needed. Player walks freely on edge tiles but can't move outward unless on a transition tile.
+3. **Transition palette section** — Change `isTerrainTile()` to include `'transition'`, flip tile category to `"transition"`. ~5 lines changed, tiles get their own editor section.
+4. **Remove fallback mirror code** — Delete the fallback position-mirroring in `TryEdgeTransition()`. All maps should use transition tiles. Simplifies the method.
+5. **Cache transition positions** — In `MapDefinition` constructor, scan edges once and store transition tile positions in a dictionary. Eliminates per-frame scanning.
 
 ### New Feature Ideas
 - **Bidirectional transition tiles** — A single "Border" tile type that works in any direction based on which edge it's placed on. Reduces 4 tile types to 1, with direction inferred from position.

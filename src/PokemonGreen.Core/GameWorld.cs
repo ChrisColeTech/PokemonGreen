@@ -100,21 +100,43 @@ public class GameWorld
             }
         }
 
-        // 4. Pass movement input to player.
+        // 4. Check for edge transitions only - no input blocking
         var moveDir = Input.MoveDirection;
+        if (moveDir.HasValue && CurrentMapDefinition != null)
+        {
+            var (dx, dy) = PokemonGreen.Core.Player.DirectionExtensions.ToVector(ConvertDirection(moveDir.Value));
+            int targetX = Player.TileX + dx;
+            int targetY = Player.TileY + dy;
+
+            if (!CurrentMap.IsInBounds(targetX, targetY))
+            {
+                var edge = DirectionToEdge(moveDir.Value);
+                if (edge.HasValue)
+                {
+                    int baseTile = CurrentMapDefinition.GetBaseTile(Player.TileX, Player.TileY);
+                    Console.WriteLine($"[EDGE] pos=({Player.TileX},{Player.TileY}) target=({targetX},{targetY}) edge={edge} baseTile={baseTile}");
+                    if (IsTransitionTileForEdge(baseTile, edge.Value) && TryEdgeTransition(edge.Value, Player.TileX, Player.TileY))
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+
+        // 5. Pass movement input to player.
         if (moveDir.HasValue)
             Player.Move(ConvertDirection(moveDir.Value), Input.IsRunning, CurrentMap);
         else
             Player.StopMoving();
 
-        // 5. If jump pressed, tell player to jump.
+        // 6. If jump pressed, tell player to jump.
         if (Input.JumpPressed)
             Player.BeginJump(CurrentMap);
 
-        // 6. Update player.
+        // 7. Update player.
         Player.Update(deltaTime, CurrentMap);
 
-        // 7. Check if player is on a step warp tile.
+        // 8. Check if player is on a step warp tile.
         if (CurrentMapDefinition != null)
         {
             var stepWarp = CurrentMapDefinition.GetWarp(Player.TileX, Player.TileY, WarpTrigger.Step);
@@ -122,17 +144,6 @@ public class GameWorld
             {
                 BeginTransition(stepWarp);
                 return;
-            }
-        }
-
-        // 8. If player is at the map edge moving outward, try an edge transition.
-        if (moveDir.HasValue && CurrentMapDefinition != null)
-        {
-            var edge = DirectionToEdge(moveDir.Value);
-            if (edge.HasValue && IsAtMapEdge(edge.Value))
-            {
-                if (TryEdgeTransition(edge.Value, Player.TileX, Player.TileY))
-                    return;
             }
         }
 
@@ -290,42 +301,29 @@ public class GameWorld
         return false;
     }
 
-    private bool IsAtMapEdge(MapEdge edge)
-    {
-        return edge switch
-        {
-            MapEdge.North => Player.TileY <= 0,
-            MapEdge.South => Player.TileY >= CurrentMap!.Height - 1,
-            MapEdge.West  => Player.TileX <= 0,
-            MapEdge.East  => Player.TileX >= CurrentMap!.Width - 1,
-            _ => false
-        };
-    }
-
     private bool TryEdgeTransition(MapEdge edge, int playerX, int playerY)
     {
-        // Check if player is on a transition tile matching this edge direction
         int baseTile = CurrentMapDefinition!.GetBaseTile(playerX, playerY);
         if (!IsTransitionTileForEdge(baseTile, edge))
             return false;
 
-        // Find the neighbor map
         MapDefinition? target = null;
         var conn = CurrentMapDefinition.GetConnection(edge);
         if (conn != null)
             MapCatalog.TryGetMap(conn.TargetMapId, out target);
-        target ??= MapCatalog.GetNeighbor(CurrentMapDefinition, edge);
+        
+        if (target == null)
+            target = MapCatalog.GetNeighbor(CurrentMapDefinition, edge);
+        
         if (target == null)
             return false;
 
-        // Find the receiving transition tile on the target's opposite edge
         if (TryFindReceivingTransition(target, edge, out int tx, out int ty))
         {
             BeginTransition(new WarpConnection(0, 0, target.Id, tx, ty));
             return true;
         }
 
-        // Fallback: mirror position (backward compat)
         int offset = conn?.Offset ?? 0;
         switch (edge)
         {
