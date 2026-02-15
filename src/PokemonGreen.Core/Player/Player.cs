@@ -154,9 +154,9 @@ public class Player
         float newX = X + dx * speed * deltaTime;
         float newY = Y + dy * speed * deltaTime;
 
-        // Clamp to map bounds to prevent walking off edges
-        newX = Math.Clamp(newX, 0, map.Width - 0.001f);
-        newY = Math.Clamp(newY, 0, map.Height - 0.001f);
+        // Clamp to keep player within tile centers (prevents visual off-map on bottom/right)
+        newX = Math.Clamp(newX, 0, map.Width - 1f);
+        newY = Math.Clamp(newY, 0, map.Height - 1f);
 
         // Try full movement first
         int targetTileX = (int)MathF.Floor(newX);
