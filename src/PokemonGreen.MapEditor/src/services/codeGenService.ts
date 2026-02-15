@@ -26,7 +26,7 @@ public sealed class {{CLASS_NAME}} : MapDefinition
     public static {{CLASS_NAME}} Instance { get; } = new();
 
     private {{CLASS_NAME}}()
-        : base("{{MAP_ID}}", "{{DISPLAY_NAME}}", {{WIDTH}}, {{HEIGHT}}, {{TILE_SIZE}}, BaseTileData, OverlayTileData, WalkableTileIds)
+        : base("{{WORLD_ID}}", "{{MAP_ID}}", "{{DISPLAY_NAME}}", {{WIDTH}}, {{HEIGHT}}, {{TILE_SIZE}}, BaseTileData, OverlayTileData, WalkableTileIds{{EXTRA_CTOR_ARGS}})
     {
     }
 }
@@ -127,6 +127,9 @@ export function generateMapClass(
   mapName: string,
   cellSize: number,
   tilesById: Map<number, EditorTileDefinition>,
+  worldId: string = 'default',
+  worldX: number = 0,
+  worldY: number = 0,
 ): string {
   const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
   const className = toPascalCase(mapId) || 'UntitledMap'
@@ -143,8 +146,14 @@ export function generateMapClass(
     .filter(id => tilesById.get(id)?.walkable === true)
     .sort((a, b) => a - b)
 
+  // Extra constructor args: warps, connections, worldX, worldY (only when non-zero)
+  const extraCtorArgs = (worldX !== 0 || worldY !== 0)
+    ? `, null, null, ${worldX}, ${worldY}`
+    : ''
+
   return MAP_CLASS_TEMPLATE
     .replace(/\{\{CLASS_NAME\}\}/g, className)
+    .replace('{{WORLD_ID}}', escapeString(worldId))
     .replace('{{MAP_ID}}', escapeString(mapId))
     .replace('{{DISPLAY_NAME}}', escapeString(mapName))
     .replace('{{WIDTH}}', String(mapWidth))
@@ -153,35 +162,78 @@ export function generateMapClass(
     .replace('{{BASE_TILE_DATA}}', formatBaseTiles(mapData, mapWidth, mapHeight, tilesById))
     .replace('{{OVERLAY_TILE_DATA}}', formatOverlayTiles(mapData, mapWidth, mapHeight, tilesById))
     .replace('{{WALKABLE_TILE_IDS}}', formatWalkableIds(walkableIds))
+    .replace('{{EXTRA_CTOR_ARGS}}', extraCtorArgs)
 }
 
-// --- Registry export ---
+// --- Registry C# export ---
 
-export function exportRegistryJson(registry: EditorTileRegistry): string {
-  const output = {
-    id: registry.id,
-    name: registry.name,
-    version: registry.version,
-    categories: registry.categories.map(c => ({
-      id: c.id,
-      label: c.label,
-      showInPalette: c.showInPalette,
-    })),
-    tiles: registry.tiles
-      .slice()
-      .sort((a, b) => a.id - b.id)
-      .map(t => {
-        const entry: Record<string, unknown> = {
-          id: t.id,
-          name: t.name,
-          walkable: t.walkable,
-          color: t.color,
-          category: t.category,
-        }
-        if (t.encounter) entry.encounter = t.encounter
-        return entry
-      }),
-    buildings: registry.buildings,
+function toCSharpCategory(category: string): string {
+  // Editor uses lowercase category strings; C# uses PascalCase enum
+  const map: Record<string, string> = {
+    terrain: 'Terrain',
+    decoration: 'Decoration',
+    interactive: 'Interactive',
+    entity: 'Entity',
+    trainer: 'Trainer',
+    encounter: 'Encounter',
+    structure: 'Structure',
+    item: 'Item',
   }
-  return JSON.stringify(output, null, 2)
+  return map[category] ?? 'Terrain'
+}
+
+function formatTileDefinition(tile: EditorTileDefinition): string {
+  const cat = toCSharpCategory(tile.category)
+  let args = `${tile.id}, "${escapeString(tile.name)}", ${tile.walkable.toString()}, "${escapeString(tile.color)}", TileCategory.${cat}`
+  if (tile.encounter) {
+    args += `, "${escapeString(tile.encounter)}"`
+  }
+  return `        [${tile.id}] = new TileDefinition(${args}),`
+}
+
+export function exportRegistryCSharp(registry: EditorTileRegistry): string {
+  const sorted = registry.tiles.slice().sort((a, b) => a.id - b.id)
+
+  // Group tiles by category for comments
+  const groups: { label: string; tiles: EditorTileDefinition[] }[] = []
+  let currentCat = ''
+  for (const tile of sorted) {
+    if (tile.category !== currentCat) {
+      currentCat = tile.category
+      const catDef = registry.categories.find(c => c.id === currentCat)
+      groups.push({ label: catDef?.label ?? currentCat, tiles: [] })
+    }
+    groups[groups.length - 1].tiles.push(tile)
+  }
+
+  const tileLines: string[] = []
+  for (const group of groups) {
+    const first = group.tiles[0].id
+    const last = group.tiles[group.tiles.length - 1].id
+    tileLines.push(``)
+    tileLines.push(`        // ${group.label} (${first}-${last})`)
+    for (const tile of group.tiles) {
+      tileLines.push(formatTileDefinition(tile))
+    }
+  }
+
+  return `namespace PokemonGreen.Core.Maps;
+
+public static class TileRegistry
+{
+    private static readonly Dictionary<int, TileDefinition> _tiles = new()
+    {${tileLines.join('\n')}
+    };
+
+    public static TileDefinition? GetTile(int id) =>
+        _tiles.TryGetValue(id, out var tile) ? tile : null;
+
+    public static IEnumerable<TileDefinition> GetTilesByCategory(TileCategory category) =>
+        _tiles.Values.Where(t => t.Category == category);
+
+    public static IEnumerable<TileDefinition> AllTiles => _tiles.Values;
+
+    public static int Count => _tiles.Count;
+}
+`
 }

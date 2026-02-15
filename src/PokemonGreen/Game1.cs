@@ -36,12 +36,16 @@ public class Game1 : Game
         _graphics.PreferredBackBufferHeight = ViewportHeight;
         _graphics.ApplyChanges();
 
+        WorldRegistry.Initialize();
         MapRegistry.Initialize();
         _gameWorld = new GameWorld(ViewportWidth, ViewportHeight);
 
-        if (MapCatalog.TryGetMap("test_map_center", out var startMap) && startMap != null)
+        var defaultWorld = WorldRegistry.GetWorld(WorldRegistry.DefaultWorldId);
+        if (defaultWorld != null
+            && MapCatalog.TryGetMap(defaultWorld.SpawnMapId, out var startMap)
+            && startMap != null)
         {
-            _gameWorld.LoadMap(startMap);
+            _gameWorld.LoadMap(startMap, defaultWorld.SpawnX, defaultWorld.SpawnY);
         }
         else
         {

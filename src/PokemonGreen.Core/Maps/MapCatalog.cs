@@ -87,7 +87,7 @@ public static class MapCatalog
 
         foreach (var map in _maps.Values)
         {
-            if (map.WorldX == nx && map.WorldY == ny)
+            if (map.WorldId == from.WorldId && map.WorldX == nx && map.WorldY == ny)
                 return map;
         }
         return null;

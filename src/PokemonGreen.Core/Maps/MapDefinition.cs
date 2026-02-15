@@ -15,6 +15,9 @@ public abstract class MapDefinition
     private readonly WarpConnection[] _warps;
     private readonly MapConnection[] _connections;
 
+    /// <summary>Identifier of the world this map belongs to (e.g., "small_world").</summary>
+    public string WorldId { get; }
+
     /// <summary>Unique identifier for this map (e.g., "pallet_town").</summary>
     public string Id { get; }
 
@@ -47,13 +50,14 @@ public abstract class MapDefinition
     /// Automatically registers this map in MapCatalog.
     /// </summary>
     protected MapDefinition(
-        string id, string name,
+        string worldId, string id, string name,
         int width, int height, int tileSize,
         int[] baseTileData, int?[] overlayTileData, int[] walkableTileIds,
         WarpConnection[]? warps = null,
         MapConnection[]? connections = null,
         int worldX = 0, int worldY = 0)
     {
+        WorldId = worldId;
         Id = id;
         Name = name;
         Width = width;

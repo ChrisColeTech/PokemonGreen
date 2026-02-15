@@ -11,7 +11,7 @@ import {
   parseCSharpMap,
   UNKNOWN_TILE,
 } from '../services/registryService'
-import { generateMapClass, exportRegistryJson } from '../services/codeGenService'
+import { generateMapClass, exportRegistryCSharp } from '../services/codeGenService'
 
 function createGrid(width: number, height: number): number[][] {
   return Array.from({ length: height }, () => Array(width).fill(1))
@@ -42,6 +42,9 @@ interface EditorState {
   mapHeight: number
   cellSize: number
   mapName: string
+  worldId: string
+  worldX: number
+  worldY: number
 
   // Selection
   selectedTile: number
@@ -57,6 +60,9 @@ interface EditorState {
   resize: (width: number, height: number) => void
   clear: () => void
   rotateMap: (direction: 1 | -1) => void
+  setWorldId: (id: string) => void
+  setWorldX: (x: number) => void
+  setWorldY: (y: number) => void
   setMapData: (data: number[][], width: number, height: number) => void
   setCellSize: (size: number) => void
   setMapName: (name: string) => void
@@ -64,9 +70,8 @@ interface EditorState {
   // Actions — IO
   importJson: (json: string) => void
   importCSharpMap: (source: string) => void
-  exportJson: () => string
   exportCSharp: () => string
-  exportRegistryJson: () => string
+  exportRegistryCSharp: () => string
 
   // Actions — selection
   selectTile: (id: number) => void
@@ -88,6 +93,9 @@ export const useEditorStore = create<EditorState>()(
     mapHeight: 18,
     cellSize: 24,
     mapName: 'Untitled Map',
+    worldId: 'default',
+    worldX: 0,
+    worldY: 0,
 
     selectedTile: 1,
     selectedBuilding: null,
@@ -142,6 +150,9 @@ export const useEditorStore = create<EditorState>()(
       state.mapHeight = 18
       state.cellSize = 24
       state.mapName = 'Untitled Map'
+      state.worldId = 'default'
+      state.worldX = 0
+      state.worldY = 0
       state.selectedTile = fallbackTileId(state.registry as EditorTileRegistry)
       state.selectedBuilding = null
       state.buildingRotation = 0
@@ -186,6 +197,18 @@ export const useEditorStore = create<EditorState>()(
       state.mapName = name
     }),
 
+    setWorldId: (id) => set(state => {
+      state.worldId = id
+    }),
+
+    setWorldX: (x) => set(state => {
+      state.worldX = x
+    }),
+
+    setWorldY: (y) => set(state => {
+      state.worldY = y
+    }),
+
     importJson: (json) => {
       try {
         const data = JSON.parse(json)
@@ -212,6 +235,9 @@ export const useEditorStore = create<EditorState>()(
             state.mapHeight = height
             state.mapName = data.displayName || data.mapId || 'Imported Map'
             if (data.tileSize) state.cellSize = data.tileSize
+            if (data.worldId) state.worldId = data.worldId
+            state.worldX = data.worldX ?? 0
+            state.worldY = data.worldY ?? 0
           })
           return
         }
@@ -240,40 +266,21 @@ export const useEditorStore = create<EditorState>()(
           state.mapHeight = parsed.height
           state.mapName = parsed.displayName
           state.cellSize = parsed.tileSize
+          state.worldId = parsed.worldId
         })
       } catch (err) {
         alert(`Invalid C# map: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     },
 
-    exportJson: () => {
-      const { mapData, mapWidth, mapHeight, cellSize, mapName, registry } = get()
-      const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
-
-      const data = {
-        schemaVersion: 2,
-        mapId,
-        displayName: mapName,
-        tileSize: cellSize,
-        width: mapWidth,
-        height: mapHeight,
-        baseTiles: mapData,
-        overlayTiles: mapData.map(row => row.map(() => null)),
-        registryId: registry.id,
-        registryVersion: registry.version,
-      }
-
-      return JSON.stringify(data, null, 2)
-    },
-
     exportCSharp: () => {
-      const { mapData, mapWidth, mapHeight, cellSize, mapName, tilesById } = get()
-      return generateMapClass(mapData, mapWidth, mapHeight, mapName, cellSize, tilesById as Map<number, EditorTileDefinition>)
+      const { mapData, mapWidth, mapHeight, cellSize, mapName, worldId, worldX, worldY, tilesById } = get()
+      return generateMapClass(mapData, mapWidth, mapHeight, mapName, cellSize, tilesById as Map<number, EditorTileDefinition>, worldId, worldX, worldY)
     },
 
-    exportRegistryJson: () => {
+    exportRegistryCSharp: () => {
       const { registry } = get()
-      return exportRegistryJson(registry as EditorTileRegistry)
+      return exportRegistryCSharp(registry as EditorTileRegistry)
     },
 
     selectTile: (id) => set(state => {

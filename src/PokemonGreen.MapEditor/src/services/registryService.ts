@@ -125,6 +125,7 @@ export function parseCSharpRegistry(source: string): EditorTileRegistry {
 // --- C# generated map (.g.cs) parser ---
 
 export interface ParsedCSharpMap {
+  worldId: string
   mapId: string
   displayName: string
   width: number
@@ -134,13 +135,29 @@ export interface ParsedCSharpMap {
 }
 
 export function parseCSharpMap(source: string): ParsedCSharpMap {
-  // Extract constructor: base("map_id", "Display Name", width, height, tileSize, ...)
-  const ctorPattern = /base\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/
-  const ctorMatch = ctorPattern.exec(source)
-  if (!ctorMatch) {
-    throw new Error('Could not find MapDefinition constructor call')
+  // Try new format first: base("worldId", "map_id", "Display Name", width, height, tileSize, ...)
+  const newCtorPattern = /base\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/
+  const newCtorMatch = newCtorPattern.exec(source)
+
+  let worldId: string
+  let mapId: string
+  let displayName: string
+  let widthStr: string
+  let heightStr: string
+  let tileSizeStr: string
+
+  if (newCtorMatch) {
+    [, worldId, mapId, displayName, widthStr, heightStr, tileSizeStr] = newCtorMatch
+  } else {
+    // Legacy format: base("map_id", "Display Name", width, height, tileSize, ...)
+    const legacyPattern = /base\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/
+    const legacyMatch = legacyPattern.exec(source)
+    if (!legacyMatch) {
+      throw new Error('Could not find MapDefinition constructor call')
+    }
+    worldId = 'default';
+    [, mapId, displayName, widthStr, heightStr, tileSizeStr] = legacyMatch
   }
-  const [, mapId, displayName, widthStr, heightStr, tileSizeStr] = ctorMatch
   const width = parseInt(widthStr)
   const height = parseInt(heightStr)
   const tileSize = parseInt(tileSizeStr)
@@ -179,7 +196,7 @@ export function parseCSharpMap(source: string): ParsedCSharpMap {
     }
   }
 
-  return { mapId, displayName, width, height, tileSize, mapData }
+  return { worldId, mapId, displayName, width, height, tileSize, mapData }
 }
 
 // --- Derived lookups ---

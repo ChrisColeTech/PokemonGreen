@@ -15,6 +15,7 @@ public class GameWorld
     // ── Public state ──────────────────────────────────────────────────
     public TileMap? CurrentMap { get; private set; }
     public MapDefinition? CurrentMapDefinition { get; private set; }
+    public string? CurrentWorldId { get; private set; }
     public PlayerClass Player { get; }
     public Camera Camera { get; }
     public InputManager Input { get; }
@@ -48,6 +49,7 @@ public class GameWorld
     public void LoadMap(MapDefinition mapDef, float? spawnX, float? spawnY)
     {
         CurrentMapDefinition = mapDef;
+        CurrentWorldId = mapDef.WorldId;
         CurrentMap = mapDef.CreateTileMap();
 
         float px = spawnX ?? CurrentMap.Width / 2f;

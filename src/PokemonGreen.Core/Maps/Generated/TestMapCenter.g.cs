@@ -52,7 +52,7 @@ public sealed class TestMapCenter : MapDefinition
     public static TestMapCenter Instance { get; } = new();
 
     private TestMapCenter()
-        : base("test_map_center", "Test Map center", 16, 16, 16, BaseTileData, OverlayTileData, WalkableTileIds)
+        : base("small_world", "test_map_center", "Test Map center", 16, 16, 16, BaseTileData, OverlayTileData, WalkableTileIds)
     {
     }
 }

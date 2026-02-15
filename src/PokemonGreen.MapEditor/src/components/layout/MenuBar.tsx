@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useEditorStore } from '../../store/editorStore'
-import { parseRegistryJson, parseCSharpRegistry } from '../../services/registryService'
+import { parseCSharpRegistry } from '../../services/registryService'
 import { toPascalCase } from '../../services/codeGenService'
 
 interface MenuItem {
@@ -30,17 +30,13 @@ function downloadFile(filename: string, content: string) {
 export function MenuBar() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const csMapInputRef = useRef<HTMLInputElement>(null)
-  const registryInputRef = useRef<HTMLInputElement>(null)
   const csRegistryInputRef = useRef<HTMLInputElement>(null)
 
   const mapName = useEditorStore(s => s.mapName)
-  const importJson = useEditorStore(s => s.importJson)
-  const exportJson = useEditorStore(s => s.exportJson)
   const importCSharpMap = useEditorStore(s => s.importCSharpMap)
   const exportCSharp = useEditorStore(s => s.exportCSharp)
-  const exportRegistryJson = useEditorStore(s => s.exportRegistryJson)
+  const exportRegistryCSharp = useEditorStore(s => s.exportRegistryCSharp)
   const clear = useEditorStore(s => s.clear)
   const setRegistry = useEditorStore(s => s.setRegistry)
 
@@ -53,21 +49,6 @@ export function MenuBar() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
-
-  function handleImport() {
-    fileInputRef.current?.click()
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      importJson(ev.target?.result as string)
-    }
-    reader.readAsText(file)
-    e.target.value = ''
-  }
 
   function handleImportCSharp() {
     csMapInputRef.current?.click()
@@ -84,12 +65,6 @@ export function MenuBar() {
     e.target.value = ''
   }
 
-  function handleExportJson() {
-    const json = exportJson()
-    const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
-    downloadFile(`${mapId}.map.json`, json)
-  }
-
   function handleExportCSharp() {
     const code = exportCSharp()
     const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
@@ -97,29 +72,9 @@ export function MenuBar() {
     downloadFile(`${className}.g.cs`, code)
   }
 
-  function handleExportRegistryJson() {
-    const json = exportRegistryJson()
-    downloadFile('tile-registry.json', json)
-  }
-
-  function handleLoadRegistry() {
-    registryInputRef.current?.click()
-  }
-
-  function handleRegistryChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const registry = parseRegistryJson(ev.target?.result as string)
-        setRegistry(registry)
-      } catch (err) {
-        alert(`Invalid registry: ${err instanceof Error ? err.message : 'Unknown error'}`)
-      }
-    }
-    reader.readAsText(file)
-    e.target.value = ''
+  function handleExportRegistryCSharp() {
+    const code = exportRegistryCSharp()
+    downloadFile('TileRegistry.cs', code)
   }
 
   function handleLoadCSharpRegistry() {
@@ -148,14 +103,11 @@ export function MenuBar() {
       items: [
         { label: 'New Map', shortcut: 'Ctrl+N', onClick: clear },
         { separator: true, label: '' },
-        { label: 'Import Map (JSON)...', onClick: handleImport },
         { label: 'Import Map (C#)...', onClick: handleImportCSharp },
-        { label: 'Export Map (JSON)', onClick: handleExportJson },
         { label: 'Export Map (C#)', onClick: handleExportCSharp },
         { separator: true, label: '' },
-        { label: 'Load Registry (JSON)...', onClick: handleLoadRegistry },
         { label: 'Load Registry (C#)...', onClick: handleLoadCSharpRegistry },
-        { label: 'Export Registry (JSON)', onClick: handleExportRegistryJson },
+        { label: 'Export Registry (C#)', onClick: handleExportRegistryCSharp },
       ],
     },
     {
@@ -224,25 +176,11 @@ export function MenuBar() {
       <div className="flex-1" />
 
       <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <input
         ref={csMapInputRef}
         type="file"
         accept=".cs"
         className="hidden"
         onChange={handleCSharpMapChange}
-      />
-      <input
-        ref={registryInputRef}
-        type="file"
-        accept=".json"
-        className="hidden"
-        onChange={handleRegistryChange}
       />
       <input
         ref={csRegistryInputRef}

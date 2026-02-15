@@ -167,6 +167,12 @@ function PaletteSection() {
 function ControlsSection() {
   const mapName = useEditorStore(s => s.mapName)
   const setMapName = useEditorStore(s => s.setMapName)
+  const worldId = useEditorStore(s => s.worldId)
+  const setWorldId = useEditorStore(s => s.setWorldId)
+  const worldX = useEditorStore(s => s.worldX)
+  const setWorldX = useEditorStore(s => s.setWorldX)
+  const worldY = useEditorStore(s => s.worldY)
+  const setWorldY = useEditorStore(s => s.setWorldY)
   const registry = useEditorStore(s => s.registry)
   const mapWidth = useEditorStore(s => s.mapWidth)
   const mapHeight = useEditorStore(s => s.mapHeight)
@@ -238,6 +244,28 @@ function ControlsSection() {
           style={{ ...inputStyle, display: 'block', marginTop: 2 }}
         />
       </label>
+
+      {/* World */}
+      <label style={{ fontSize: 10, color: '#808080' }}>
+        World ID
+        <input
+          type="text"
+          value={worldId}
+          onChange={e => setWorldId(e.target.value)}
+          style={{ ...inputStyle, display: 'block', marginTop: 2 }}
+        />
+      </label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+        <label style={{ fontSize: 10, color: '#808080' }}>
+          World X
+          <input type="number" value={worldX} onChange={e => setWorldX(+e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ fontSize: 10, color: '#808080' }}>
+          World Y
+          <input type="number" value={worldY} onChange={e => setWorldY(+e.target.value)} style={inputStyle} />
+        </label>
+      </div>
+
       <div style={{ fontSize: 10, color: '#808080' }}>
         Registry: <span style={{ color: '#e0e0e0' }}>{registry.name} v{registry.version}</span>
       </div>

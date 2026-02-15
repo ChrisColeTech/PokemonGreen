@@ -52,7 +52,7 @@ public sealed class TestMapC : MapDefinition
     public static TestMapC Instance { get; } = new();
 
     private TestMapC()
-        : base("test_map_c", "Test Map C", 16, 16, 16, BaseTileData, OverlayTileData, WalkableTileIds, null, null, 0, 1)
+        : base("small_world", "test_map_c", "Test Map C", 16, 16, 16, BaseTileData, OverlayTileData, WalkableTileIds, null, null, 0, 1)
     {
     }
 }
