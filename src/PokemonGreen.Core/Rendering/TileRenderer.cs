@@ -193,6 +193,47 @@ public static class TileRenderer
             return;
         }
 
+        // NPCs and Trainers (48-71)
+        if (TileSpriteMapping.IsNPCTile(tileId))
+        {
+            var spriteName = TileSpriteMapping.GetNPCSprite(tileId);
+            if (spriteName != null)
+            {
+                var npcTexture = TextureStore.GetTexture(spriteName);
+                if (npcTexture != null)
+                {
+                    spriteBatch.Draw(
+                        npcTexture,
+                        new Rectangle(worldX, worldY, tileSize, tileSize),
+                        null,
+                        Color.White);
+                }
+            }
+            return;
+        }
+
+        // Items (96-103)
+        if (TileSpriteMapping.IsItemTile(tileId))
+        {
+            var spriteName = TileSpriteMapping.GetItemSprite(tileId);
+            if (spriteName != null)
+            {
+                var itemTexture = TextureStore.GetTexture(spriteName);
+                if (itemTexture != null)
+                {
+                    int itemSize = tileSize / 2;
+                    int itemOffset = itemSize / 2;
+                    
+                    spriteBatch.Draw(
+                        itemTexture,
+                        new Rectangle(worldX + itemOffset, worldY + itemOffset, itemSize, itemSize),
+                        null,
+                        Color.White);
+                }
+            }
+            return;
+        }
+
         float scale = 1.0f;
         if (_visualScale.TryGetValue(tileId, out float visualScale))
         {
