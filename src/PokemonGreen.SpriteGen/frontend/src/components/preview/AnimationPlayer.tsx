@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { useStore } from '../../store';
 
@@ -18,6 +19,16 @@ export function AnimationPlayer() {
   const togglePlayback = useStore((s) => s.togglePlayback);
   const currentFrame = useStore((s) => s.currentFrame);
   const setCurrentFrame = useStore((s) => s.setCurrentFrame);
+  const playbackSpeed = useStore((s) => s.playbackSpeed);
+
+  useEffect(() => {
+    if (!isPlaying || frames.length <= 1) return;
+    const id = setInterval(() => {
+      const cur = useStore.getState().currentFrame;
+      useStore.getState().setCurrentFrame((cur + 1) % frames.length);
+    }, playbackSpeed);
+    return () => clearInterval(id);
+  }, [isPlaying, frames.length, playbackSpeed]);
 
   if (frames.length === 0) return null;
 

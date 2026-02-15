@@ -49,10 +49,12 @@ interface SpriteGenState {
   error: string | null;
   sidebarCollapsed: boolean;
   galleryCollapsed: boolean;
+  showGrid: boolean;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   toggleSidebar: () => void;
   toggleGallery: () => void;
+  toggleGrid: () => void;
 }
 
 export const useStore = create<SpriteGenState>((set, get) => ({
@@ -118,8 +120,10 @@ export const useStore = create<SpriteGenState>((set, get) => ({
   error: null,
   sidebarCollapsed: false,
   galleryCollapsed: false,
+  showGrid: true,
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   toggleGallery: () => set((s) => ({ galleryCollapsed: !s.galleryCollapsed })),
+  toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
 }));

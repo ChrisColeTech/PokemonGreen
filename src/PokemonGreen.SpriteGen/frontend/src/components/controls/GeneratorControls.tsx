@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dices, Play, Save, Download } from 'lucide-react';
 import { useStore } from '../../store';
 import { SectionHeader } from '../common/SectionHeader';
+import { api } from '../../services/apiClient';
 import type { GeneratorType } from '../../types/generator';
 
 const GENERATOR_OPTIONS: { value: GeneratorType; label: string }[] = [
@@ -67,8 +68,39 @@ export function GeneratorControls() {
   const setFrameCount = useStore((s) => s.setFrameCount);
   const setPlaybackSpeed = useStore((s) => s.setPlaybackSpeed);
   const randomizeSeed = useStore((s) => s.randomizeSeed);
+  const setFrames = useStore((s) => s.setFrames);
+  const setLoading = useStore((s) => s.setLoading);
+  const setError = useStore((s) => s.setError);
+  const setGalleryItems = useStore((s) => s.setGalleryItems);
 
   const variants = VARIANT_MAP[selectedType];
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await api.generate(selectedType, seed, selectedVariant ?? undefined, frameCount);
+      setFrames(result.frames);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Generation failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.save(selectedType, seed, selectedVariant ?? undefined);
+      const gallery = await api.getGallery();
+      setGalleryItems(gallery.items);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Save failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -165,6 +197,7 @@ export function GeneratorControls() {
           <div className="flex flex-col gap-[4px] mt-[4px]">
             <button
               disabled={isLoading}
+              onClick={handleGenerate}
               style={{
                 ...btnStyle,
                 background: '#094771',
@@ -180,11 +213,11 @@ export function GeneratorControls() {
               {isLoading ? 'Generating...' : 'Generate Preview'}
             </button>
             <div className="flex gap-[4px]">
-              <button style={{ ...btnStyle, flex: 1 }}>
+              <button onClick={handleSave} style={{ ...btnStyle, flex: 1 }}>
                 <Save size={12} />
                 Save
               </button>
-              <button style={{ ...btnStyle, flex: 1 }}>
+              <button disabled style={{ ...btnStyle, flex: 1, opacity: 0.4 }}>
                 <Download size={12} />
                 Export
               </button>

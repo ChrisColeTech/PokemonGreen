@@ -4,6 +4,7 @@ import { useStore } from '../../store';
 export function PreviewCanvas() {
   const frames = useStore((s) => s.frames);
   const currentFrame = useStore((s) => s.currentFrame);
+  const showGrid = useStore((s) => s.showGrid);
   const svgContent = frames[currentFrame];
 
   return (
@@ -24,13 +25,15 @@ export function PreviewCanvas() {
             dangerouslySetInnerHTML={{ __html: svgContent }}
           />
           {/* Grid overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-5"
-            style={{
-              backgroundImage:
-                'repeating-linear-gradient(0deg,transparent,transparent 19px,#fff 19px,#fff 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,#fff 19px,#fff 20px)',
-            }}
-          />
+          {showGrid && (
+            <div
+              className="absolute inset-0 pointer-events-none opacity-5"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(0deg,transparent,transparent 19px,#fff 19px,#fff 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,#fff 19px,#fff 20px)',
+              }}
+            />
+          )}
         </>
       ) : (
         <div className="flex flex-col items-center gap-[8px] text-text-disabled">

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, Trash2, Save, X } from 'lucide-react';
 import { useStore } from '../../store';
 import { SectionHeader } from '../common/SectionHeader';
+import { api } from '../../services/apiClient';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -40,6 +41,31 @@ export function ImportDropZone() {
   const clearImportFiles = useStore((s) => s.clearImportFiles);
   const setImportBaseName = useStore((s) => s.setImportBaseName);
   const isLoading = useStore((s) => s.isLoading);
+  const setLoading = useStore((s) => s.setLoading);
+  const setError = useStore((s) => s.setError);
+  const setGalleryItems = useStore((s) => s.setGalleryItems);
+
+  const handleSaveFrames = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const frameData = await Promise.all(
+        importFiles.map(async (f, i) => ({
+          index: i,
+          content: await f.file.text(),
+          filename: f.file.name,
+        }))
+      );
+      await api.importFrames(importBaseName, frameData);
+      clearImportFiles();
+      const gallery = await api.getGallery();
+      setGalleryItems(gallery.items);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Import failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -153,6 +179,7 @@ export function ImportDropZone() {
               <div className="flex gap-[4px] mt-[2px]">
                 <button
                   disabled={isLoading}
+                  onClick={handleSaveFrames}
                   style={{
                     ...btnStyle,
                     flex: 1,

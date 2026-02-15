@@ -9,6 +9,7 @@ using PokemonGreen.Assets;
 using PokemonGreen.Core;
 using PokemonGreen.Core.Maps;
 using PokemonGreen.Core.Rendering;
+using PokemonGreen.Core.UI;
 
 namespace PokemonGreen;
 
@@ -22,9 +23,11 @@ public class Game1 : Game
     private SpriteFont _battleFont = null!;
     private MouseState _previousMouseState;
     private KeyboardState _previousKeyboardState;
-    private int _battleMenuIndex; // 0=Fight, 1=Bag, 2=Pokemon, 3=Run
-    private enum BattlePhase { Intro, ZoomOut, Menu }
-    private BattlePhase _battlePhase;
+
+    // Battle UI
+    private readonly Core.UI.MessageBox _battleMessageBox = new();
+    private readonly MenuBox _battleMenuBox = new() { Columns = 2 };
+    private bool _battleZoomStarted;
 
     // Battle 3D scene
     private BattleModelData? _battleBG;
@@ -89,12 +92,17 @@ public class Game1 : Game
 
         _playerRenderer = new PlayerRenderer();
 
+        // Set up battle menu items (reused each battle)
+        _battleMenuBox.SetItems(
+            new MenuItem("Fight"),
+            new MenuItem("Bag"),
+            new MenuItem("Pokemon"),
+            new MenuItem("Run", () => _gameWorld.ExitBattle()));
+
         if (DebugStartInBattle)
         {
             _gameWorld.DebugEnterBattle();
-            _battleCamPos = BattleCamFoe;
-            _battleCamLerp = 1f;
-            _battlePhase = BattlePhase.Intro;
+            EnterBattle();
         }
 
         base.Initialize();
@@ -178,50 +186,28 @@ public class Game1 : Game
 
         if (_gameWorld.State == GameWorld.GameState.Battle && _gameWorld.FadeAlpha <= 0f)
         {
-            bool anyKeyPressed = kbState.GetPressedKeyCount() > 0 && _previousKeyboardState.GetPressedKeyCount() == 0;
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            bool confirm = KeyPressed(kbState, Keys.Enter) || KeyPressed(kbState, Keys.Space) || KeyPressed(kbState, Keys.E) || mouseClicked;
 
-            if (_battlePhase == BattlePhase.Intro)
+            if (_battleMenuBox.IsActive)
             {
-                // Any key or click advances to zoom-out
-                if (anyKeyPressed || mouseClicked)
-                {
-                    _battlePhase = BattlePhase.ZoomOut;
-                    _battleCamFrom = _battleCamPos;
-                    _battleCamTo = BattleCamDefault;
-                    _battleCamLerp = 0f;
-                }
+                // Menu is primary — tick message box passively (typewriter only, no input)
+                _battleMessageBox.Update(dt, false);
+                _battleMenuBox.Update(
+                    left:  KeyPressed(kbState, Keys.Left) || KeyPressed(kbState, Keys.A),
+                    right: KeyPressed(kbState, Keys.Right) || KeyPressed(kbState, Keys.D),
+                    up:    KeyPressed(kbState, Keys.Up) || KeyPressed(kbState, Keys.W),
+                    down:  KeyPressed(kbState, Keys.Down) || KeyPressed(kbState, Keys.S),
+                    confirm: KeyPressed(kbState, Keys.Enter) || KeyPressed(kbState, Keys.Space) || KeyPressed(kbState, Keys.E),
+                    cancel: KeyPressed(kbState, Keys.Back) || KeyPressed(kbState, Keys.B),
+                    mousePosition: mouseState.Position,
+                    mouseClicked: mouseClicked);
             }
-            else if (_battlePhase == BattlePhase.Menu)
+            else if (_battleMessageBox.IsActive)
             {
-                // Arrow key navigation (2x2 grid: row = index/2, col = index%2)
-                if (KeyPressed(kbState, Keys.Left) || KeyPressed(kbState, Keys.A))
-                    _battleMenuIndex = (_battleMenuIndex % 2 == 1) ? _battleMenuIndex - 1 : _battleMenuIndex;
-                if (KeyPressed(kbState, Keys.Right) || KeyPressed(kbState, Keys.D))
-                    _battleMenuIndex = (_battleMenuIndex % 2 == 0) ? _battleMenuIndex + 1 : _battleMenuIndex;
-                if (KeyPressed(kbState, Keys.Up) || KeyPressed(kbState, Keys.W))
-                    _battleMenuIndex = (_battleMenuIndex >= 2) ? _battleMenuIndex - 2 : _battleMenuIndex;
-                if (KeyPressed(kbState, Keys.Down) || KeyPressed(kbState, Keys.S))
-                    _battleMenuIndex = (_battleMenuIndex < 2) ? _battleMenuIndex + 2 : _battleMenuIndex;
-
-                // Mouse click on any menu item
-                if (mouseClicked)
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        if (GetMenuItemRect(i).Contains(mouseState.Position))
-                        {
-                            _battleMenuIndex = i;
-                            ConfirmBattleMenu();
-                            break;
-                        }
-                    }
-                }
-
-                // Confirm with Enter/Space/E
-                if (KeyPressed(kbState, Keys.Enter) || KeyPressed(kbState, Keys.Space) || KeyPressed(kbState, Keys.E))
-                    ConfirmBattleMenu();
+                // Message box is primary — receives confirm input
+                _battleMessageBox.Update(dt, confirm);
             }
-            // ZoomOut phase: no input, just wait for animation to finish
         }
         _previousMouseState = mouseState;
         _previousKeyboardState = kbState;
@@ -237,8 +223,12 @@ public class Game1 : Game
                 _battleCamLerp = 1f;
                 _battleCamPos = _battleCamTo;
                 // Zoom-out finished — show the menu
-                if (_battlePhase == BattlePhase.ZoomOut)
-                    _battlePhase = BattlePhase.Menu;
+                if (_battleZoomStarted)
+                {
+                    _battleZoomStarted = false;
+                    _battleMenuBox.IsActive = true;
+                    _battleMessageBox.Show("What will you do?");
+                }
             }
             else
             {
@@ -248,15 +238,10 @@ public class Game1 : Game
             }
         }
 
-        // Detect battle entry and reset camera to foe focus
+        // Detect battle entry and reset camera/UI
         var currentState = _gameWorld.State;
         if (currentState == GameWorld.GameState.Battle && _prevGameState != GameWorld.GameState.Battle)
-        {
-            _battleCamPos = BattleCamFoe;
-            _battleCamLerp = 1f;
-            _battleMenuIndex = 0;
-            _battlePhase = BattlePhase.Intro;
-        }
+            EnterBattle();
         _prevGameState = currentState;
 
         TileRenderer.Update(deltaTime);
@@ -381,64 +366,27 @@ public class Game1 : Game
         // ── 2D UI overlay ──
         _spriteBatch.Begin();
 
-        int menuH = 120;
-        int menuY = h - menuH - 20;
+        int panelH = 120;
+        int panelY = h - panelH - 20;
 
-        if (_battlePhase == BattlePhase.Intro)
+        if (_battleMenuBox.IsActive)
         {
-            // Intro: full-width text box with encounter message
-            int boxW = w - 40;
-            DrawTextBox(20, menuY, boxW, menuH);
-            _spriteBatch.DrawString(_battleFont, "Wild POKEMON appeared!",
-                new Vector2(32, menuY + 12), Color.White);
-
-            // Prompt to continue
-            string prompt = "Press any key...";
-            var promptSize = _battleFont.MeasureString(prompt);
-            _spriteBatch.DrawString(_battleFont, prompt,
-                new Vector2(boxW - promptSize.X, menuY + menuH - promptSize.Y - 12),
-                Color.Gray);
-        }
-        else if (_battlePhase == BattlePhase.Menu)
-        {
-            // Menu box (bottom-right)
+            // Menu (bottom-right) + message (bottom-left)
             int menuW = 200;
             int menuX = w - menuW - 20;
-            DrawTextBox(menuX, menuY, menuW, menuH);
+            _battleMenuBox.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                new Rectangle(menuX, panelY, menuW, panelH));
 
-            // Menu options
-            string[] menuItems = ["Fight", "Bag", "Pokemon", "Run"];
-            int itemH = menuH / 2;
-            int itemW = menuW / 2;
-            var mouseState = Mouse.GetState();
-
-            for (int i = 0; i < menuItems.Length; i++)
-            {
-                int col = i % 2;
-                int row = i / 2;
-                int ix = menuX + col * itemW;
-                int iy = menuY + row * itemH;
-                var itemRect = new Rectangle(ix, iy, itemW, itemH);
-                bool selected = i == _battleMenuIndex;
-                bool hovering = itemRect.Contains(mouseState.Position);
-
-                if (selected)
-                    _spriteBatch.Draw(_pixelTexture, itemRect, new Color(70, 70, 110));
-                else if (hovering)
-                    _spriteBatch.Draw(_pixelTexture, itemRect, new Color(55, 55, 80));
-
-                string label = selected ? "> " + menuItems[i] : "  " + menuItems[i];
-                var textSize = _battleFont.MeasureString(label);
-                _spriteBatch.DrawString(_battleFont, label,
-                    new Vector2(ix + 8, iy + (itemH - textSize.Y) / 2),
-                    selected ? Color.Yellow : Color.White);
-            }
-
-            // Text box (bottom-left)
             int textBoxW = w - menuW - 60;
-            DrawTextBox(20, menuY, textBoxW, menuH);
-            _spriteBatch.DrawString(_battleFont, "What will you do?",
-                new Vector2(32, menuY + 12), Color.White);
+            _battleMessageBox.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                new Rectangle(20, panelY, textBoxW, panelH));
+        }
+        else if (_battleMessageBox.IsActive)
+        {
+            // Full-width message box (intro / battle messages)
+            int boxW = w - 40;
+            _battleMessageBox.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                new Rectangle(20, panelY, boxW, panelH));
         }
 
         _spriteBatch.End();
@@ -511,38 +459,28 @@ public class Game1 : Game
         File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "battle3d_log.txt"), msg + "\n");
     }
 
-    private void DrawTextBox(int x, int y, int w, int h)
+    private void EnterBattle()
     {
-        _spriteBatch.Draw(_pixelTexture, new Rectangle(x, y, w, h), new Color(40, 40, 60));
-        _spriteBatch.Draw(_pixelTexture, new Rectangle(x, y, w, 2), Color.White);
-        _spriteBatch.Draw(_pixelTexture, new Rectangle(x, y + h - 2, w, 2), Color.White);
-        _spriteBatch.Draw(_pixelTexture, new Rectangle(x, y, 2, h), Color.White);
-        _spriteBatch.Draw(_pixelTexture, new Rectangle(x + w - 2, y, 2, h), Color.White);
+        _battleCamPos = BattleCamFoe;
+        _battleCamLerp = 1f;
+        _battleZoomStarted = false;
+        _battleMenuBox.IsActive = false;
+        _battleMenuBox.SelectedIndex = 0;
+        _battleMessageBox.Clear();
+        _battleMessageBox.Show("Wild POKEMON appeared!");
+        _battleMessageBox.OnFinished = () =>
+        {
+            // Message dismissed → start camera zoom-out
+            _battleZoomStarted = true;
+            _battleCamFrom = _battleCamPos;
+            _battleCamTo = BattleCamDefault;
+            _battleCamLerp = 0f;
+        };
     }
 
     private bool KeyPressed(KeyboardState current, Keys key)
     {
         return current.IsKeyDown(key) && !_previousKeyboardState.IsKeyDown(key);
-    }
-
-    private void ConfirmBattleMenu()
-    {
-        // Only "Run" (index 3) does anything for now
-        if (_battleMenuIndex == 3)
-            _gameWorld.ExitBattle();
-    }
-
-    private Rectangle GetMenuItemRect(int index)
-    {
-        int menuW = 200;
-        int menuH = 120;
-        int menuX = Window.ClientBounds.Width - menuW - 20;
-        int menuY = Window.ClientBounds.Height - menuH - 20;
-        int itemW = menuW / 2;
-        int itemH = menuH / 2;
-        int col = index % 2;
-        int row = index / 2;
-        return new Rectangle(menuX + col * itemW, menuY + row * itemH, itemW, itemH);
     }
 
     private void OnClientSizeChanged(object? sender, System.EventArgs e)

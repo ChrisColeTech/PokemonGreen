@@ -36,4 +36,10 @@ export const api = {
     request<{ success: boolean }>(`/sprites/${encodeURIComponent(filename)}`, { method: 'DELETE' }),
 
   clearAll: () => request<{ deleted: number }>('/clear', { method: 'POST' }),
+
+  importFrames: (baseName: string, frames: { index: number; content: string; filename: string }[]) =>
+    request<{ saved: string[]; count: number }>('/import', {
+      method: 'POST',
+      body: JSON.stringify({ baseName, frames }),
+    }),
 };

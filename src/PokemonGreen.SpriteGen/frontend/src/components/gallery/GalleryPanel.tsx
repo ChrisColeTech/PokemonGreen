@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PanelRightClose, PanelRightOpen, Search, Package } from 'lucide-react';
 import { useStore } from '../../store';
 import { SectionHeader } from '../common/SectionHeader';
+import { api } from '../../services/apiClient';
 
 export function GalleryPanel() {
   const collapsed = useStore((s) => s.galleryCollapsed);
@@ -9,7 +10,27 @@ export function GalleryPanel() {
   const items = useStore((s) => s.galleryItems);
   const filter = useStore((s) => s.galleryFilter);
   const setFilter = useStore((s) => s.setGalleryFilter);
+  const setItems = useStore((s) => s.setGalleryItems);
+  const setFrames = useStore((s) => s.setFrames);
+  const setError = useStore((s) => s.setError);
   const [expanded, setExpanded] = useState(true);
+
+  useEffect(() => {
+    api.getGallery(filter || undefined)
+      .then((res) => setItems(res.items))
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load gallery'));
+  }, [filter, setItems, setError]);
+
+  const handleItemClick = async (filename: string) => {
+    try {
+      const res = await fetch(`/api/sprites/${encodeURIComponent(filename)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const svg = await res.text();
+      setFrames([svg]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load sprite');
+    }
+  };
 
   return (
     <aside
@@ -61,6 +82,7 @@ export function GalleryPanel() {
                       className="aspect-square flex items-center justify-center rounded-[2px] cursor-pointer hover:bg-hover"
                       style={{ background: '#0f0f23', border: '1px solid #2d2d2d' }}
                       title={item.filename}
+                      onClick={() => handleItemClick(item.filename)}
                     >
                       {item.thumbnail ? (
                         <div className="sprite-render" dangerouslySetInnerHTML={{ __html: item.thumbnail }} />
