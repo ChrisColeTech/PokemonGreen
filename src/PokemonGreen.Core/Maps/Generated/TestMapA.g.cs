@@ -21,7 +21,7 @@ public sealed class TestMapA : MapDefinition
         0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
         0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
         0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 
-        0, 0, 1, 1, 1, 1, 1, 1, 113, 1, 1, 1, 1, 1, 0, 0
+        0, 0, 1, 1, 1, 1, 1, 113, 113, 1, 1, 1, 1, 1, 0, 0
     ];
 
     private static readonly int?[] OverlayTileData =
@@ -46,7 +46,7 @@ public sealed class TestMapA : MapDefinition
 
     private static readonly int[] WalkableTileIds =
     [
-        1, 2, 18, 113
+        1, 18, 113
     ];
 
     public static TestMapA Instance { get; } = new();

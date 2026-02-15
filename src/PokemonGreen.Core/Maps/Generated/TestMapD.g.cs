@@ -13,8 +13,8 @@ public sealed class TestMapD : MapDefinition
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
-        114, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
+        114, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
+        114, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 
@@ -33,10 +33,10 @@ public sealed class TestMapD : MapDefinition
         null, null, null, null, null, null, null,   22, null, null, null, null, null, null,   80, null, 
         null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null, 
         null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null, 
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null,
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null,
-        null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null,
-        null, null, null, null, null, null, null, null, null, null, null, null,   17, null,   80, null,
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null, 
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null, 
+        null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null, 
+        null, null, null, null, null, null, null, null, null, null, null, null,   17, null,   80, null, 
         null, null, null,   16, null, null, null, null, null, null, null, null, null, null,   80, null, 
         null, null, null, null, null, null, null, null, null, null, null, null, null, null,   80, null, 
           80,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80,   80, null, 
@@ -46,7 +46,7 @@ public sealed class TestMapD : MapDefinition
 
     private static readonly int[] WalkableTileIds =
     [
-        1, 2, 18, 114
+        1, 18, 114
     ];
 
     public static TestMapD Instance { get; } = new();

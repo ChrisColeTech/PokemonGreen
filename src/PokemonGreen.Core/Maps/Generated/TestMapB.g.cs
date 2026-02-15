@@ -13,8 +13,8 @@ public sealed class TestMapB : MapDefinition
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 115,
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 115, 
+        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 115, 
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
@@ -32,9 +32,9 @@ public sealed class TestMapB : MapDefinition
         null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
         null,   80, null, null, null, null, null, null, null, null, null, null,   16, null, null, null, 
         null,   80, null,   17, null, null, null, null, null, null, null, null, null, null, null, null, 
-        null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-        null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-        null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+        null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
+        null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
+        null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
         null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
         null,   80, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
         null,   80, null, null, null, null, null, null,   22, null, null, null, null, null, null, null, 
@@ -46,7 +46,7 @@ public sealed class TestMapB : MapDefinition
 
     private static readonly int[] WalkableTileIds =
     [
-        1, 2, 18, 115
+        1, 18, 115
     ];
 
     public static TestMapB Instance { get; } = new();
