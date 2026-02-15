@@ -15,7 +15,7 @@ public class GameWorld
     private const int EncounterChance = 10; // 1 in N chance per step
 
     // ── Game state ──────────────────────────────────────────────────
-    public enum GameState { Overworld, Battle }
+    public enum GameState { Overworld, Battle, PauseMenu }
     public GameState State { get; private set; } = GameState.Overworld;
 
     // ── Public state ──────────────────────────────────────────────────
@@ -99,8 +99,8 @@ public class GameWorld
             return;
         }
 
-        // 1b. In battle state, wait for Game1 to call ExitBattle().
-        if (State == GameState.Battle)
+        // 1b. In battle or pause state, skip overworld logic.
+        if (State != GameState.Overworld)
             return;
 
         // 2. Read input.
@@ -215,6 +215,18 @@ public class GameWorld
     public void DebugEnterBattle()
     {
         State = GameState.Battle;
+    }
+
+    public void EnterPauseMenu()
+    {
+        if (State == GameWorld.GameState.Overworld)
+            State = GameState.PauseMenu;
+    }
+
+    public void ExitPauseMenu()
+    {
+        if (State == GameState.PauseMenu)
+            State = GameState.Overworld;
     }
 
     // ── Transition logic ──────────────────────────────────────────────

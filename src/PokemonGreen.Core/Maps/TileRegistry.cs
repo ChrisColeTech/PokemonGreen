@@ -5,11 +5,11 @@ public static class TileRegistry
     private static readonly Dictionary<int, TileDefinition> _tiles = new()
     {
         // Terrain (0-15)
-        [0] = new TileDefinition(0, "Water", false, "#3890f8", TileCategory.Terrain),
-        [1] = new TileDefinition(1, "Grass", true, "#7ec850", TileCategory.Terrain),
-        [2] = new TileDefinition(2, "Path", true, "#d4a574", TileCategory.Terrain),
+        [0] = new TileDefinition(0, "Water", false, "#3890f8", TileCategory.Terrain, SpriteName: "tile_water", AnimationFrames: 4),
+        [1] = new TileDefinition(1, "Grass", true, "#7ec850", TileCategory.Terrain, SpriteName: "tile_grass"),
+        [2] = new TileDefinition(2, "Path", true, "#d4a574", TileCategory.Terrain, SpriteName: "tile_path"),
         [3] = new TileDefinition(3, "Floor", true, "#c0a080", TileCategory.Terrain),
-        [4] = new TileDefinition(4, "Bridge", true, "#8b7355", TileCategory.Terrain),
+        [4] = new TileDefinition(4, "Bridge", true, "#8b7355", TileCategory.Terrain, SpriteName: "tile_bridge"),
         [5] = new TileDefinition(5, "DeepWater", false, "#2060c0", TileCategory.Terrain),
         [6] = new TileDefinition(6, "Sand", true, "#e8d8a0", TileCategory.Terrain),
         [7] = new TileDefinition(7, "Snow", true, "#f0f8ff", TileCategory.Terrain),
@@ -17,22 +17,22 @@ public static class TileRegistry
         [9] = new TileDefinition(9, "Mud", true, "#6b4423", TileCategory.Terrain, "slow"),
         [10] = new TileDefinition(10, "Lava", false, "#ff4500", TileCategory.Terrain),
         [11] = new TileDefinition(11, "Void", false, "#000000", TileCategory.Terrain),
-        [12] = new TileDefinition(12, "CaveFloor", true, "#606060", TileCategory.Terrain),
+        [12] = new TileDefinition(12, "CaveFloor", true, "#606060", TileCategory.Terrain, SpriteName: "tile_cave"),
         [13] = new TileDefinition(13, "WoodFloor", true, "#a0522d", TileCategory.Terrain),
         [14] = new TileDefinition(14, "Carpet", true, "#8b0000", TileCategory.Terrain),
         [15] = new TileDefinition(15, "Tiles", true, "#d3d3d3", TileCategory.Terrain),
 
         // Decoration (16-31)
-        [16] = new TileDefinition(16, "Tree", false, "#228b22", TileCategory.Decoration),
-        [17] = new TileDefinition(17, "Rock", false, "#808080", TileCategory.Decoration),
-        [18] = new TileDefinition(18, "Flower", true, "#ff69b4", TileCategory.Decoration),
-        [19] = new TileDefinition(19, "Statue", false, "#a9a9a9", TileCategory.Decoration),
+        [16] = new TileDefinition(16, "Tree", false, "#228b22", TileCategory.Decoration, SpriteName: "tile_tree", AnimationFrames: 6),
+        [17] = new TileDefinition(17, "Rock", false, "#808080", TileCategory.Decoration, SpriteName: "tile_rock"),
+        [18] = new TileDefinition(18, "Flower", true, "#ff69b4", TileCategory.Decoration, SpriteName: "tile_flower_pink", AnimationFrames: 5),
+        [19] = new TileDefinition(19, "Statue", false, "#a9a9a9", TileCategory.Decoration, SpriteName: "tile_statue"),
         [20] = new TileDefinition(20, "Bush", false, "#2e8b57", TileCategory.Decoration),
-        [21] = new TileDefinition(21, "Stump", false, "#8b4513", TileCategory.Decoration),
-        [22] = new TileDefinition(22, "Boulder", false, "#696969", TileCategory.Decoration),
-        [23] = new TileDefinition(23, "Sign", false, "#deb887", TileCategory.Decoration, "readable"),
-        [24] = new TileDefinition(24, "Fence", false, "#cd853f", TileCategory.Decoration),
-        [25] = new TileDefinition(25, "Torch", false, "#ffa500", TileCategory.Decoration),
+        [21] = new TileDefinition(21, "Stump", false, "#8b4513", TileCategory.Decoration, SpriteName: "tile_cut_tree"),
+        [22] = new TileDefinition(22, "Boulder", false, "#696969", TileCategory.Decoration, SpriteName: "tile_boulder"),
+        [23] = new TileDefinition(23, "Sign", false, "#deb887", TileCategory.Decoration, "readable", SpriteName: "tile_sign"),
+        [24] = new TileDefinition(24, "Fence", false, "#cd853f", TileCategory.Decoration, SpriteName: "tile_fence"),
+        [25] = new TileDefinition(25, "Torch", false, "#ffa500", TileCategory.Decoration, AnimationFrames: 4),
         [26] = new TileDefinition(26, "Chest", false, "#8b4513", TileCategory.Decoration, "openable"),
         [27] = new TileDefinition(27, "Barrel", false, "#a0522d", TileCategory.Decoration),
         [28] = new TileDefinition(28, "Crate", false, "#d2691e", TileCategory.Decoration),
@@ -41,12 +41,12 @@ public static class TileRegistry
         [31] = new TileDefinition(31, "Table", false, "#deb887", TileCategory.Decoration),
 
         // Interactive (32-47)
-        [32] = new TileDefinition(32, "Door", true, "#8b4513", TileCategory.Interactive, "door"),
-        [33] = new TileDefinition(33, "Warp", true, "#9400d3", TileCategory.Interactive, "warp"),
+        [32] = new TileDefinition(32, "Door", true, "#8b4513", TileCategory.Interactive, "door", SpriteName: "tile_door"),
+        [33] = new TileDefinition(33, "Warp", true, "#9400d3", TileCategory.Interactive, "warp", SpriteName: "tile_warp"),
         [34] = new TileDefinition(34, "PC", false, "#4169e1", TileCategory.Interactive, "pc"),
         [35] = new TileDefinition(35, "HealingMachine", false, "#ff6b6b", TileCategory.Interactive, "heal"),
         [36] = new TileDefinition(36, "Mart", false, "#4682b4", TileCategory.Interactive, "shop"),
-        [37] = new TileDefinition(37, "StrengthRock", false, "#708090", TileCategory.Interactive, "strength"),
+        [37] = new TileDefinition(37, "StrengthRock", false, "#708090", TileCategory.Interactive, "strength", SpriteName: "tile_strength_rock"),
         [38] = new TileDefinition(38, "CutTree", false, "#556b2f", TileCategory.Interactive, "cut"),
         [39] = new TileDefinition(39, "SmashRock", false, "#778899", TileCategory.Interactive, "rock_smash"),
         [40] = new TileDefinition(40, "WaterfallClimb", false, "#4682b4", TileCategory.Interactive, "waterfall"),
@@ -87,8 +87,8 @@ public static class TileRegistry
         [71] = new TileDefinition(71, "Elder", false, "#ff1493", TileCategory.Trainer, "team_yell", EntityId: 502),
 
         // Encounter (72-79)
-        [72] = new TileDefinition(72, "TallGrass", true, "#5a9c3a", TileCategory.Encounter, "wild_encounter"),
-        [73] = new TileDefinition(73, "RareGrass", true, "#4a8c2a", TileCategory.Encounter, "rare_encounter"),
+        [72] = new TileDefinition(72, "TallGrass", true, "#5a9c3a", TileCategory.Encounter, "wild_encounter", SpriteName: "tile_tall_grass", AnimationFrames: 5),
+        [73] = new TileDefinition(73, "RareGrass", true, "#4a8c2a", TileCategory.Encounter, "rare_encounter", SpriteName: "tile_rare_grass"),
         [74] = new TileDefinition(74, "DarkGrass", true, "#3a7c1a", TileCategory.Encounter, "double_encounter"),
         [75] = new TileDefinition(75, "CaveEncounter", true, "#505050", TileCategory.Encounter, "cave_encounter"),
         [76] = new TileDefinition(76, "WaterEncounter", false, "#3890f8", TileCategory.Encounter, "water_encounter"),
@@ -97,7 +97,7 @@ public static class TileRegistry
         [79] = new TileDefinition(79, "Headbutt", false, "#228b22", TileCategory.Encounter, "headbutt"),
 
         // Structure (80-95)
-        [80] = new TileDefinition(80, "Wall", false, "#404040", TileCategory.Structure),
+        [80] = new TileDefinition(80, "Wall", false, "#404040", TileCategory.Structure, SpriteName: "tile_wall"),
         [81] = new TileDefinition(81, "LedgeDown", true, "#7ec850", TileCategory.Structure, "ledge_down"),
         [82] = new TileDefinition(82, "LedgeLeft", true, "#7ec850", TileCategory.Structure, "ledge_left"),
         [83] = new TileDefinition(83, "LedgeRight", true, "#7ec850", TileCategory.Structure, "ledge_right"),
@@ -111,8 +111,8 @@ public static class TileRegistry
         [91] = new TileDefinition(91, "Ladder", true, "#a0522d", TileCategory.Structure, "ladder"),
         [92] = new TileDefinition(92, "Ramp", true, "#9b8b7b", TileCategory.Structure, "ramp"),
         [93] = new TileDefinition(93, "Cliff", false, "#5a5a5a", TileCategory.Structure),
-        [94] = new TileDefinition(94, "Waterfall", false, "#4090ff", TileCategory.Structure, "waterfall_hm"),
-        [95] = new TileDefinition(95, "Whirlpool", false, "#3080e8", TileCategory.Structure, "whirlpool_hm"),
+        [94] = new TileDefinition(94, "Waterfall", false, "#4090ff", TileCategory.Structure, "waterfall_hm", AnimationFrames: 4),
+        [95] = new TileDefinition(95, "Whirlpool", false, "#3080e8", TileCategory.Structure, "whirlpool_hm", AnimationFrames: 4),
 
         // Items (96-111) → ItemRegistry IDs
         [96] = new TileDefinition(96, "Pokeball", true, "#ff0000", TileCategory.Item, "item", EntityId: 0),
@@ -137,6 +137,13 @@ public static class TileRegistry
         [113] = new TileDefinition(113, "Transition South", true, "#00aaff", TileCategory.Terrain),
         [114] = new TileDefinition(114, "Transition West", true, "#ff8800", TileCategory.Terrain),
         [115] = new TileDefinition(115, "Transition East", true, "#cc44ff", TileCategory.Terrain),
+
+        // Flower variants (116-120)
+        [116] = new TileDefinition(116, "FlowerRed", true, "#e63946", TileCategory.Decoration, SpriteName: "tile_flower_red", AnimationFrames: 5),
+        [117] = new TileDefinition(117, "FlowerPink", true, "#ff69b4", TileCategory.Decoration, SpriteName: "tile_flower_pink", AnimationFrames: 5),
+        [118] = new TileDefinition(118, "FlowerYellow", true, "#ffd700", TileCategory.Decoration, SpriteName: "tile_flower_yellow", AnimationFrames: 5),
+        [119] = new TileDefinition(119, "FlowerWhite", true, "#ffffff", TileCategory.Decoration, SpriteName: "tile_flower_white", AnimationFrames: 5),
+        [120] = new TileDefinition(120, "FlowerPurple", true, "#9b59b6", TileCategory.Decoration, SpriteName: "tile_flower_purple", AnimationFrames: 5),
     };
 
     public static TileDefinition? GetTile(int id) =>

@@ -132,6 +132,43 @@ public class Player
         return map.IsInBounds(x, y) && map.IsWalkable(x, y);
     }
 
+    /// <summary>
+    /// Checks if the position (px, py) is blocked, using reduced collision areas
+    /// for decoration objects like trees and boulders so their hitbox is smaller
+    /// than a full tile.
+    /// </summary>
+    private bool IsBlocked(float px, float py, TileMap map)
+    {
+        int tileX = (int)MathF.Floor(px);
+        int tileY = (int)MathF.Floor(py);
+
+        if (!map.IsInBounds(tileX, tileY))
+            return true;
+
+        if (map.IsWalkable(tileX, tileY))
+            return false;
+
+        int overlayId = map.GetOverlayTile(tileX, tileY);
+        var (insetX, insetY) = GetObjectCollisionInsets(overlayId);
+        if (insetX <= 0f && insetY <= 0f)
+            return true;
+
+        float localX = px - tileX;
+        float localY = py - tileY;
+        return localX >= insetX && localX < 1f - insetX &&
+               localY >= insetY && localY < 1f - insetY;
+    }
+
+    private static (float x, float y) GetObjectCollisionInsets(int tileId) => tileId switch
+    {
+        16 => (0.3f, 0.2f),   // Tree - smaller Y inset = taller hitbox
+        17 => (0.25f, 0.25f), // Rock
+        20 => (0.25f, 0.25f), // Bush
+        22 => (0.25f, 0.25f), // Boulder
+        19 => (0.2f, 0.2f),   // Statue
+        _ => (0f, 0f)
+    };
+
     public int FramesPerState() => State switch
     {
         PlayerState.Idle => 2,
@@ -158,11 +195,8 @@ public class Player
         newX = Math.Clamp(newX, 0, map.Width - 1f);
         newY = Math.Clamp(newY, 0, map.Height - 1f);
 
-        // Try full movement first
-        int targetTileX = (int)MathF.Floor(newX);
-        int targetTileY = (int)MathF.Floor(newY);
-
-        if (CanMoveTo(targetTileX, targetTileY, map))
+        // Try full movement first (using centered collision box)
+        if (!IsBlocked(newX, newY, map))
         {
             X = newX;
             Y = newY;
@@ -170,18 +204,14 @@ public class Player
         }
 
         // Axis-aligned sliding: try X alone
-        int slideTileX = (int)MathF.Floor(newX);
-        int currentTileY = (int)MathF.Floor(Y);
-        if (dx != 0 && CanMoveTo(slideTileX, currentTileY, map))
+        if (dx != 0 && !IsBlocked(newX, Y, map))
         {
             X = newX;
             return;
         }
 
         // Try Y alone
-        int currentTileX = (int)MathF.Floor(X);
-        int slideTileY = (int)MathF.Floor(newY);
-        if (dy != 0 && CanMoveTo(currentTileX, slideTileY, map))
+        if (dy != 0 && !IsBlocked(X, newY, map))
         {
             Y = newY;
         }
@@ -203,10 +233,7 @@ public class Player
             float proposedX = X + driftX;
             float proposedY = Y + driftY;
 
-            int targetTileX = (int)MathF.Floor(proposedX);
-            int targetTileY = (int)MathF.Floor(proposedY);
-
-            if (CanMoveTo(targetTileX, targetTileY, map))
+            if (!IsBlocked(proposedX, proposedY, map))
             {
                 X = proposedX;
                 Y = proposedY;
@@ -214,20 +241,13 @@ public class Player
             else
             {
                 // Try sliding along each axis
-                int slideTileX = (int)MathF.Floor(proposedX);
-                int curTileY = (int)MathF.Floor(Y);
-                if (_jumpMomentumDx != 0 && CanMoveTo(slideTileX, curTileY, map))
+                if (_jumpMomentumDx != 0 && !IsBlocked(proposedX, Y, map))
                 {
                     X = proposedX;
                 }
-                else
+                else if (_jumpMomentumDy != 0 && !IsBlocked(X, proposedY, map))
                 {
-                    int curTileX = (int)MathF.Floor(X);
-                    int slideTileY = (int)MathF.Floor(proposedY);
-                    if (_jumpMomentumDy != 0 && CanMoveTo(curTileX, slideTileY, map))
-                    {
-                        Y = proposedY;
-                    }
+                    Y = proposedY;
                 }
             }
         }

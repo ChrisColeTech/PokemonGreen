@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 const itemsDir = join(rootDir, 'Assets', 'Items');
-const outputDir = join(rootDir, 'src', 'PokemonGreen', 'Content', 'Sprites', 'Items');
+const outputDir = join(rootDir, 'src', 'PokemonGreen.Assets', 'Items');
 
 const files = await glob('*.svg', { cwd: itemsDir });
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PokemonGreen.Core.UI.Fonts;
 
 namespace PokemonGreen.Core.UI;
 
@@ -11,7 +12,7 @@ namespace PokemonGreen.Core.UI;
 /// </summary>
 public class MessageBox
 {
-    private const float CharsPerSecond = 30f;
+    private const float CharsPerSecond = 38f;
     private const float PromptBlinkRate = 2f; // blinks per second
 
     private readonly Queue<string> _messages = new();
@@ -93,7 +94,7 @@ public class MessageBox
     }
 
     /// <summary>
-    /// Draw the message box with bordered panel and current text.
+    /// Draw the message box with bordered panel and current text (SpriteFont version).
     /// </summary>
     public void Draw(SpriteBatch spriteBatch, SpriteFont font, Texture2D pixel, Rectangle bounds)
     {
@@ -112,7 +113,30 @@ public class MessageBox
             new Vector2(bounds.X + padding, bounds.Y + padding),
             UIStyle.TextNormal, UIStyle.TextNormalOutline);
 
-        // Blinking advance prompt when fully revealed
+        DrawPrompt(spriteBatch, pixel, bounds, padding);
+    }
+
+    /// <summary>
+    /// Draw the message box with bordered panel and current text (KermFont version).
+    /// </summary>
+    public void Draw(SpriteBatch spriteBatch, KermFontRenderer fontRenderer, Texture2D pixel, Rectangle bounds, int fontScale = 1)
+    {
+        if (_currentMessage == null)
+            return;
+
+        UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
+
+        int padding = 16;
+        int maxChars = Math.Min((int)_visibleChars, _currentMessage.Length);
+        fontRenderer.DrawString(spriteBatch, _currentMessage,
+            new Vector2(bounds.X + padding, bounds.Y + padding),
+            fontScale, Color.White, maxChars);
+
+        DrawPrompt(spriteBatch, pixel, bounds, padding);
+    }
+
+    private void DrawPrompt(SpriteBatch spriteBatch, Texture2D pixel, Rectangle bounds, int padding)
+    {
         if (IsTextFullyRevealed)
         {
             bool showPrompt = ((int)(_blinkTimer * PromptBlinkRate)) % 2 == 0;

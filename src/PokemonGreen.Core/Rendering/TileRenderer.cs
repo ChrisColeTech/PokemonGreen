@@ -8,19 +8,34 @@ namespace PokemonGreen.Core.Rendering;
 
 public static class TileRenderer
 {
-    private static readonly Dictionary<int, Texture2D[]> _animatedTiles = new();
+    private static readonly Dictionary<int, AnimatedSprite> _tileSprites = new();
     private static float _animTimer;
     private static readonly float _animFrameDuration = 0.3f;
     private static int _animFrame;
+    private static AnimatedSprite? _singleGrassSprite;
 
     private static readonly Dictionary<int, float> _visualScale = new()
     {
         [16] = 1.8f,
+        [17] = 1.2f,
         [20] = 1.4f,
         [22] = 1.3f,
         [18] = 0.55f,
         [19] = 1.5f,
     };
+
+    private static readonly Dictionary<int, (int x, int y)> _visualOffset = new()
+    {
+        [16] = (8, 4),
+        [17] = (8, 6),
+        [22] = (5, 8),
+        [20] = (5, 6),
+        [19] = (5, 8),
+    };
+
+    // Set of tile IDs that use scaled rendering anchored to fill the tile from the top down,
+    // so the visible content fills the tile and overflow extends below (hidden by Y-sort).
+    private static readonly HashSet<int> _scaledDecoration = new() { 16, 17, 19, 20, 22 };
 
     public static void Update(float deltaTime)
     {
@@ -30,6 +45,7 @@ public static class TileRenderer
             _animTimer -= _animFrameDuration;
             _animFrame++;
         }
+        AnimatedSpriteCache.UpdateAll(deltaTime);
     }
 
     public static void DrawBaseTiles(
@@ -148,7 +164,7 @@ public static class TileRenderer
         }
         else
         {
-            texture = GetAnimatedFrame(tileId, tile.Name)
+            texture = GetAnimatedFrame(tileId, tile)
                       ?? TextureStore.GetTileTexture(tileId, tile.Name);
         }
 
@@ -241,10 +257,26 @@ public static class TileRenderer
         }
 
         float textureScale = (float)tileSize / texture.Width * scale;
-        int drawWidth = (int)(texture.Width * textureScale);
-        int drawHeight = (int)(texture.Height * textureScale);
-        int offsetX = (tileSize - drawWidth) / 2;
-        int offsetY = tileSize - drawHeight;
+        int drawWidth = (int)MathF.Round(texture.Width * textureScale);
+        int drawHeight = (int)MathF.Round(texture.Height * textureScale);
+
+        int offsetX, offsetY;
+        if (_scaledDecoration.Contains(tileId))
+        {
+            offsetX = (tileSize - drawWidth + 1) / 2;
+            offsetY = (tileSize - drawHeight + 1) / 2;
+        }
+        else
+        {
+            offsetX = (tileSize - drawWidth) / 2;
+            offsetY = tileSize - drawHeight;
+        }
+
+        if (_visualOffset.TryGetValue(tileId, out var offset))
+        {
+            offsetX += offset.x;
+            offsetY += offset.y;
+        }
 
         spriteBatch.Draw(
             texture,
@@ -253,72 +285,36 @@ public static class TileRenderer
             Color.White);
     }
 
-    private static Texture2D? GetAnimatedFrame(int tileId, string tileName)
+    private static Texture2D? GetAnimatedFrame(int tileId, TileDefinition tile)
     {
-        if (_animatedTiles.TryGetValue(tileId, out var frames))
-            return frames[_animFrame % frames.Length];
-
-        var baseName = TileNameToSpriteBase(tileName);
-        var frameList = new List<Texture2D>();
-
-        for (int i = 0; ; i++)
+        var spriteName = tile.GetSpriteName();
+        
+        if (_tileSprites.TryGetValue(tileId, out var cached))
+            return cached.GetCurrentFrame();
+        
+        var sprite = AnimatedSpriteCache.GetOrLoad(spriteName);
+        if (sprite != null)
         {
-            var frame = TextureStore.GetAnimatedTileFrame(tileId, baseName, i);
-            if (frame == null)
-                break;
-            frameList.Add(frame);
+            _tileSprites[tileId] = sprite;
+            return sprite.GetCurrentFrame();
         }
-
-        if (frameList.Count > 1)
-        {
-            var arr = frameList.ToArray();
-            _animatedTiles[tileId] = arr;
-            return arr[_animFrame % arr.Length];
-        }
-
-        return null;
+        
+        return TextureStore.GetTileTexture(tileId, tile.Name);
     }
 
-    private static string TileNameToSpriteBase(string name)
-    {
-        var result = new System.Text.StringBuilder();
-        foreach (char c in name)
-        {
-            if (char.IsUpper(c) && result.Length > 0)
-                result.Append('_');
-            result.Append(char.ToLower(c));
-        }
-        return $"tile_{result}";
-    }
-
-    private static Texture2D[]? _singleGrassFrames;
-    
     private static Texture2D? GetSingleGrassFrame()
     {
-        if (_singleGrassFrames != null)
-            return _singleGrassFrames[_animFrame % _singleGrassFrames.Length];
+        if (_singleGrassSprite != null)
+            return _singleGrassSprite.GetCurrentFrame();
 
-        var frameList = new List<Texture2D>();
-        for (int i = 0; ; i++)
-        {
-            var frame = TextureStore.GetTexture($"tile_tall_grass_single_{i}");
-            if (frame == null)
-                break;
-            frameList.Add(frame);
-        }
-
-        if (frameList.Count > 0)
-        {
-            _singleGrassFrames = frameList.ToArray();
-            return _singleGrassFrames[_animFrame % _singleGrassFrames.Length];
-        }
-
-        return TextureStore.GetTexture("tile_tall_grass_single");
+        _singleGrassSprite = AnimatedSpriteCache.GetOrLoad("tile_tall_grass_single");
+        return _singleGrassSprite?.GetCurrentFrame() ?? TextureStore.GetTexture("tile_tall_grass_single");
     }
 
     public static void Clear()
     {
-        _animatedTiles.Clear();
-        _singleGrassFrames = null;
+        _tileSprites.Clear();
+        _singleGrassSprite = null;
+        AnimatedSpriteCache.Clear();
     }
 }

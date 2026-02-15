@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PokemonGreen.Core.UI.Fonts;
 
 namespace PokemonGreen.Core.UI;
 
@@ -38,6 +39,9 @@ public class MenuBox
 
     /// <summary>Whether this menu is visible and accepting input.</summary>
     public bool IsActive { get; set; }
+
+    /// <summary>Use standard (overworld) panel style instead of battle style.</summary>
+    public bool UseStandardStyle { get; set; }
 
     /// <summary>Callback when cancel/back is pressed.</summary>
     public Action? OnCancel { get; set; }
@@ -131,7 +135,10 @@ public class MenuBox
         LastBounds = bounds;
 
         // Bordered panel
-        UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
+        if (UseStandardStyle)
+            UIStyle.DrawStandardPanel(spriteBatch, pixel, bounds);
+        else
+            UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
 
         int rows = (_items.Count + Columns - 1) / Columns;
         int itemW = bounds.Width / Columns;
@@ -148,7 +155,7 @@ public class MenuBox
 
             bool selected = i == SelectedIndex;
 
-            // Text colors based on state
+            // Text colors based on state and style
             Color textColor, outlineColor;
             if (!item.Enabled)
             {
@@ -159,6 +166,11 @@ public class MenuBox
             {
                 textColor = UIStyle.TextSelected;
                 outlineColor = UIStyle.TextSelectedOutline;
+            }
+            else if (UseStandardStyle)
+            {
+                textColor = UIStyle.TextDarkGray;
+                outlineColor = UIStyle.TextDarkGrayOutline;
             }
             else
             {
@@ -182,6 +194,61 @@ public class MenuBox
             UIStyle.DrawShadowedText(spriteBatch, font, item.Label,
                 new Vector2(textX, textY),
                 textColor, outlineColor);
+        }
+    }
+
+    /// <summary>
+    /// Draw the menu with KermFont renderer instead of SpriteFont.
+    /// </summary>
+    public void Draw(SpriteBatch spriteBatch, KermFontRenderer fontRenderer, KermFont font, Texture2D pixel, Rectangle bounds, int fontScale = 1)
+    {
+        if (!IsActive || _items.Count == 0)
+            return;
+
+        LastBounds = bounds;
+
+        if (UseStandardStyle)
+            UIStyle.DrawStandardPanel(spriteBatch, pixel, bounds);
+        else
+            UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
+
+        int rows = (_items.Count + Columns - 1) / Columns;
+        int itemW = bounds.Width / Columns;
+        int itemH = bounds.Height / rows;
+        int fontHeight = font.FontHeight * fontScale;
+
+        for (int i = 0; i < _items.Count; i++)
+        {
+            var item = _items[i];
+            int col = i % Columns;
+            int row = i / Columns;
+            int ix = bounds.X + col * itemW;
+            int iy = bounds.Y + row * itemH;
+
+            bool selected = i == SelectedIndex;
+
+            // For kermfont, the palette is baked. Use Color.White for normal,
+            // tint for selected/disabled.
+            Color tint;
+            if (!item.Enabled)
+                tint = new Color(133, 133, 141);
+            else if (selected)
+                tint = new Color(255, 224, 22);
+            else
+                tint = Color.White;
+
+            int textX = ix + 20;
+            int textY = iy + (itemH - fontHeight) / 2;
+
+            if (selected)
+            {
+                int arrowSize = 8;
+                int arrowX = ix + 6;
+                int arrowY = textY + fontHeight / 2 - arrowSize / 2;
+                UIStyle.DrawArrowRight(spriteBatch, pixel, arrowX, arrowY, arrowSize, tint);
+            }
+
+            fontRenderer.DrawString(spriteBatch, item.Label, new Vector2(textX, textY), fontScale, tint);
         }
     }
 
