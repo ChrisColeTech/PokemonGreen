@@ -45,6 +45,9 @@ public class Game1 : Game
     private readonly MenuBox _battleMainMenu = new() { Columns = 2 };
     private readonly MenuBox _battleMoveMenu = new() { Columns = 2 };
     private MenuBox _activeBattleMenu = null!;
+    private bool _inFightMenu;
+    private int _fightGridCol;
+    private int _fightGridRow;
     private bool _battleZoomStarted;
     private bool _battleIntroComplete; // foe revealed — show foe info bar
     private bool _allySentOut;         // ally sent out — show ally info bar
@@ -135,9 +138,9 @@ public class Game1 : Game
             new MenuItem("Fight", OpenFightMenu),
             new MenuItem("Bag", () => PushOverlay(new BagScreen(_playerBag))),
             new MenuItem("Pokemon", () => PushOverlay(new PartyScreen(_playerParty, PartyScreenMode.BattleSwitchIn))),
-            new MenuItem("Run", () => _gameWorld.ExitBattle()));
+            new MenuItem("Run", TryRun));
 
-        _battleMoveMenu.OnCancel = () => SwitchBattleMenu(_battleMainMenu, "What will you do?");
+        _battleMoveMenu.OnCancel = CloseFightMenu;
 
         _activeBattleMenu = _battleMainMenu;
 
@@ -351,8 +354,8 @@ public class Game1 : Game
                     up: inputState.Up, down: inputState.Down,
                     confirm: inputState.Confirm,
                     cancel: KeyPressed(kbState, Keys.Back) || KeyPressed(kbState, Keys.B),
-                    mousePosition: virtualMouse,
-                    mouseClicked: mouseClicked);
+                    mousePosition: Point.Zero,
+                    mouseClicked: false);
             }
 
             // Handle battle UI input
@@ -363,13 +366,68 @@ public class Game1 : Game
                 if (_activeBattleMenu.IsActive)
                 {
                     _battleMessageBox.Update(dt, false);
-                    _activeBattleMenu.Update(
-                        left: inputState.Left, right: inputState.Right,
-                        up: inputState.Up, down: inputState.Down,
-                        confirm: inputState.Confirm,
-                        cancel: KeyPressed(kbState, Keys.Back) || KeyPressed(kbState, Keys.B),
-                        mousePosition: virtualMouse,
-                        mouseClicked: mouseClicked);
+                    bool cancel = KeyPressed(kbState, Keys.Back) || KeyPressed(kbState, Keys.B);
+
+                    if (_inFightMenu)
+                    {
+                        // Unified grid: cols 0-1 = move menu, cols 2-3 = action panel
+                        int newCol = _fightGridCol;
+                        int newRow = _fightGridRow;
+                        if (inputState.Right) newCol++;
+                        if (inputState.Left) newCol--;
+                        if (inputState.Down) newRow++;
+                        if (inputState.Up) newRow--;
+                        newCol = Math.Clamp(newCol, 0, 3);
+                        newRow = Math.Clamp(newRow, 0, 1);
+
+                        // Only move there if the cell has an item
+                        bool valid;
+                        if (newCol < 2)
+                        {
+                            int idx = newRow * 2 + newCol;
+                            valid = idx < _battleMoveMenu.Items.Count;
+                        }
+                        else
+                        {
+                            int idx = newRow * 2 + (newCol - 2);
+                            valid = idx < _battleMainMenu.Items.Count;
+                        }
+                        if (valid)
+                        {
+                            _fightGridCol = newCol;
+                            _fightGridRow = newRow;
+                        }
+
+                        // Map grid position to the right menu
+                        if (_fightGridCol < 2)
+                        {
+                            _activeBattleMenu = _battleMoveMenu;
+                            _battleMoveMenu.SelectedIndex = _fightGridRow * 2 + _fightGridCol;
+                            _battleMainMenu.SelectedIndex = -1;
+                        }
+                        else
+                        {
+                            _activeBattleMenu = _battleMainMenu;
+                            _battleMainMenu.SelectedIndex = _fightGridRow * 2 + (_fightGridCol - 2);
+                            _battleMoveMenu.SelectedIndex = -1;
+                        }
+
+                        // Confirm/cancel only — grid handles navigation, no mouse
+                        _activeBattleMenu.Update(
+                            left: false, right: false, up: false, down: false,
+                            confirm: inputState.Confirm, cancel: cancel,
+                            mousePosition: Point.Zero,
+                            mouseClicked: false);
+                    }
+                    else
+                    {
+                        _activeBattleMenu.Update(
+                            left: inputState.Left, right: inputState.Right,
+                            up: inputState.Up, down: inputState.Down,
+                            confirm: inputState.Confirm, cancel: cancel,
+                            mousePosition: Point.Zero,
+                            mouseClicked: false);
+                    }
                 }
                 else if (_battleMessageBox.IsActive)
                 {
@@ -600,32 +658,33 @@ public class Game1 : Game
 
         if (_activeBattleMenu.IsActive)
         {
-            bool isMoveMenu = _activeBattleMenu == _battleMoveMenu;
+            // Right-side action panel dimensions (same position for both layouts)
+            int menuW = 280;
+            int menuX = w - menuW - 20;
 
-            if (isMoveMenu)
+            if (_inFightMenu)
             {
-                // Move menu: full-width move list + small detail panel (Type / PP)
-                int detailW = 200;
-                int moveListW = w - detailW - 60; // 20px left margin + 20px gap + 20px right margin
-                int moveListX = detailW + 40; // after detail panel + gap
-                int detailX = 20;
+                // Fight mode: move grid left, action panel (Back/Mega/Power) right
+                int moveGridW = w - menuW - 60;
 
-                // Draw the move list panel (right portion, full-width minus detail area)
                 if (_kermFontRenderer != null && _kermFont != null)
-                    _activeBattleMenu.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixelTexture,
-                        new Rectangle(moveListX, panelY, moveListW, panelH), 3);
+                {
+                    _battleMoveMenu.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixelTexture,
+                        new Rectangle(20, panelY, moveGridW, panelH), 3);
+                    _battleMainMenu.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixelTexture,
+                        new Rectangle(menuX, panelY, menuW, panelH), 3);
+                }
                 else
-                    _activeBattleMenu.Draw(_spriteBatch, _battleFont, _pixelTexture,
-                        new Rectangle(moveListX, panelY, moveListW, panelH));
-
-                // Draw the move detail panel (left portion: Type and PP)
-                DrawMoveDetailPanel(detailX, panelY, detailW, panelH);
+                {
+                    _battleMoveMenu.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                        new Rectangle(20, panelY, moveGridW, panelH));
+                    _battleMainMenu.Draw(_spriteBatch, _battleFont, _pixelTexture,
+                        new Rectangle(menuX, panelY, menuW, panelH));
+                }
             }
             else
             {
                 // Main menu (Fight/Bag/Pokemon/Run): message box left + menu right
-                int menuW = 280;
-                int menuX = w - menuW - 20;
                 int textBoxW = w - menuW - 60;
 
                 if (_kermFontRenderer != null && _kermFont != null)
@@ -808,13 +867,44 @@ public class Game1 : Game
     private void OpenFightMenu()
     {
         BuildMoveMenu();
-        // Switch to move menu without showing a message box — the move detail
-        // panel (Type/PP) replaces the message box in the fight sub-menu.
-        _activeBattleMenu.IsActive = false;
+
+        // Swap the main menu to Back/Mega/Power (displayed alongside move grid)
+        _battleMainMenu.SetItems(
+            new MenuItem("Back", CloseFightMenu),
+            new MenuItem("Mega", () => { /* toggle later */ }),
+            new MenuItem("Power", () => { /* toggle later */ }));
+        _battleMainMenu.Columns = 2;
+        _battleMainMenu.SelectedIndex = -1;
+
+        // Switch keyboard focus to move grid (main menu stays active/visible)
         _activeBattleMenu = _battleMoveMenu;
         _activeBattleMenu.SelectedIndex = 0;
         _activeBattleMenu.IsActive = true;
         _battleMessageBox.Clear();
+        _inFightMenu = true;
+        _fightGridCol = 0;
+        _fightGridRow = 0;
+    }
+
+    private void CloseFightMenu()
+    {
+        // Restore main menu items
+        _battleMainMenu.SetItems(
+            new MenuItem("Fight", OpenFightMenu),
+            new MenuItem("Bag", () => PushOverlay(new BagScreen(_playerBag))),
+            new MenuItem("Pokemon", () => PushOverlay(new PartyScreen(_playerParty, PartyScreenMode.BattleSwitchIn))),
+            new MenuItem("Run", TryRun));
+        _battleMainMenu.Columns = 2;
+        _inFightMenu = false;
+        SwitchBattleMenu(_battleMainMenu, "What will you do?");
+    }
+
+    private void TryRun()
+    {
+        _activeBattleMenu.IsActive = false;
+        _battleMessageBox.Clear();
+        _battleMessageBox.Show("You got away safely!");
+        _battleMessageBox.OnFinished = () => _gameWorld.ExitBattle();
     }
 
     private void BuildMoveMenu()
@@ -865,6 +955,13 @@ public class Game1 : Game
             returnToMainMenu: () =>
             {
                 BuildMoveMenu(); // refresh PP counts
+                _inFightMenu = false;
+                _battleMainMenu.SetItems(
+                    new MenuItem("Fight", OpenFightMenu),
+                    new MenuItem("Bag", () => PushOverlay(new BagScreen(_playerBag))),
+                    new MenuItem("Pokemon", () => PushOverlay(new PartyScreen(_playerParty, PartyScreenMode.BattleSwitchIn))),
+                    new MenuItem("Run", TryRun));
+                _battleMainMenu.Columns = 2;
                 _activeBattleMenu = _battleMainMenu;
                 _activeBattleMenu.SelectedIndex = 0;
                 _activeBattleMenu.IsActive = true;
@@ -887,6 +984,13 @@ public class Game1 : Game
         _battleZoomStarted = false;
         _battleIntroComplete = false;
         _allySentOut = false;
+        _inFightMenu = false;
+        _battleMainMenu.SetItems(
+            new MenuItem("Fight", OpenFightMenu),
+            new MenuItem("Bag", () => PushOverlay(new BagScreen(_playerBag))),
+            new MenuItem("Pokemon", () => PushOverlay(new PartyScreen(_playerParty, PartyScreenMode.BattleSwitchIn))),
+            new MenuItem("Run", TryRun));
+        _battleMainMenu.Columns = 2;
         _activeBattleMenu = _battleMainMenu;
         _activeBattleMenu.IsActive = false;
         _activeBattleMenu.SelectedIndex = 0;
