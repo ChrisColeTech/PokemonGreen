@@ -50,19 +50,12 @@ public class BattleModelData : IDisposable
     public Vector3 BoundsMin { get; set; } = new(float.MaxValue);
     public Vector3 BoundsMax { get; set; } = new(float.MinValue);
 
-    public void Draw(GraphicsDevice device, Effect effect)
+    public void Draw(GraphicsDevice device, AlphaTestEffect effect)
     {
-        var alphaTest = effect as AlphaTestEffect;
-
         foreach (var mesh in Meshes)
         {
             if (mesh.Texture != null)
-            {
-                if (alphaTest != null)
-                    alphaTest.Texture = mesh.Texture;
-                else
-                    effect.Parameters["Texture"]?.SetValue(mesh.Texture);
-            }
+                effect.Texture = mesh.Texture;
 
             device.SetVertexBuffer(mesh.VertexBuffer);
             device.Indices = mesh.IndexBuffer;
@@ -92,6 +85,23 @@ public static class BattleModelLoader
         var result = new BattleModelData();
         string directory = Path.GetDirectoryName(daeFilePath) ?? "";
 
+        // Pre-build sorted list of usable textures in the folder for fallback assignment
+        string folderPrefix = Path.GetFileName(directory) ?? "";
+        var folderTextures = new List<string>();
+        if (!string.IsNullOrEmpty(directory))
+        {
+            foreach (var file in Directory.EnumerateFiles(directory, $"{folderPrefix}_*.png"))
+            {
+                string name = Path.GetFileName(file);
+                if (name.Contains("Nor", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Mask", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Dummy", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                folderTextures.Add(file);
+            }
+            folderTextures.Sort(StringComparer.OrdinalIgnoreCase);
+        }
+
         using var importer = new AssimpContext();
         var scene = importer.ImportFile(daeFilePath,
             PostProcessSteps.Triangulate |
@@ -107,12 +117,13 @@ public static class BattleModelLoader
             var mesh = scene.Meshes[m];
 
             // Extract vertices
+            bool hasUVs = mesh.HasTextureCoords(0);
             var vertices = new VertexPositionNormalTexture[mesh.VertexCount];
             for (int i = 0; i < mesh.VertexCount; i++)
             {
                 var pos = mesh.Vertices[i];
                 var normal = mesh.HasNormals ? mesh.Normals[i] : new Vector3D(0, 1, 0);
-                var uv = mesh.HasTextureCoords(0) ? mesh.TextureCoordinateChannels[0][i] : new Vector3D(0, 0, 0);
+                var uv = hasUVs ? mesh.TextureCoordinateChannels[0][i] : new Vector3D(0, 0, 0);
 
                 vertices[i] = new VertexPositionNormalTexture(
                     new Vector3(pos.X, pos.Y, pos.Z),
@@ -152,6 +163,10 @@ public static class BattleModelLoader
                     string folderName = Path.GetFileName(directory) ?? "";
                     texturePath = FindTextureForMaterial(directory, folderName, matName);
                 }
+
+                // Last resort: assign from folder textures by mesh index
+                if (texturePath == null && m < folderTextures.Count)
+                    texturePath = folderTextures[m];
 
                 if (texturePath != null)
                 {

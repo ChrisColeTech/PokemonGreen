@@ -200,19 +200,15 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
     var garcFiles = new List<FileInfo>();
     foreach (var file in allFiles)
     {
-        Console.WriteLine($"  Checking: {file.FullName} ({file.Length} bytes)");
-        if (file.Length < 4) { Console.WriteLine("    Too small, skip"); continue; }
+        if (file.Length < 4) continue;
         try
         {
             using var fs = file.OpenRead();
             var magic = new byte[4];
-            var bytesRead = fs.Read(magic, 0, 4);
-            var magicVal = BitConverter.ToUInt32(magic, 0);
-            Console.WriteLine($"    Read {bytesRead} bytes, magic=0x{magicVal:X8}, expected=0x{GARC_MAGIC:X8}, match={magicVal == GARC_MAGIC}");
-            if (bytesRead == 4 && magicVal == GARC_MAGIC)
+            if (fs.Read(magic, 0, 4) == 4 && BitConverter.ToUInt32(magic, 0) == GARC_MAGIC)
                 garcFiles.Add(file);
         }
-        catch (Exception ex) { Console.Error.WriteLine($"  SKIP {file.FullName}: {ex.Message}"); }
+        catch { /* skip unreadable files */ }
     }
 
     Console.WriteLine($"Found {garcFiles.Count} GARC archives.\n");
@@ -811,11 +807,14 @@ static int ExportModel(RenderBase.OModelGroup models, string sourceName, string 
         Console.WriteLine($"  Texture: {tex.name}.png ({tex.texture.Width}x{tex.texture.Height})");
     }
 
-    // Export each model
+    // Export each model — deduplicate names
+    var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     for (int i = 0; i < models.model.Count; i++)
     {
         var mdl = models.model[i];
         var modelName = mdl.name ?? $"model_{i}";
+        if (!usedNames.Add(modelName))
+            modelName = $"{modelName}_{i}";
         var outFile = Path.Combine(outDir, modelName);
 
         switch (format.ToLower())
@@ -927,11 +926,25 @@ static int ExportModelGrouped(RenderBase.OModelGroup models, List<RenderBase.OMo
         }
     }
 
-    // Export models
+    // Merge primary extra textures into model so DAE library_images is populated
+    if (extraTextures.Count > 0)
+    {
+        var existingNames = new HashSet<string>(models.texture.Select(t => t.name));
+        foreach (var tex in extraTextures[0].texture)
+        {
+            if (existingNames.Add(tex.name))
+                models.texture.Add(tex);
+        }
+    }
+
+    // Export models — deduplicate names so second model doesn't overwrite first
+    var usedModelNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     for (int i = 0; i < models.model.Count; i++)
     {
         var mdl = models.model[i];
         var modelName = mdl.name ?? $"model_{i}";
+        if (!usedModelNames.Add(modelName))
+            modelName = $"{modelName}_{i}";
         var outFile = Path.Combine(outDir, modelName);
 
         switch (format.ToLower())

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-const ASSETS_DIR = 'D:/Projects/PokemonGreen/Assets'
+const ASSETS_DIR = 'D:/Projects/PokemonGreen/src/PokemonGreen.Assets/Pokemon3D'
 const MODEL_EXTS = ['.fbx', '.dae', '.obj']
 const TEXTURE_EXTS = ['.png', '.jpg', '.jpeg', '.bmp', '.tga']
 

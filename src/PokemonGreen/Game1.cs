@@ -914,11 +914,9 @@ public class Game1 : Game
     {
         var min = model.BoundsMin;
         var max = model.BoundsMax;
-        string msg = $"[Battle3D] {name}: {model.Meshes.Count} meshes, {model.TotalVertices} verts, " +
-            $"{model.TexturedMeshCount} textured, bounds: ({min.X:F1},{min.Y:F1},{min.Z:F1}) to ({max.X:F1},{max.Y:F1},{max.Z:F1})";
-        Console.WriteLine(msg);
-        System.Diagnostics.Debug.WriteLine(msg);
-        File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "battle3d_log.txt"), msg + "\n");
+        System.Diagnostics.Debug.WriteLine(
+            $"[Battle3D] {name}: {model.Meshes.Count} meshes, {model.TotalVertices} verts, " +
+            $"{model.TexturedMeshCount} textured, bounds: ({min.X:F1},{min.Y:F1},{min.Z:F1}) to ({max.X:F1},{max.Y:F1},{max.Z:F1})");
     }
 
     private BattleModelData? LoadPokemonModel(int speciesId)
@@ -1004,6 +1002,7 @@ public class Game1 : Game
         {
             _gameWorld.Progress.UpdateFromParty(_playerParty);
             _gameWorld.ExitBattle();
+            AutoSave();
         };
     }
 
@@ -1102,6 +1101,7 @@ public class Game1 : Game
                 _allyModel = null;
                 _foeModel = null;
                 _gameWorld.ExitBattle();
+                AutoSave();
             });
 
         // Select the battle background set based on encounter type

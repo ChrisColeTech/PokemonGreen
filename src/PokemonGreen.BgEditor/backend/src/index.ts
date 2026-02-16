@@ -4,7 +4,7 @@ import cors from '@fastify/cors'
 import fs from 'fs'
 import path from 'path'
 
-const ASSETS_DIR = 'D:/Projects/PokemonGreen/Assets'
+const ASSETS_DIR = "D:/Projects/PokemonGreen/src/PokemonGreen.Assets/Pokemon3D"
 const PORT = 3001
 
 const app = Fastify({ logger: true })
