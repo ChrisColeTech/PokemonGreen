@@ -247,15 +247,17 @@ class Program
                     Console.WriteLine($"  model{suffix}.dae ({mdl.Meshes.Count} meshes, {mdl.Skeleton.Count} bones, {scene.SkeletalAnimations.Count} anims available, baked={animIdx})");
                 }
 
-                // 6. Export additional animations as separate DAE files
-                for (int a = 1; a < scene.SkeletalAnimations.Count; a++)
+                // 6. Export each animation as a separate DAE file
+                for (int a = 0; a < scene.SkeletalAnimations.Count; a++)
                 {
                     try
                     {
                         var dae = new DAE(scene, 0, a);
-                        string animPath = Path.Combine(pokemonDir, $"anim_{a}.dae");
+                        string animName = scene.SkeletalAnimations[a].Name ?? $"anim_{a}";
+                        string safeName = string.Join("_", animName.Split(Path.GetInvalidFileNameChars()));
+                        string animPath = Path.Combine(pokemonDir, $"anim_{a:D3}_{safeName}.dae");
                         dae.Save(animPath);
-                        Console.WriteLine($"  anim_{a}.dae ({scene.SkeletalAnimations[a].Name})");
+                        Console.WriteLine($"  anim_{a:D3}_{safeName}.dae ({(int)scene.SkeletalAnimations[a].FramesCount} frames)");
                     }
                     catch (Exception ex)
                     {
