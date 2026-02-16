@@ -33,14 +33,15 @@ namespace OhanaCli.App
             var convertFmtOpt = new Option<string>(new[] { "-f", "--format" }, () => "dae", "Output format (dae or obj)");
             var convertAnimOpt = new Option<int>(new[] { "-a", "--anim" }, () => -1, "Skeletal animation index (-1 = none)");
             var convertDiagOpt = new Option<bool>("--diag", "Enable GfModel diagnostic logging");
+            var convertLimitOpt = new Option<int>(new[] { "-n", "--limit" }, () => -1, "Max container entries to process (-1 = all)");
             var convertCommand = new Command("convert", "Convert a file to DAE or OBJ")
             {
-                convertFileArg, convertOutOpt, convertFmtOpt, convertAnimOpt, convertDiagOpt
+                convertFileArg, convertOutOpt, convertFmtOpt, convertAnimOpt, convertDiagOpt, convertLimitOpt
             };
             convertCommand.SetHandler(
-                (string file, string output, string format, int anim, bool diag) =>
-                    RunConvert(file, output, format, anim, diag),
-                convertFileArg, convertOutOpt, convertFmtOpt, convertAnimOpt, convertDiagOpt);
+                (string file, string output, string format, int anim, bool diag, int limit) =>
+                    RunConvert(file, output, format, anim, diag, limit),
+                convertFileArg, convertOutOpt, convertFmtOpt, convertAnimOpt, convertDiagOpt, convertLimitOpt);
             rootCommand.AddCommand(convertCommand);
 
             // --- batch command ---
@@ -152,7 +153,7 @@ namespace OhanaCli.App
         // =========================================================
         // convert
         // =========================================================
-        static void RunConvert(string filePath, string outDir, string format, int animIndex, bool diag)
+        static void RunConvert(string filePath, string outDir, string format, int animIndex, bool diag, int entryLimit = -1)
         {
             if (!File.Exists(filePath))
             {
@@ -182,13 +183,14 @@ namespace OhanaCli.App
             }
             else if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
             {
-                Console.WriteLine($"  Container with {container.content.Count} entries. Processing each...");
+                int maxEntries = entryLimit > 0 ? Math.Min(entryLimit, container.content.Count) : container.content.Count;
+                Console.WriteLine($"  Container with {container.content.Count} entries. Processing {maxEntries}...");
 
-                // Streaming grouping: merge trailing texture entries into preceding model
+                // Streaming grouping: merge trailing texture/animation entries into preceding model
                 RenderBase.OModelGroup? currentModel = null;
                 int modelEntryIndex = -1;
 
-                for (int i = 0; i < container.content.Count; i++)
+                for (int i = 0; i < maxEntries; i++)
                 {
                     try
                     {
@@ -197,14 +199,29 @@ namespace OhanaCli.App
 
                         if (entry.type == FileIO.formatType.model && entry.data is RenderBase.OModelGroup entryModels)
                         {
-                            // Flush previous model group
-                            if (currentModel != null)
+                            bool hasMeshes = false;
+                            foreach (var m in entryModels.model)
+                                if (m.mesh.Count > 0) { hasMeshes = true; break; }
+
+                            if (hasMeshes)
                             {
-                                string prevDir = Path.Combine(outDir, $"entry_{modelEntryIndex}");
-                                ExportModelGroup(currentModel, prevDir, $"entry_{modelEntryIndex}", format, animIndex);
+                                // New model with geometry — flush previous
+                                if (currentModel != null)
+                                {
+                                    string prevDir = Path.Combine(outDir, $"entry_{modelEntryIndex}");
+                                    ExportModelGroup(currentModel, prevDir, $"entry_{modelEntryIndex}", format, animIndex);
+                                }
+                                currentModel = entryModels;
+                                modelEntryIndex = i;
                             }
-                            currentModel = entryModels;
-                            modelEntryIndex = i;
+                            else if (currentModel != null)
+                            {
+                                // Animation-only model entry — merge animations + textures into preceding model
+                                foreach (var a in entryModels.skeletalAnimation.list)
+                                    currentModel.skeletalAnimation.list.Add(a);
+                                foreach (var t in entryModels.texture)
+                                    currentModel.texture.Add(t);
+                            }
                         }
                         else if (entry.type == FileIO.formatType.texture && entry.data is RenderBase.OModelGroup entryTex)
                         {

@@ -1,54 +1,29 @@
-import { useEditorStore } from './store/editorStore'
-import InfoBar from './components/InfoBar'
-import Viewport from './components/Viewport'
-import DropZone from './components/DropZone'
-import TexturePanel from './components/TexturePanel'
-import ColorControls from './components/ColorControls'
-import AnimationPanel from './components/AnimationPanel'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Sidebar from './components/Sidebar'
+import EditorPage from './pages/EditorPage'
+import ToolsPage from './pages/ToolsPage'
 
 export default function App() {
-  const scene = useEditorStore(s => s.scene)
-
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
-      height: '100%',
-    }}>
-      <InfoBar />
+    <BrowserRouter>
       <div style={{
-        flex: 1,
         display: 'flex',
-        position: 'relative',
-        overflow: 'hidden',
+        width: '100%',
+        height: '100%',
       }}>
-        {scene ? (
-          <>
-            <Viewport />
-            <div style={{
-              width: 280,
-              display: 'flex',
-              flexDirection: 'column',
-              background: '#16162a',
-              borderLeft: '1px solid #2a2a4a',
-              overflow: 'hidden',
-            }}>
-              <div style={{ flex: '0 0 auto', maxHeight: '30%', overflow: 'hidden', display: 'flex' }}>
-                <TexturePanel />
-              </div>
-              <div style={{ flex: '0 0 auto', overflow: 'hidden' }}>
-                <AnimationPanel />
-              </div>
-              <div style={{ flex: '1 1 auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <ColorControls />
-              </div>
-            </div>
-          </>
-        ) : (
-          <DropZone />
-        )}
+        <Sidebar />
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}>
+          <Routes>
+            <Route path="/" element={<EditorPage />} />
+            <Route path="/tools" element={<ToolsPage />} />
+          </Routes>
+        </div>
       </div>
-    </div>
+    </BrowserRouter>
   )
 }

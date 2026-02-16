@@ -4,10 +4,12 @@ import type { LoadedTexture, TextureAdjustment } from '../types/editor'
 import { DEFAULT_ADJUSTMENT } from '../types/editor'
 import { loadScene } from '../services/sceneService'
 import type { Manifest } from '../services/sceneService'
+import { applyAdjustment, updateThreeTexture } from '../services/textureProcessor'
 
 interface EditorState {
   // Scene
   sceneName: string | null
+  manifest: Manifest | null
   scene: THREE.Group | null
   animations: THREE.AnimationClip[]
   textures: LoadedTexture[]
@@ -30,8 +32,24 @@ interface EditorState {
   setActiveClipIndex: (index: number) => void
 }
 
+function processTexture(tex: LoadedTexture, adj: TextureAdjustment): LoadedTexture {
+  const modifiedDataUrl = applyAdjustment(tex.originalImage, adj)
+  updateThreeTexture(tex.threeTexture, modifiedDataUrl)
+  return { ...tex, adjustment: adj, modifiedDataUrl }
+}
+
+function resetTextureToOriginal(tex: LoadedTexture): LoadedTexture {
+  updateThreeTexture(tex.threeTexture, tex.originalDataUrl)
+  return {
+    ...tex,
+    adjustment: { ...DEFAULT_ADJUSTMENT },
+    modifiedDataUrl: tex.originalDataUrl,
+  }
+}
+
 export const useEditorStore = create<EditorState>()((set, get) => ({
   sceneName: null,
+  manifest: null,
   scene: null,
   animations: [],
   textures: [],
@@ -52,6 +70,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         animations: result.animations,
         textures: result.textures,
         sceneName: manifest.name,
+        manifest,
         selectedTextureIndex: 0,
         loading: false,
         animationPlaying: true,
@@ -72,30 +91,20 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setAdjustment: (index: number, adj: Partial<TextureAdjustment>) => {
     const textures = [...get().textures]
     if (!textures[index]) return
-    textures[index] = {
-      ...textures[index],
-      adjustment: { ...textures[index].adjustment, ...adj },
-    }
+    const newAdj = { ...textures[index].adjustment, ...adj }
+    textures[index] = processTexture(textures[index], newAdj)
     set({ textures })
   },
 
   resetTexture: (index: number) => {
     const textures = [...get().textures]
     if (!textures[index]) return
-    textures[index] = {
-      ...textures[index],
-      adjustment: { ...DEFAULT_ADJUSTMENT },
-      modifiedDataUrl: textures[index].originalDataUrl,
-    }
+    textures[index] = resetTextureToOriginal(textures[index])
     set({ textures })
   },
 
   resetAll: () => {
-    const textures = get().textures.map(t => ({
-      ...t,
-      adjustment: { ...DEFAULT_ADJUSTMENT },
-      modifiedDataUrl: t.originalDataUrl,
-    }))
+    const textures = get().textures.map(t => resetTextureToOriginal(t))
     set({ textures })
   },
 
@@ -104,10 +113,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const source = textures[selectedTextureIndex]
     if (!source) return
     const adj = source.adjustment
-    const updated = textures.map(t => ({
-      ...t,
-      adjustment: { ...adj },
-    }))
+    const updated = textures.map(t => processTexture(t, { ...adj }))
     set({ textures: updated })
   },
 

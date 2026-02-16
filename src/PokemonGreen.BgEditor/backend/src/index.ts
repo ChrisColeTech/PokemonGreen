@@ -3,13 +3,17 @@ import fastifyStatic from '@fastify/static'
 import cors from '@fastify/cors'
 import fs from 'fs'
 import path from 'path'
+import manifestRoutes from './routes/manifests.js'
+import textureRoutes from './routes/textures.js'
 
 const ASSETS_DIR = "D:/Projects/PokemonGreen/src/PokemonGreen.Assets/Pokemon3D"
 const PORT = 3001
 
-const app = Fastify({ logger: true })
+const app = Fastify({ logger: true, bodyLimit: 100 * 1024 * 1024 })
 
 await app.register(cors, { origin: true })
+await app.register(manifestRoutes, { assetsDir: path.resolve(ASSETS_DIR) })
+await app.register(textureRoutes)
 
 // Serve the entire Assets directory as static files under /assets/
 // This lets Three.js loaders resolve texture paths naturally.
