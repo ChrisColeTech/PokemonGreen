@@ -35,7 +35,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 {
                     output.AppendLine("v " + getString(vertex.position.x) + " " + getString(vertex.position.y) + " " + getString(vertex.position.z));
                     output.AppendLine("vn " + getString(vertex.normal.x) + " " + getString(vertex.normal.y) + " " + getString(vertex.normal.z));
-                    output.AppendLine("vt " + getString(vertex.texture0.x) + " " + getString(1.0f - vertex.texture0.y));
+                    output.AppendLine("vt " + getString(vertex.texture0.x) + " " + getString(vertex.texture0.y));
                 }
                 output.AppendLine(null);
 
