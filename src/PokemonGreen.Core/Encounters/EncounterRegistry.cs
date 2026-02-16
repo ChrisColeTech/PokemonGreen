@@ -27,7 +27,7 @@ public static class EncounterRegistry
             return;
         }
 
-        string path = Path.Combine("Content", "Data", "Encounters", $"{mapId}.json");
+        string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content", "Data", "Encounters", $"{mapId}.json");
         if (!File.Exists(path))
         {
             _currentMapEncounters = null;

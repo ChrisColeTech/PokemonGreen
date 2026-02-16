@@ -73,6 +73,10 @@ public class Game1 : Game
     private BattleModelData? _activePlatformFoe;
     private AlphaTestEffect? _battleEffect;
 
+    // Pokemon 3D models on battle field
+    private BattleModelData? _allyModel;
+    private BattleModelData? _foeModel;
+
     // Battle camera animation
     private static readonly Vector3 BattleCamFoe = new(6.9f, 7f, 4.6f);   // zoomed on foe
     private static readonly Vector3 BattleCamDefault = new(7f, 7f, 15f);   // full battle view
@@ -858,6 +862,24 @@ public class Game1 : Game
             _activePlatformAlly.Draw(device, _battleEffect);
         }
 
+        // Foe Pokemon model
+        if (_foeModel != null)
+        {
+            float scale = FitModelScale(_foeModel, 3.0f);
+            _battleEffect.World = Matrix.CreateScale(scale) *
+                Matrix.CreateTranslation(0f, -0.20f - _foeModel.BoundsMin.Y * scale, -15f);
+            _foeModel.Draw(device, _battleEffect);
+        }
+
+        // Ally Pokemon model
+        if (_allyModel != null)
+        {
+            float scale = FitModelScale(_allyModel, 3.5f);
+            _battleEffect.World = Matrix.CreateScale(scale) *
+                Matrix.CreateTranslation(0f, -0.20f - _allyModel.BoundsMin.Y * scale, 3f);
+            _allyModel.Draw(device, _battleEffect);
+        }
+
         // Reset state for 2D rendering
         device.DepthStencilState = DepthStencilState.None;
         device.RasterizerState = RasterizerState.CullCounterClockwise;
@@ -873,6 +895,25 @@ public class Game1 : Game
         Console.WriteLine(msg);
         System.Diagnostics.Debug.WriteLine(msg);
         File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "battle3d_log.txt"), msg + "\n");
+    }
+
+    private BattleModelData? LoadPokemonModel(int speciesId)
+    {
+        var species = SpeciesRegistry.GetSpecies(speciesId);
+        if (species?.ModelFolder == null) return null;
+        var model = PokemonModelLoader.Load(species.ModelFolder, GraphicsDevice);
+        if (model != null)
+            LogModelBounds($"Pokemon #{speciesId} ({species.Name})", model);
+        else
+            Console.WriteLine($"[Battle3D] No model found for #{speciesId} ({species.Name}) at {species.ModelFolder}");
+        return model;
+    }
+
+    private static float FitModelScale(BattleModelData model, float targetHeight)
+    {
+        float modelHeight = model.BoundsMax.Y - model.BoundsMin.Y;
+        if (modelHeight <= 0.001f) return 1f;
+        return targetHeight / modelHeight;
     }
 
     private void PushOverlay(IScreenOverlay overlay)
@@ -1001,6 +1042,10 @@ public class Game1 : Game
             _foePokemon = BattlePokemon.CreateTestFoe();
         }
 
+        // Load 3D models for the battling Pokemon
+        _allyModel = LoadPokemonModel(_allyPokemon.SpeciesId);
+        _foeModel = LoadPokemonModel(_foePokemon.SpeciesId);
+
         _battleTurnManager = new BattleTurnManager(
             _allyPokemon, _foePokemon,
             showMessage: (msg, onDone) =>
@@ -1029,6 +1074,8 @@ public class Game1 : Game
             exitBattle: () =>
             {
                 _gameWorld.Progress.UpdateFromParty(_playerParty);
+                _allyModel = null;
+                _foeModel = null;
                 _gameWorld.ExitBattle();
             });
 
