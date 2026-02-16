@@ -71,6 +71,7 @@ public class GameWorld
         Player.SetPosition(px, py);
         _prevTileX = Player.TileX;
         _prevTileY = Player.TileY;
+        _encounterCheckPending = false;
 
         SnapCamera(px, py);
     }
@@ -85,6 +86,7 @@ public class GameWorld
         Player.SetPosition(px, py);
         _prevTileX = Player.TileX;
         _prevTileY = Player.TileY;
+        _encounterCheckPending = false;
 
         SnapCamera(px, py);
     }
@@ -159,6 +161,7 @@ public class GameWorld
 
         // 7b. Encounter check — mark pending when entering an encounter tile,
         // then trigger only once the player reaches the center of the tile.
+        // Also checks tile below because flame sprites extend 4px upward into adjacent tile.
         if (Player.TileX != _prevTileX || Player.TileY != _prevTileY)
         {
             _prevTileX = Player.TileX;
@@ -170,27 +173,32 @@ public class GameWorld
                 _pendingEncTileX = Player.TileX;
                 _pendingEncTileY = Player.TileY;
             }
+            else if (Player.TileY + 1 < CurrentMap.Height && IsEncounterTile(Player.TileX, Player.TileY + 1))
+            {
+                _encounterCheckPending = true;
+                _pendingEncTileX = Player.TileX;
+                _pendingEncTileY = Player.TileY + 1;
+            }
             else
             {
                 _encounterCheckPending = false;
             }
         }
 
-        if (_encounterCheckPending
-            && Player.TileX == _pendingEncTileX
-            && Player.TileY == _pendingEncTileY)
+        if (_encounterCheckPending)
         {
             float localX = Player.X - Player.TileX;
             float localY = Player.Y - Player.TileY;
 
-            // Hitbox matches the visible flame sprite area (upper portion of tile).
-            if (localX >= 0.15f && localX <= 0.85f
-                && localY >= 0.0f && localY <= 0.5f)
+            bool inHitbox = localX >= 0.15f && localX <= 0.85f
+                && localY >= 0.0f && localY <= 0.25f;
+
+            if (inHitbox)
             {
                 _encounterCheckPending = false;
                 if (_encounterRandom.Next(EncounterChance) == 0)
                 {
-                    BeginBattleTransition();
+                    BeginBattleTransition(_pendingEncTileX, _pendingEncTileY);
                     return;
                 }
             }
@@ -348,10 +356,10 @@ public class GameWorld
 
     // ── Battle transition ─────────────────────────────────────────────
 
-    private void BeginBattleTransition()
+    private void BeginBattleTransition(int encounterTileX, int encounterTileY)
     {
         CurrentBattleBackground = BattleBackgroundResolver.FromOverlayBehavior(
-            GetEncounterBehavior(Player.TileX, Player.TileY));
+            GetEncounterBehavior(encounterTileX, encounterTileY));
         _transitionState = TransitionState.FlashWhite;
         _fadeTimer = 0f;
     }
