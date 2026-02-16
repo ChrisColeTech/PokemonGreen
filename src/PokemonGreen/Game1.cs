@@ -13,6 +13,7 @@ using PokemonGreen.Core.Items;
 using PokemonGreen.Core.Maps;
 using PokemonGreen.Core.Pokemon;
 using PokemonGreen.Core.Rendering;
+using PokemonGreen.Core.Save;
 using PokemonGreen.Core.Systems;
 using PokemonGreen.Core.UI;
 using PokemonGreen.Core.UI.Fonts;
@@ -39,6 +40,10 @@ public class Game1 : Game
     // Player data
     private Party _playerParty = null!;
     private PlayerInventory _playerBag = null!;
+    private PCBoxes _pcBoxes = new();
+    private readonly SaveManager _saveManager = new();
+    private int _currentSaveSlot = 1;
+    private double _playtimeSeconds;
 
     // Battle UI
     private readonly Core.UI.MessageBox _battleMessageBox = new();
@@ -129,9 +134,33 @@ public class Game1 : Game
 
         _playerRenderer = new PlayerRenderer();
 
-        // Create player data
-        _playerParty = Party.CreateTestParty();
-        _playerBag = PlayerInventory.CreateTestInventory();
+        // Load save or create test data
+        var saveData = _saveManager.Load(_currentSaveSlot);
+        if (saveData != null)
+        {
+            _playerParty = saveData.Party;
+            _playerBag = saveData.Inventory;
+            _pcBoxes = saveData.PCBoxes;
+            _playtimeSeconds = saveData.PlaytimeSeconds;
+            _dayNightCycle.ElapsedSeconds = (float)saveData.GameTimeSeconds;
+            _gameWorld.Progress.BadgeCount = saveData.BadgeCount;
+            foreach (var flag in saveData.StoryFlags)
+                _gameWorld.Progress.StoryFlags.Add(flag);
+
+            // Restore saved map and position
+            if (MapCatalog.TryGetMap(saveData.MapId, out var savedMap) && savedMap != null)
+            {
+                _gameWorld.LoadMap(savedMap, saveData.PlayerX, saveData.PlayerY);
+                _gameWorld.Player.SetFacing((PokemonGreen.Core.Player.Direction)saveData.Facing);
+            }
+        }
+        else
+        {
+            _playerParty = Party.CreateTestParty();
+            _playerBag = PlayerInventory.CreateTestInventory();
+            _pcBoxes = new PCBoxes();
+        }
+        _gameWorld.Progress.UpdateFromParty(_playerParty);
 
         // Set up battle menus
         _battleMainMenu.SetItems(
@@ -148,7 +177,7 @@ public class Game1 : Game
         _pauseMenuBox.SetItems(
             new MenuItem("Pokemon", () => PushOverlay(new PartyScreen(_playerParty, PartyScreenMode.PauseMenu))),
             new MenuItem("Bag", () => PushOverlay(new BagScreen(_playerBag))),
-            new MenuItem("Save"),
+            new MenuItem("Save", PerformSave),
             new MenuItem("Close", ClosePauseMenu));
         _pauseMenuBox.OnCancel = ClosePauseMenu;
 
@@ -485,6 +514,7 @@ public class Game1 : Game
             _foePokemon?.UpdateDisplayHP(deltaTime);
         }
 
+        _playtimeSeconds += deltaTime;
         _dayNightCycle.Update(deltaTime);
         TileRenderer.Update(deltaTime);
         _gameWorld.Update(deltaTime);
@@ -654,7 +684,7 @@ public class Game1 : Game
 
         if (_allySentOut && _allyPokemon != null)
             BattleInfoBar.DrawAllyBar(_spriteBatch, _pixelTexture, _kermFontRenderer, _battleFont,
-                new Rectangle(w - infoBarW - 20, panelY - 114, infoBarW, 108), _allyPokemon, 0.5f, infoFontScale);
+                new Rectangle(w - infoBarW - 20, panelY - 114, infoBarW, 108), _allyPokemon, _allyPokemon.EXPPercent, infoFontScale);
 
         if (_activeBattleMenu.IsActive)
         {
@@ -904,7 +934,11 @@ public class Game1 : Game
         _activeBattleMenu.IsActive = false;
         _battleMessageBox.Clear();
         _battleMessageBox.Show("You got away safely!");
-        _battleMessageBox.OnFinished = () => _gameWorld.ExitBattle();
+        _battleMessageBox.OnFinished = () =>
+        {
+            _gameWorld.Progress.UpdateFromParty(_playerParty);
+            _gameWorld.ExitBattle();
+        };
     }
 
     private void BuildMoveMenu()
@@ -940,8 +974,31 @@ public class Game1 : Game
 
     private void EnterBattle()
     {
-        _allyPokemon = BattlePokemon.CreateTestAlly();
-        _foePokemon = BattlePokemon.CreateTestFoe();
+        // Create ally from first non-fainted party member
+        PartyPokemon? lead = null;
+        for (int i = 0; i < _playerParty.Count; i++)
+        {
+            if (!_playerParty[i].IsFainted)
+            {
+                lead = _playerParty[i];
+                break;
+            }
+        }
+        _allyPokemon = lead != null
+            ? BattlePokemon.FromParty(lead)
+            : BattlePokemon.CreateTestAlly();
+
+        // Create foe from encounter result, or fallback to test foe
+        var encounter = _gameWorld.PendingEncounterResult;
+        if (encounter != null)
+        {
+            var foePkmn = PartyPokemon.Create(encounter.SpeciesId, encounter.Level, Gender.Unknown);
+            _foePokemon = BattlePokemon.FromParty(foePkmn);
+        }
+        else
+        {
+            _foePokemon = BattlePokemon.CreateTestFoe();
+        }
 
         _battleTurnManager = new BattleTurnManager(
             _allyPokemon, _foePokemon,
@@ -968,7 +1025,11 @@ public class Game1 : Game
                 _battleMessageBox.Clear();
                 _battleMessageBox.Show("What will you do?");
             },
-            exitBattle: () => _gameWorld.ExitBattle());
+            exitBattle: () =>
+            {
+                _gameWorld.Progress.UpdateFromParty(_playerParty);
+                _gameWorld.ExitBattle();
+            });
 
         // Select the battle background set based on encounter type
         var bgType = _gameWorld.CurrentBattleBackground;
@@ -1022,6 +1083,29 @@ public class Game1 : Game
     {
         _gameWorld.ExitPauseMenu();
         _pauseMenuBox.IsActive = false;
+    }
+
+    private void PerformSave()
+    {
+        var data = new GameSaveData
+        {
+            PlayerName = "Red",
+            Money = 0,
+            PlaytimeSeconds = _playtimeSeconds,
+            GameTimeSeconds = _dayNightCycle.ElapsedSeconds,
+            MapId = _gameWorld.CurrentMapDefinition?.Id ?? "",
+            PlayerX = _gameWorld.Player.X,
+            PlayerY = _gameWorld.Player.Y,
+            Facing = (int)_gameWorld.Player.Facing,
+            BadgeCount = _gameWorld.Progress.BadgeCount,
+            StoryFlags = _gameWorld.Progress.StoryFlags,
+            Party = _playerParty,
+            PCBoxes = _pcBoxes,
+            Inventory = _playerBag,
+            SavedAt = DateTime.UtcNow,
+        };
+        _saveManager.Save(_currentSaveSlot, data);
+        ClosePauseMenu();
     }
 
     /// <summary>

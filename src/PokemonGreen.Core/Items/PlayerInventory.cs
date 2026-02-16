@@ -46,6 +46,22 @@ public class PlayerInventory
             pouch.Add(new InventorySlot(itemId, quantity));
     }
 
+    /// <summary>Enumerate all non-empty pouches for serialization.</summary>
+    public IEnumerable<(ItemCategory category, IReadOnlyList<InventorySlot> items)> GetAllPouches()
+    {
+        foreach (var kvp in _pouches)
+        {
+            if (kvp.Value.Count > 0)
+                yield return (kvp.Key, kvp.Value);
+        }
+    }
+
+    /// <summary>Remove all items. Used during save load.</summary>
+    public void Clear()
+    {
+        _pouches.Clear();
+    }
+
     /// <summary>Create an inventory with test items for development.</summary>
     public static PlayerInventory CreateTestInventory()
     {

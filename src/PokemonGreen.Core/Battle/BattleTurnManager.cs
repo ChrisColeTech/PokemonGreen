@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PokemonGreen.Core.Pokemon;
 
 namespace PokemonGreen.Core.Battle;
 
@@ -14,6 +15,7 @@ public class BattleTurnManager
         Idle,           // Waiting for player to pick Fight
         PlayerAttack,   // Showing player's attack message, applying damage
         FoeAttack,      // Showing foe's attack message, applying damage
+        EXPReward,      // Awarding EXP and handling level-ups
         TurnEnd,        // Check faint, decide next turn or battle over
         BattleOver      // Victory/defeat message shown
     }
@@ -78,16 +80,55 @@ public class BattleTurnManager
     {
         if (_foe.IsFainted)
         {
-            Phase = TurnPhase.BattleOver;
-            _showMessage($"Wild {_foe.Nickname} fainted!", () =>
-            {
-                _showMessage("You win!", () => _exitBattle());
-            });
+            _showMessage($"Wild {_foe.Nickname} fainted!", () => AwardEXP());
             return;
         }
 
         Phase = TurnPhase.FoeAttack;
         ExecuteFoeAttack();
+    }
+
+    private void AwardEXP()
+    {
+        Phase = TurnPhase.EXPReward;
+
+        // Look up foe species for base EXP yield
+        var foeSpecies = SpeciesRegistry.GetSpecies(_foe.SpeciesId);
+        int baseYield = foeSpecies?.BaseEXPYield ?? 50;
+
+        uint expGain = GrowthRateHelper.CalculateEXPGain(
+            baseYield, _foe.Level, _ally.Level,
+            isTrainerBattle: false, participantCount: 1);
+
+        _showMessage($"{_ally.Nickname} gained {expGain} EXP. Points!", () =>
+        {
+            // Award EXP to the source PartyPokemon if available
+            int levelsGained = 0;
+            if (_ally.Source != null)
+            {
+                levelsGained = _ally.Source.AddEXP(expGain);
+                // Sync updated level/stats back to BattlePokemon
+                _ally.Level = _ally.Source.Level;
+                _ally.MaxHP = _ally.Source.MaxHP;
+                _ally.CurrentHP = _ally.Source.CurrentHP;
+            }
+
+            if (levelsGained > 0)
+                ShowLevelUp();
+            else
+                ShowVictory();
+        });
+    }
+
+    private void ShowLevelUp()
+    {
+        _showMessage($"{_ally.Nickname} grew to Lv. {_ally.Level}!", () => ShowVictory());
+    }
+
+    private void ShowVictory()
+    {
+        Phase = TurnPhase.BattleOver;
+        _showMessage("You win!", () => _exitBattle());
     }
 
     private void ExecuteFoeAttack()

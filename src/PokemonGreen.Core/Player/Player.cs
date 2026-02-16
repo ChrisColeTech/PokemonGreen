@@ -127,6 +127,11 @@ public class Player
         Y = y;
     }
 
+    public void SetFacing(Direction dir)
+    {
+        Facing = dir;
+    }
+
     public bool CanMoveTo(int x, int y, TileMap map)
     {
         return map.IsInBounds(x, y) && map.IsWalkable(x, y);

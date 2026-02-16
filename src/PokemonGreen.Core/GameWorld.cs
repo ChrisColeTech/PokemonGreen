@@ -1,4 +1,5 @@
 using PokemonGreen.Core.Battle;
+using PokemonGreen.Core.Encounters;
 using PokemonGreen.Core.Maps;
 using PokemonGreen.Core.Systems;
 using PlayerDirection = PokemonGreen.Core.Player.Direction;
@@ -13,8 +14,6 @@ public class GameWorld
     public const float FadeDuration = 0.3f;
     public const float FlashDuration = 0.15f;
     public const int VisibleTilesY = 5;
-    private const int EncounterChance = 10; // 1 in N chance per step
-
     // ── Game state ──────────────────────────────────────────────────
     public enum GameState { Overworld, Battle, PauseMenu }
     public GameState State { get; private set; } = GameState.Overworld;
@@ -42,7 +41,11 @@ public class GameWorld
     private int _prevTileX, _prevTileY;
     private bool _encounterCheckPending;
     private int _pendingEncTileX, _pendingEncTileY;
-    private static readonly Random _encounterRandom = new();
+    /// <summary>The result of the most recent encounter roll. Read by Game1 to create the wild Pokemon.</summary>
+    public WildEncounterResult? PendingEncounterResult { get; private set; }
+
+    /// <summary>Player progress state for encounter gating and level scaling.</summary>
+    public PlayerProgress Progress { get; } = new();
 
     // ── Constructor ───────────────────────────────────────────────────
 
@@ -72,6 +75,8 @@ public class GameWorld
         _prevTileX = Player.TileX;
         _prevTileY = Player.TileY;
         _encounterCheckPending = false;
+
+        EncounterRegistry.LoadForMap(mapDef.Id);
 
         SnapCamera(px, py);
     }
@@ -196,10 +201,17 @@ public class GameWorld
             if (inHitbox)
             {
                 _encounterCheckPending = false;
-                if (_encounterRandom.Next(EncounterChance) == 0)
+                string? behavior = GetEncounterBehavior(_pendingEncTileX, _pendingEncTileY);
+                string? encounterType = EncounterTypeResolver.FromOverlayBehavior(behavior);
+                if (encounterType != null)
                 {
-                    BeginBattleTransition(_pendingEncTileX, _pendingEncTileY);
-                    return;
+                    var result = EncounterRegistry.TryEncounter(encounterType, Progress);
+                    if (result != null)
+                    {
+                        PendingEncounterResult = result;
+                        BeginBattleTransition(_pendingEncTileX, _pendingEncTileY);
+                        return;
+                    }
                 }
             }
         }

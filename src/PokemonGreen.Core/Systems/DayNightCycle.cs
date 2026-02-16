@@ -48,6 +48,13 @@ public class DayNightCycle
     /// <summary>Current game hour (0-23).</summary>
     public int CurrentHour => (int)(_elapsedSeconds / SecondsPerGameHour) % 24;
 
+    /// <summary>Elapsed seconds within the cycle. Exposed for save/load.</summary>
+    public float ElapsedSeconds
+    {
+        get => _elapsedSeconds;
+        set => _elapsedSeconds = value % TotalCycleSeconds;
+    }
+
     /// <summary>Whether the cycle is active. Disable for indoor maps etc.</summary>
     public bool Enabled { get; set; } = true;
 

@@ -8,13 +8,16 @@ namespace PokemonGreen.Core.Battle;
 public class BattlePokemon
 {
     public string Nickname { get; }
-    public int Species { get; }
-    public int Level { get; }
+    public int SpeciesId { get; }
+    public int Level { get; set; }
     public int CurrentHP { get; set; }
-    public int MaxHP { get; }
+    public int MaxHP { get; set; }
     public Gender Gender { get; }
     public string? Status { get; set; }
     public BattleMove[] Moves { get; }
+
+    /// <summary>The party Pokemon this was created from (null for wild foes).</summary>
+    public PartyPokemon? Source { get; }
 
     /// <summary>Smoothly animated HP for the bar display. Lerps toward CurrentHP.</summary>
     public float DisplayHP { get; set; }
@@ -23,21 +26,25 @@ public class BattlePokemon
     public float DisplayHPPercent => MaxHP > 0 ? DisplayHP / MaxHP : 0f;
     public bool IsFainted => CurrentHP <= 0;
 
+    /// <summary>EXP bar percentage (0..1) for display. Driven by source PartyPokemon.</summary>
+    public float EXPPercent => Source?.EXPPercent ?? 0f;
+
     public void ApplyDamage(int damage)
     {
         CurrentHP = System.Math.Max(0, CurrentHP - damage);
     }
 
-    public BattlePokemon(string nickname, int species, int level,
+    public BattlePokemon(string nickname, int speciesId, int level,
                          int currentHP, int maxHP, Gender gender,
-                         params BattleMove[] moves)
+                         PartyPokemon? source, params BattleMove[] moves)
     {
         Nickname = nickname;
-        Species = species;
+        SpeciesId = speciesId;
         Level = level;
         CurrentHP = currentHP;
         MaxHP = maxHP;
         Gender = gender;
+        Source = source;
         Moves = moves;
         DisplayHP = currentHP;
     }
@@ -56,15 +63,40 @@ public class BattlePokemon
             DisplayHP = CurrentHP;
     }
 
+    /// <summary>Sync level/HP/stats back to the source PartyPokemon after battle.</summary>
+    public void SyncToParty()
+    {
+        if (Source == null) return;
+        Source.CurrentHP = CurrentHP;
+        Source.Status = Status;
+        Source.Level = Level;
+        Source.MaxHP = MaxHP;
+    }
+
+    /// <summary>Create a BattlePokemon from a PartyPokemon.</summary>
+    public static BattlePokemon FromParty(PartyPokemon pkmn)
+    {
+        var moves = new BattleMove[pkmn.MoveIds.Length];
+        for (int i = 0; i < pkmn.MoveIds.Length; i++)
+        {
+            var moveData = MoveRegistry.GetMove(pkmn.MoveIds[i]);
+            int maxPP = moveData?.MaxPP ?? 5;
+            moves[i] = new BattleMove(pkmn.MoveIds[i],
+                i < pkmn.MovePPs.Length ? pkmn.MovePPs[i] : maxPP);
+        }
+        return new BattlePokemon(pkmn.Nickname, pkmn.SpeciesId, pkmn.Level,
+            pkmn.CurrentHP, pkmn.MaxHP, pkmn.Gender, pkmn, moves);
+    }
+
     public static BattlePokemon CreateTestAlly() => new(
-        "Charmander", 4, 5, 20, 20, Gender.Male,
+        "Charmander", 4, 5, 20, 20, Gender.Male, null,
         new BattleMove(2, 35),   // Scratch
         new BattleMove(3, 40),   // Growl
         new BattleMove(5, 25),   // Ember
         new BattleMove(4, 30));  // Leer
 
     public static BattlePokemon CreateTestFoe() => new(
-        "Pidgey", 16, 3, 15, 15, Gender.Female,
+        "Pidgey", 16, 3, 15, 15, Gender.Female, null,
         new BattleMove(1, 35),   // Tackle
         new BattleMove(8, 15));  // Sand Attack
 }
