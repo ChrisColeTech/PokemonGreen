@@ -465,6 +465,9 @@ namespace OhanaCli.Formats.Models.GenericFormats
 
         public class daeMatrix
         {
+            [XmlAttribute]
+            public string sid;
+
             [XmlText]
             public string data;
 
@@ -601,7 +604,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
             [XmlAttribute]
             public string type = "NODE";
 
-            // Decomposed transforms for joint nodes (order matters for COLLADA)
+            // Decomposed transforms for joint nodes (Blender format: S, Rz, Ry, Rx, T)
             [XmlElement("scale", IsNullable = false)]
             public daeScale scale;
 
@@ -1129,11 +1132,16 @@ namespace OhanaCli.Formats.Models.GenericFormats
         /// <param name="target">Target matrix to save bone transformation</param>
         private static void transformSkeleton(List<RenderBase.OBone> skeleton, int index, ref RenderBase.OMatrix target)
         {
-            target *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
-            target *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
-            target *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);
-            target *= RenderBase.OMatrix.translate(skeleton[index].translation);
-            if (skeleton[index].parentId > -1) transformSkeleton(skeleton, skeleton[index].parentId, ref target);
+            RenderBase.OBone bone = skeleton[index];
+            float sx = bone.scale.x == 0 ? 1 : bone.scale.x;
+            float sy = bone.scale.y == 0 ? 1 : bone.scale.y;
+            float sz = bone.scale.z == 0 ? 1 : bone.scale.z;
+            target *= RenderBase.OMatrix.scale(new RenderBase.OVector3(sx, sy, sz));
+            target *= RenderBase.OMatrix.rotateZ(bone.rotation.z);
+            target *= RenderBase.OMatrix.rotateY(bone.rotation.y);
+            target *= RenderBase.OMatrix.rotateX(bone.rotation.x);
+            target *= RenderBase.OMatrix.translate(bone.translation);
+            if (bone.parentId > -1) transformSkeleton(skeleton, bone.parentId, ref target);
         }
 
         /// <summary>
@@ -1154,7 +1162,9 @@ namespace OhanaCli.Formats.Models.GenericFormats
 
             RenderBase.OBone bone = skeleton[index];
 
-            // Decomposed transforms with SIDs (order: S * Rx * Ry * Rz * T)
+            // Decomposed transforms matching Blender's COLLADA format exactly
+            // Order: scale, rotateZ, rotateY, rotateX, translate
+            // SIDs must match: "scale", "rotationZ/Y/X", "location"
             node.scale = new daeScale();
             node.scale.sid = "scale";
             node.scale.set(bone.scale.x == 0 ? 1 : bone.scale.x,
@@ -1162,15 +1172,15 @@ namespace OhanaCli.Formats.Models.GenericFormats
                            bone.scale.z == 0 ? 1 : bone.scale.z);
 
             node.rotate = new List<daeRotate>();
-            daeRotate rx = new daeRotate(); rx.sid = "rotationX"; rx.set(1, 0, 0, toDeg(bone.rotation.x));
-            daeRotate ry = new daeRotate(); ry.sid = "rotationY"; ry.set(0, 1, 0, toDeg(bone.rotation.y));
             daeRotate rz = new daeRotate(); rz.sid = "rotationZ"; rz.set(0, 0, 1, toDeg(bone.rotation.z));
-            node.rotate.Add(rx);
-            node.rotate.Add(ry);
+            daeRotate ry = new daeRotate(); ry.sid = "rotationY"; ry.set(0, 1, 0, toDeg(bone.rotation.y));
+            daeRotate rx = new daeRotate(); rx.sid = "rotationX"; rx.set(1, 0, 0, toDeg(bone.rotation.x));
             node.rotate.Add(rz);
+            node.rotate.Add(ry);
+            node.rotate.Add(rx);
 
             node.translate = new daeTranslate();
-            node.translate.sid = "translation";
+            node.translate.sid = "location";
             node.translate.set(bone.translation.x, bone.translation.y, bone.translation.z);
 
             for (int i = 0; i < skeleton.Count; i++)
@@ -1202,9 +1212,12 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 }
                 if (boneIndex == -1) continue;
 
-                string boneSid = bone.name;
-                string nodeId = boneSid + "_bone_id";
-                string[] axisNames = { "scaleX", "scaleY", "scaleZ", "rotationX", "rotationY", "rotationZ", "translationX", "translationY", "translationZ" };
+                string nodeId = bone.name + "_bone_id";
+
+                // Channel definitions matching Blender's COLLADA format:
+                // SIDs: "scale", "rotationX/Y/Z", "location"
+                // Targets: scale.X, rotationX.ANGLE, location.X
+                string[] axisNames = { "scaleX", "scaleY", "scaleZ", "rotationX", "rotationY", "rotationZ", "locationX", "locationY", "locationZ" };
                 string[] targetPaths = {
                     nodeId + "/scale.X",
                     nodeId + "/scale.Y",
@@ -1212,11 +1225,11 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     nodeId + "/rotationX.ANGLE",
                     nodeId + "/rotationY.ANGLE",
                     nodeId + "/rotationZ.ANGLE",
-                    nodeId + "/translation.X",
-                    nodeId + "/translation.Y",
-                    nodeId + "/translation.Z"
+                    nodeId + "/location.X",
+                    nodeId + "/location.Y",
+                    nodeId + "/location.Z"
                 };
-                // Rotation axes (indices 3-5) need radian-to-degree conversion
+                // Rotation channels (indices 3-5) need radian-to-degree conversion
                 bool[] needsDegConversion = { false, false, false, true, true, true, false, false, false };
 
                 RenderBase.OAnimationKeyFrameGroup[] groups = {
@@ -1229,8 +1242,8 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 {
                     if (!groups[axis].exists || groups[axis].keyFrames.Count == 0) continue;
 
-                    daeAnimation animNode = new daeAnimation();
                     string animId = "anim_" + bone.name + "_" + axisNames[axis];
+                    daeAnimation animNode = new daeAnimation();
                     animNode.id = animId;
 
                     // INPUT source (time)
@@ -1248,7 +1261,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     inputSrc.technique_common.accessor.addParam("TIME", "float");
                     animNode.source.Add(inputSrc);
 
-                    // OUTPUT source (values)
+                    // OUTPUT source (values — degrees for rotation)
                     daeSource outputSrc = new daeSource();
                     outputSrc.id = animId + "_output";
                     outputSrc.float_array = new daeFloatArray();
@@ -1260,7 +1273,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     outputSrc.technique_common.accessor.source = "#" + outputSrc.float_array.id;
                     outputSrc.technique_common.accessor.count = (uint)values.Count;
                     outputSrc.technique_common.accessor.stride = 1;
-                    outputSrc.technique_common.accessor.addParam("VALUE", "float");
+                    outputSrc.technique_common.accessor.addParam(needsDegConversion[axis] ? "ANGLE" : "VALUE", "float");
                     animNode.source.Add(outputSrc);
 
                     // INTERPOLATION source
@@ -1270,7 +1283,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     interpSrc.Name_array.id = animId + "_interpolation_array";
                     List<string> interps = new List<string>();
                     for (int k = 0; k < groups[axis].keyFrames.Count; k++)
-                        interps.Add("HERMITE");
+                        interps.Add("LINEAR");
                     interpSrc.Name_array.set(interps);
                     interpSrc.technique_common.accessor.source = "#" + interpSrc.Name_array.id;
                     interpSrc.technique_common.accessor.count = (uint)interps.Count;
@@ -1278,52 +1291,12 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     interpSrc.technique_common.accessor.addParam("INTERPOLATION", "Name");
                     animNode.source.Add(interpSrc);
 
-                    // IN_TANGENT source
-                    daeSource inTangentSrc = new daeSource();
-                    inTangentSrc.id = animId + "_in_tangent";
-                    inTangentSrc.float_array = new daeFloatArray();
-                    inTangentSrc.float_array.id = animId + "_in_tangent_array";
-                    List<float> inTangents = new List<float>();
-                    foreach (RenderBase.OAnimationKeyFrame kf in groups[axis].keyFrames)
-                    {
-                        inTangents.Add(kf.frame / anim.frameSize);
-                        inTangents.Add(needsDegConversion[axis] ? toDeg(kf.inSlope) : kf.inSlope);
-                    }
-                    inTangentSrc.float_array.set(inTangents);
-                    inTangentSrc.technique_common.accessor.source = "#" + inTangentSrc.float_array.id;
-                    inTangentSrc.technique_common.accessor.count = (uint)groups[axis].keyFrames.Count;
-                    inTangentSrc.technique_common.accessor.stride = 2;
-                    inTangentSrc.technique_common.accessor.addParam("X", "float");
-                    inTangentSrc.technique_common.accessor.addParam("Y", "float");
-                    animNode.source.Add(inTangentSrc);
-
-                    // OUT_TANGENT source
-                    daeSource outTangentSrc = new daeSource();
-                    outTangentSrc.id = animId + "_out_tangent";
-                    outTangentSrc.float_array = new daeFloatArray();
-                    outTangentSrc.float_array.id = animId + "_out_tangent_array";
-                    List<float> outTangents = new List<float>();
-                    foreach (RenderBase.OAnimationKeyFrame kf in groups[axis].keyFrames)
-                    {
-                        outTangents.Add(kf.frame / anim.frameSize);
-                        outTangents.Add(needsDegConversion[axis] ? toDeg(kf.outSlope) : kf.outSlope);
-                    }
-                    outTangentSrc.float_array.set(outTangents);
-                    outTangentSrc.technique_common.accessor.source = "#" + outTangentSrc.float_array.id;
-                    outTangentSrc.technique_common.accessor.count = (uint)groups[axis].keyFrames.Count;
-                    outTangentSrc.technique_common.accessor.stride = 2;
-                    outTangentSrc.technique_common.accessor.addParam("X", "float");
-                    outTangentSrc.technique_common.accessor.addParam("Y", "float");
-                    animNode.source.Add(outTangentSrc);
-
                     // Sampler
                     daeAnimationSampler samp = new daeAnimationSampler();
                     samp.id = animId + "_sampler";
                     samp.addInput("INPUT", "#" + inputSrc.id);
                     samp.addInput("OUTPUT", "#" + outputSrc.id);
                     samp.addInput("INTERPOLATION", "#" + interpSrc.id);
-                    samp.addInput("IN_TANGENT", "#" + inTangentSrc.id);
-                    samp.addInput("OUT_TANGENT", "#" + outTangentSrc.id);
                     animNode.sampler.Add(samp);
 
                     // Channel
