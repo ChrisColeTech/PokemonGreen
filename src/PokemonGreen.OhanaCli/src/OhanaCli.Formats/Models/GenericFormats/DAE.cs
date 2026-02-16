@@ -34,6 +34,9 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             [XmlArrayItem("controller")]
             public List<daeController> library_controllers;
 
+            [XmlArrayItem("animation")]
+            public List<daeAnimation> library_animations;
+
             [XmlArrayItem("visual_scene")]
             public List<daeVisualScene> library_visual_scenes = new List<daeVisualScene>();
 
@@ -560,6 +563,50 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             public daeInstanceController instance_controller;
         }
 
+        public class daeAnimationSampler
+        {
+            [XmlAttribute]
+            public string id;
+
+            [XmlElement("input")]
+            public List<daeInput> input = new List<daeInput>();
+
+            public void addInput(string semantic, string source)
+            {
+                daeInput i = new daeInput();
+                i.semantic = semantic;
+                i.source = source;
+                input.Add(i);
+            }
+        }
+
+        public class daeChannel
+        {
+            [XmlAttribute]
+            public string source;
+
+            [XmlAttribute]
+            public string target;
+        }
+
+        public class daeAnimation
+        {
+            [XmlAttribute]
+            public string id;
+
+            [XmlAttribute]
+            public string name;
+
+            [XmlElement("source")]
+            public List<daeSource> source = new List<daeSource>();
+
+            [XmlElement("sampler")]
+            public List<daeAnimationSampler> sampler = new List<daeAnimationSampler>();
+
+            [XmlElement("channel")]
+            public List<daeChannel> channel = new List<daeChannel>();
+        }
+
         public class daeVisualScene
         {
             [XmlAttribute]
@@ -987,6 +1034,17 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             }
             dae.library_visual_scenes.Add(vs);
 
+            // Export skeletal animations
+            if (skeletalAnimationIndex >= 0 && skeletalAnimationIndex < model.skeletalAnimation.list.Count)
+            {
+                exportAnimation(dae, model, mdl, skeletalAnimationIndex);
+            }
+            else if (model.skeletalAnimation.list.Count > 0)
+            {
+                // Export the first animation by default (idle pose)
+                exportAnimation(dae, model, mdl, 0);
+            }
+
             daeInstaceVisualScene scene = new daeInstaceVisualScene();
             scene.url = "#" + vs.id;
             dae.scene.Add(scene);
@@ -1006,6 +1064,105 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             {
                 serializer.Serialize(output, dae, ns);
             }
+        }
+
+        private static void exportAnimation(COLLADA dae, RenderBase.OModelGroup model, RenderBase.OModel mdl, int animIndex)
+        {
+            var anim = (RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[animIndex];
+            dae.library_animations = new List<daeAnimation>();
+
+            string[] channelNames = { "scale.X", "scale.Y", "scale.Z", "rotation.X", "rotation.Y", "rotation.Z", "translation.X", "translation.Y", "translation.Z" };
+
+            foreach (var bone in anim.bone)
+            {
+                RenderBase.OAnimationKeyFrameGroup[] groups = {
+                    bone.scaleX, bone.scaleY, bone.scaleZ,
+                    bone.rotationX, bone.rotationY, bone.rotationZ,
+                    bone.translationX, bone.translationY, bone.translationZ
+                };
+
+                for (int ch = 0; ch < 9; ch++)
+                {
+                    var group = groups[ch];
+                    if (!group.exists || group.keyFrames.Count == 0) continue;
+
+                    string animId = bone.name + "_" + channelNames[ch].Replace(".", "_");
+
+                    daeAnimation daeAnim = new daeAnimation();
+                    daeAnim.id = animId;
+                    daeAnim.name = animId;
+
+                    // Input source (time/frame numbers)
+                    daeSource inputSrc = new daeSource();
+                    inputSrc.id = animId + "_input";
+                    inputSrc.float_array = new daeFloatArray();
+                    inputSrc.float_array.id = animId + "_input_array";
+                    inputSrc.float_array.count = (uint)group.keyFrames.Count;
+                    StringBuilder timeData = new StringBuilder();
+                    foreach (var kf in group.keyFrames)
+                        timeData.Append((kf.frame / 30f).ToString(CultureInfo.InvariantCulture) + " ");
+                    inputSrc.float_array.data = timeData.ToString().TrimEnd();
+                    inputSrc.technique_common.accessor.source = "#" + inputSrc.float_array.id;
+                    inputSrc.technique_common.accessor.count = (uint)group.keyFrames.Count;
+                    inputSrc.technique_common.accessor.stride = 1;
+                    inputSrc.technique_common.accessor.addParam("TIME", "float");
+                    daeAnim.source.Add(inputSrc);
+
+                    // Output source (values)
+                    daeSource outputSrc = new daeSource();
+                    outputSrc.id = animId + "_output";
+                    outputSrc.float_array = new daeFloatArray();
+                    outputSrc.float_array.id = animId + "_output_array";
+                    outputSrc.float_array.count = (uint)group.keyFrames.Count;
+                    StringBuilder valData = new StringBuilder();
+                    foreach (var kf in group.keyFrames)
+                        valData.Append(kf.value.ToString(CultureInfo.InvariantCulture) + " ");
+                    outputSrc.float_array.data = valData.ToString().TrimEnd();
+                    outputSrc.technique_common.accessor.source = "#" + outputSrc.float_array.id;
+                    outputSrc.technique_common.accessor.count = (uint)group.keyFrames.Count;
+                    outputSrc.technique_common.accessor.stride = 1;
+                    outputSrc.technique_common.accessor.addParam("VALUE", "float");
+                    daeAnim.source.Add(outputSrc);
+
+                    // Interpolation source
+                    daeSource interpSrc = new daeSource();
+                    interpSrc.id = animId + "_interpolation";
+                    interpSrc.Name_array = new daeNameArray();
+                    interpSrc.Name_array.id = animId + "_interpolation_array";
+                    interpSrc.Name_array.count = (uint)group.keyFrames.Count;
+                    string interpType = group.interpolation == RenderBase.OInterpolationMode.hermite ? "HERMITE" :
+                                        group.interpolation == RenderBase.OInterpolationMode.linear ? "LINEAR" : "STEP";
+                    StringBuilder interpData = new StringBuilder();
+                    for (int k = 0; k < group.keyFrames.Count; k++)
+                        interpData.Append(interpType + " ");
+                    interpSrc.Name_array.data = interpData.ToString().TrimEnd();
+                    interpSrc.technique_common.accessor.source = "#" + interpSrc.Name_array.id;
+                    interpSrc.technique_common.accessor.count = (uint)group.keyFrames.Count;
+                    interpSrc.technique_common.accessor.stride = 1;
+                    interpSrc.technique_common.accessor.addParam("INTERPOLATION", "Name");
+                    daeAnim.source.Add(interpSrc);
+
+                    // Sampler
+                    daeAnimationSampler sampler = new daeAnimationSampler();
+                    sampler.id = animId + "_sampler";
+                    sampler.addInput("INPUT", "#" + inputSrc.id);
+                    sampler.addInput("OUTPUT", "#" + outputSrc.id);
+                    sampler.addInput("INTERPOLATION", "#" + interpSrc.id);
+                    daeAnim.sampler.Add(sampler);
+
+                    // Channel — targets the bone's transform component
+                    daeChannel channel = new daeChannel();
+                    channel.source = "#" + sampler.id;
+                    channel.target = bone.name + "_bone_id/" + channelNames[ch];
+                    daeAnim.channel.Add(channel);
+
+                    dae.library_animations.Add(daeAnim);
+                }
+            }
+
+            // Don't include empty library
+            if (dae.library_animations.Count == 0)
+                dae.library_animations = null;
         }
 
         /// <summary>

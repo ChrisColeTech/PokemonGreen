@@ -8,8 +8,12 @@ using System.IO;
 
 namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 {
-    class GfModel
+    public class GfModel
     {
+        /// <summary>
+        ///     When true, loadModel() prints detailed parsing diagnostics to Console.Error.
+        /// </summary>
+        public static bool DiagnosticLogging = false;
         /// <summary>
         ///     Loads a Pokémon Sun/Moon Model file.
         /// </summary>
@@ -91,15 +95,30 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
             long mdlStart = data.Position;
 
-            data.Seek(0x10, SeekOrigin.Current);
+            uint preHeaderMagic = input.ReadUInt32();
+            uint preHeaderSectionsCount = input.ReadUInt32();
+            data.Seek(mdlStart + 0x10, SeekOrigin.Begin); // skip to section header (aligned to 16)
+
             ulong mdlMagic = input.ReadUInt64(); //gfmodel string
             uint mdlLength = input.ReadUInt32();
             input.ReadUInt32(); //-1
+
+            if (DiagnosticLogging)
+            {
+                Console.Error.WriteLine($"    [loadModel] mdlStart=0x{mdlStart:X}, preHeaderMagic=0x{preHeaderMagic:X8}, sectionsCount={preHeaderSectionsCount}");
+                Console.Error.WriteLine($"    [loadModel] mdlMagic=0x{mdlMagic:X16}, mdlLength=0x{mdlLength:X} ({mdlLength}), pos=0x{data.Position:X}");
+            }
 
             string[] effectNames = getStrTable(input);
             string[] textureNames = getStrTable(input);
             string[] materialNames = getStrTable(input);
             string[] meshNames = getStrTable(input);
+
+            if (DiagnosticLogging)
+            {
+                Console.Error.WriteLine($"    [loadModel] effects={effectNames.Length}, textures={textureNames.Length}, materials={materialNames.Length}, meshes={meshNames.Length}");
+                Console.Error.WriteLine($"    [loadModel] after string tables pos=0x{data.Position:X}");
+            }
 
             input.BaseStream.Seek(0x20, SeekOrigin.Current); //2 float4 (Maybe 2 Quaternions?)
 
@@ -133,6 +152,11 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
             uint bonesCount = input.ReadUInt32();
             input.BaseStream.Seek(0xc, SeekOrigin.Current);
+
+            if (DiagnosticLogging)
+            {
+                Console.Error.WriteLine($"    [loadModel] bonesCount={bonesCount}, pos=0x{data.Position:X}");
+            }
 
             List<string> boneNames = new List<string>();
 
@@ -170,6 +194,12 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
             //Materials
             List<string> matMeshBinding = new List<string>();
+
+            if (DiagnosticLogging)
+            {
+                Console.Error.WriteLine($"    [loadModel] after bones pos=0x{data.Position:X}");
+                Console.Error.WriteLine($"    [loadModel] seeking to materials at mdlStart(0x{mdlStart:X}) + mdlLength(0x{mdlLength:X}) + 0x20 = 0x{mdlStart + mdlLength + 0x20:X}");
+            }
 
             input.BaseStream.Seek(mdlStart + mdlLength + 0x20, SeekOrigin.Begin);
 

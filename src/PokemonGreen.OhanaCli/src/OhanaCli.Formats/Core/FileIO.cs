@@ -60,8 +60,7 @@ namespace Ohana3DS_Rebirth.Ohana
             switch (peek(input))
             {
                 case 0x00010000: return new LoadedFile { data = GfModel.load(data), type = formatType.model };
-                // TODO: animation support
-                // case 0x00060000: return new LoadedFile { data = GfMotion.loadAnim(input), type = formatType.anims };
+                case 0x00060000: return new LoadedFile { data = GfMotion.loadAnim(input), type = formatType.anims };
                 case 0x15041213: return new LoadedFile { data = GfTexture.load(data), type = formatType.image };
                 case 0x15122117:
                     RenderBase.OModelGroup mdls = new RenderBase.OModelGroup();

@@ -3,6 +3,7 @@ using Ohana3DS_Rebirth.Ohana;
 using Ohana3DS_Rebirth.Ohana.Compressions;
 using Ohana3DS_Rebirth.Ohana.Containers;
 using Ohana3DS_Rebirth.Ohana.Models.GenericFormats;
+using Ohana3DS_Rebirth.Ohana.Models.PocketMonsters;
 
 var rootCommand = new RootCommand("OhanaCli - Pokemon 3DS model converter");
 
@@ -35,6 +36,14 @@ var convertAllFormatOpt = new Option<string>("--format", () => "dae", "Export fo
 var convertAllCommand = new Command("convert-all", "Recursively find all GARC archives and convert models") { convertAllInputArg, convertAllOutputArg, convertAllFormatOpt };
 convertAllCommand.SetHandler(ConvertAllHandler, convertAllInputArg, convertAllOutputArg, convertAllFormatOpt);
 rootCommand.AddCommand(convertAllCommand);
+
+// diagnose command: analyze failing model entries in a GARC
+var diagnoseInputArg = new Argument<FileInfo>("garc-file", "Path to GARC archive (e.g. a/0/9/4)");
+var diagnoseMaxOpt = new Option<int>("--max-failures", () => 10, "Max failing entries to dump details for");
+var diagnoseMaxGoodOpt = new Option<int>("--max-good", () => 3, "Max working entries to dump for comparison");
+var diagnoseCommand = new Command("diagnose", "Analyze why certain model entries produce 0 meshes") { diagnoseInputArg, diagnoseMaxOpt, diagnoseMaxGoodOpt };
+diagnoseCommand.SetHandler(DiagnoseHandler, diagnoseInputArg, diagnoseMaxOpt, diagnoseMaxGoodOpt);
+rootCommand.AddCommand(diagnoseCommand);
 
 return await rootCommand.InvokeAsync(args);
 
@@ -191,15 +200,19 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
     var garcFiles = new List<FileInfo>();
     foreach (var file in allFiles)
     {
-        if (file.Length < 4) continue;
+        Console.WriteLine($"  Checking: {file.FullName} ({file.Length} bytes)");
+        if (file.Length < 4) { Console.WriteLine("    Too small, skip"); continue; }
         try
         {
             using var fs = file.OpenRead();
             var magic = new byte[4];
-            if (fs.Read(magic, 0, 4) == 4 && BitConverter.ToUInt32(magic, 0) == GARC_MAGIC)
+            var bytesRead = fs.Read(magic, 0, 4);
+            var magicVal = BitConverter.ToUInt32(magic, 0);
+            Console.WriteLine($"    Read {bytesRead} bytes, magic=0x{magicVal:X8}, expected=0x{GARC_MAGIC:X8}, match={magicVal == GARC_MAGIC}");
+            if (bytesRead == 4 && magicVal == GARC_MAGIC)
                 garcFiles.Add(file);
         }
-        catch { /* skip unreadable files */ }
+        catch (Exception ex) { Console.Error.WriteLine($"  SKIP {file.FullName}: {ex.Message}"); }
     }
 
     Console.WriteLine($"Found {garcFiles.Count} GARC archives.\n");
@@ -240,14 +253,20 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
             Console.WriteLine($"  Entries: {container.content.Count}");
 
             // Single-pass streaming: process entries, hold onto current model
-            // until we've collected its trailing texture entries, then export the group.
+            // until we've collected its trailing texture/animation entries, then export the group.
             RenderBase.OModelGroup pendingModel = null;
             List<RenderBase.OModelGroup> pendingTextures = new();
+            List<RenderBase.OModelGroup> pendingAnimGroups = new();
             int pendingModelIndex = -1;
 
             void FlushPendingModel()
             {
                 if (pendingModel == null) return;
+                // Merge animations into the model group before export
+                foreach (var animGroup in pendingAnimGroups)
+                {
+                    pendingModel.skeletalAnimation.list.AddRange(animGroup.skeletalAnimation.list);
+                }
                 string folderName = DeriveFolderName(pendingModel, pendingTextures, pendingModelIndex);
                 try
                 {
@@ -264,6 +283,7 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
                 }
                 pendingModel = null;
                 pendingTextures = new();
+                pendingAnimGroups = new();
                 pendingModelIndex = -1;
             }
 
@@ -287,6 +307,7 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
                         var models = (RenderBase.OModelGroup)sub.data;
                         bool hasMeshes = models.model.Count > 0 && models.model.Any(m => m.mesh.Count > 0);
                         bool hasTextures = models.texture.Count > 0;
+                        bool hasAnims = models.skeletalAnimation.list.Count > 0;
 
                         if (hasMeshes)
                         {
@@ -300,26 +321,40 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
                             // Texture-only entry following a model — group it
                             pendingTextures.Add(models);
                         }
+                        else if (hasAnims && pendingModel != null)
+                        {
+                            // Animation-only entry following a model — group it
+                            pendingAnimGroups.Add(models);
+                        }
                         else if (hasTextures)
                         {
                             stats.AddSkip("texture entry not following a model");
                         }
+                        else if (hasAnims)
+                        {
+                            stats.AddSkip("animation entry not following a model");
+                        }
                         else
                         {
                             FlushPendingModel();
-                            stats.AddSkip("model with no meshes or textures");
+                            stats.AddSkip("model with no meshes, textures, or animations");
                         }
                     }
                     else
                     {
-                        // Non-model entry breaks the group
-                        FlushPendingModel();
+                        // Non-model entry doesn't break animation grouping
                         if (sub.type == FileIO.formatType.image)
                             stats.AddSkip("image/texture (standalone)");
                         else if (sub.type == FileIO.formatType.container)
                             stats.AddSkip("nested container");
+                        else if (sub.type == FileIO.formatType.unsupported && pendingModel != null)
+                        {
+                            // Unsupported entries (bone config, locators, etc.) don't break model grouping
+                            stats.AddSkip("unsupported format (grouped)");
+                        }
                         else
                         {
+                            FlushPendingModel();
                             string ext = entry.name != null ? Path.GetExtension(entry.name) : "";
                             stats.AddSkip($"unsupported format (ext={ext})");
                         }
@@ -444,6 +479,296 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
     var reportPath = Path.Combine(outputDir.FullName, "report.txt");
     File.WriteAllText(reportPath, reportText);
     Console.WriteLine($"Report written to: {reportPath}");
+}
+
+static void DiagnoseHandler(FileInfo garcFile, int maxFailures, int maxGood)
+{
+    if (!garcFile.Exists) { Console.Error.WriteLine($"File not found: {garcFile.FullName}"); return; }
+
+    // Diagnostic logging will be enabled selectively per entry
+    GfModel.DiagnosticLogging = false;
+
+    Console.WriteLine($"Loading GARC: {garcFile.FullName}");
+    var loaded = FileIO.load(garcFile.FullName);
+    if (loaded.type != FileIO.formatType.container)
+    {
+        Console.Error.WriteLine($"Not a container (type={loaded.type})");
+        return;
+    }
+
+    var container = (OContainer)loaded.data;
+    Console.WriteLine($"Total entries: {container.content.Count}");
+    Console.WriteLine();
+
+    int goodDumped = 0, failDumped = 0;
+    int totalGood = 0, totalFail = 0, totalSkipped = 0;
+
+    for (int i = 0; i < container.content.Count; i++)
+    {
+        var entry = container.content[i];
+        byte[] data;
+        try
+        {
+            data = ReadEntryData(container, entry);
+            if (data == null || data.Length == 0) { totalSkipped++; continue; }
+        }
+        catch { totalSkipped++; continue; }
+
+        // Check if this is a .pc file (first 2 bytes = "PC")
+        if (data.Length < 4) { totalSkipped++; continue; }
+        string magic2 = System.Text.Encoding.ASCII.GetString(data, 0, 2);
+        if (magic2 != "PC") { totalSkipped++; continue; }
+
+        // Check if this PC container actually contains a model section (not just textures)
+        bool hasModelSection = false;
+        {
+            ushort secCount = BitConverter.ToUInt16(data, 2);
+            for (int s = 0; s < secCount && !hasModelSection; s++)
+            {
+                if (4 + s * 4 + 8 > data.Length) break;
+                uint secStart = BitConverter.ToUInt32(data, 4 + s * 4);
+                if (secStart + 4 > data.Length) break;
+                uint secMagic = BitConverter.ToUInt32(data, (int)secStart);
+                if (secMagic == 0x15122117 || secMagic == 0x00010000)
+                    hasModelSection = true;
+            }
+        }
+        if (!hasModelSection) { totalSkipped++; continue; }
+
+        // First pass: load without logging
+        RenderBase.OModelGroup models;
+        try
+        {
+            GfModel.DiagnosticLogging = false;
+            var sub = FileIO.load(new MemoryStream(data));
+            if (sub.type != FileIO.formatType.model) { totalSkipped++; continue; }
+            models = (RenderBase.OModelGroup)sub.data;
+        }
+        catch (Exception ex)
+        {
+            totalFail++;
+            if (failDumped < maxFailures)
+            {
+                failDumped++;
+                Console.WriteLine($"=== ENTRY [{i}] — EXCEPTION ===");
+                Console.WriteLine($"  Size: {data.Length} bytes");
+                Console.WriteLine($"  Error: {ex.Message}");
+                // Re-run with logging
+                try
+                {
+                    GfModel.DiagnosticLogging = true;
+                    FileIO.load(new MemoryStream(data));
+                }
+                catch { }
+                GfModel.DiagnosticLogging = false;
+                DumpPcSections(data, i);
+            }
+            continue;
+        }
+
+        bool hasMeshes = models.model.Count > 0 && models.model.Any(m => m.mesh.Count > 0);
+
+        if (hasMeshes)
+        {
+            totalGood++;
+            if (goodDumped < maxGood)
+            {
+                goodDumped++;
+                int totalMeshes = models.model.Sum(m => m.mesh.Count);
+                Console.WriteLine($"=== ENTRY [{i}] — GOOD ({totalMeshes} meshes, {models.texture.Count} textures) ===");
+                Console.WriteLine($"  Size: {data.Length} bytes");
+                // Re-run with logging for comparison
+                try
+                {
+                    GfModel.DiagnosticLogging = true;
+                    FileIO.load(new MemoryStream(data));
+                }
+                catch { }
+                GfModel.DiagnosticLogging = false;
+                DumpPcSections(data, i);
+            }
+        }
+        else
+        {
+            totalFail++;
+            if (failDumped < maxFailures)
+            {
+                failDumped++;
+                Console.WriteLine($"=== ENTRY [{i}] — FAIL (0 meshes, {models.model.Count} models, {models.texture.Count} textures) ===");
+                Console.WriteLine($"  Size: {data.Length} bytes");
+                // Re-run with logging
+                try
+                {
+                    GfModel.DiagnosticLogging = true;
+                    FileIO.load(new MemoryStream(data));
+                }
+                catch { }
+                GfModel.DiagnosticLogging = false;
+                DumpPcSections(data, i);
+            }
+        }
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Summary: {totalGood} good, {totalFail} fail, {totalSkipped} skipped (non-PC)");
+}
+
+static void DumpPcSections(byte[] pcData, int entryIndex)
+{
+    using var ms = new MemoryStream(pcData);
+    using var reader = new BinaryReader(ms);
+
+    string magic = System.Text.Encoding.ASCII.GetString(pcData, 0, 2);
+    ushort sectionCount = BitConverter.ToUInt16(pcData, 2);
+    Console.WriteLine($"  PC container: magic={magic}, sections={sectionCount}");
+
+    for (int s = 0; s < sectionCount; s++)
+    {
+        ms.Seek(4 + s * 4, SeekOrigin.Begin);
+        uint startOffset = reader.ReadUInt32();
+        uint endOffset = reader.ReadUInt32();
+        uint length = endOffset - startOffset;
+
+        Console.WriteLine($"  Section [{s}]: offset=0x{startOffset:X}, length={length} bytes");
+
+        if (startOffset + length > pcData.Length)
+        {
+            Console.WriteLine($"    ERROR: section exceeds file size ({pcData.Length})");
+            continue;
+        }
+
+        // Dump first 64 bytes as hex
+        int dumpLen = (int)Math.Min(length, 64);
+        Console.Write("    Hex: ");
+        for (int b = 0; b < dumpLen; b++)
+        {
+            Console.Write($"{pcData[startOffset + b]:X2} ");
+            if (b == 31) Console.Write("\n         ");
+        }
+        Console.WriteLine();
+
+        // Identify the section format
+        if (length >= 4)
+        {
+            uint magic4 = BitConverter.ToUInt32(pcData, (int)startOffset);
+            string magic2b = System.Text.Encoding.ASCII.GetString(pcData, (int)startOffset, Math.Min(2, (int)length));
+
+            if (magic4 == 0x00010000)
+            {
+                Console.WriteLine("    Format: GfModel container (0x00010000)");
+                DumpGfModelHeader(pcData, (int)startOffset, (int)length);
+            }
+            else if (magic4 == 0x15122117)
+            {
+                Console.WriteLine("    Format: GfModel direct (0x15122117)");
+                DumpGfModelDirectHeader(pcData, (int)startOffset, (int)length);
+            }
+            else if (magic4 == 0x15041213)
+            {
+                Console.WriteLine("    Format: GfTexture (0x15041213)");
+            }
+            else
+            {
+                Console.WriteLine($"    Format: magic4=0x{magic4:X8}, magic2={magic2b}");
+            }
+        }
+    }
+    Console.WriteLine();
+}
+
+static void DumpGfModelHeader(byte[] data, int offset, int length)
+{
+    if (length < 24) { Console.WriteLine("    Too small for GfModel header"); return; }
+
+    using var ms = new MemoryStream(data, offset, length);
+    using var reader = new BinaryReader(ms);
+
+    uint headerMagic = reader.ReadUInt32(); // 0x00010000
+    Console.WriteLine($"    Header magic: 0x{headerMagic:X8}");
+
+    uint[] sectionCounts = new uint[5];
+    for (int i = 0; i < 5; i++)
+    {
+        sectionCounts[i] = reader.ReadUInt32();
+        Console.WriteLine($"    SectionCount[{i}]: {sectionCounts[i]}");
+    }
+
+    uint baseAddr = (uint)ms.Position; // 24
+    Console.WriteLine($"    Offset table starts at: 0x{baseAddr:X}");
+
+    // For each model section, try to read the offset and peek at the model data
+    for (int i = 0; i < sectionCounts[0]; i++)
+    {
+        ms.Seek(baseAddr + i * 4, SeekOrigin.Begin);
+        uint sectionOffset = reader.ReadUInt32();
+        Console.WriteLine($"    Model[{i}] offset: 0x{sectionOffset:X}");
+
+        if (sectionOffset >= length) { Console.WriteLine("      ERROR: offset out of range"); continue; }
+
+        ms.Seek(sectionOffset, SeekOrigin.Begin);
+        byte nameLen = reader.ReadByte();
+        byte[] nameBytes = reader.ReadBytes(nameLen);
+        string name = System.Text.Encoding.ASCII.GetString(nameBytes).TrimEnd('\0');
+        uint descAddr = reader.ReadUInt32();
+        Console.WriteLine($"      Name: \"{name}\", descAddr: 0x{descAddr:X}");
+
+        if (descAddr >= length) { Console.WriteLine("      ERROR: descAddr out of range"); continue; }
+
+        // Parse the model data at descAddr
+        ms.Seek(descAddr, SeekOrigin.Begin);
+        DumpLoadModelHeader(reader, ms, descAddr, length);
+    }
+}
+
+static void DumpLoadModelHeader(BinaryReader reader, MemoryStream ms, uint descAddr, int totalLength)
+{
+    long mdlStart = ms.Position;
+
+    // Skip 0x10 bytes
+    if (ms.Position + 0x10 + 16 > totalLength) { Console.WriteLine("      Too small for model header"); return; }
+
+    byte[] preHeader = reader.ReadBytes(0x10);
+    Console.Write("      Pre-header (0x10): ");
+    foreach (byte b in preHeader) Console.Write($"{b:X2} ");
+    Console.WriteLine();
+
+    ulong mdlMagic = reader.ReadUInt64();
+    string mdlMagicStr = System.Text.Encoding.ASCII.GetString(BitConverter.GetBytes(mdlMagic)).TrimEnd('\0');
+    uint mdlLength = reader.ReadUInt32();
+    uint mdlUnk = reader.ReadUInt32(); // expected -1
+
+    Console.WriteLine($"      Model magic: \"{mdlMagicStr}\" (0x{mdlMagic:X16})");
+    Console.WriteLine($"      Model length: {mdlLength} (0x{mdlLength:X})");
+    Console.WriteLine($"      Unknown (expect -1): 0x{mdlUnk:X8}");
+
+    // Read string table counts
+    string[] tableNames = { "effects", "textures", "materials", "meshes" };
+    for (int t = 0; t < 4; t++)
+    {
+        if (ms.Position + 4 > totalLength) { Console.WriteLine($"      String table {tableNames[t]}: TRUNCATED"); break; }
+        long tablePos = ms.Position;
+        uint count = reader.ReadUInt32();
+        Console.WriteLine($"      String table '{tableNames[t]}': count={count} at offset 0x{tablePos - mdlStart:X}");
+
+        // Skip the string entries (each is 0x44 bytes)
+        long skipTo = ms.Position + count * 0x44;
+        if (skipTo > totalLength)
+        {
+            Console.WriteLine($"        WARNING: table would extend past end of data (need {count * 0x44} bytes, have {totalLength - ms.Position})");
+            break;
+        }
+        ms.Seek(skipTo, SeekOrigin.Begin);
+    }
+}
+
+static void DumpGfModelDirectHeader(byte[] data, int offset, int length)
+{
+    Console.WriteLine("    (Direct model — starts with loadModel header)");
+    if (length < 32) { Console.WriteLine("    Too small"); return; }
+
+    using var ms = new MemoryStream(data, offset, length);
+    using var reader = new BinaryReader(ms);
+    DumpLoadModelHeader(reader, ms, 0, length);
 }
 
 static byte[] ReadEntryData(OContainer container, OContainer.fileEntry entry)
@@ -622,7 +947,8 @@ static int ExportModelGrouped(RenderBase.OModelGroup models, List<RenderBase.OMo
                 return textureCount;
         }
 
-        Console.WriteLine($"  {folderName}/{modelName}.{format} ({mdl.mesh.Count} meshes, {mdl.material.Count} materials, {textureCount} textures)");
+        int animCount = models.skeletalAnimation.list.Count;
+        Console.WriteLine($"  {folderName}/{modelName}.{format} ({mdl.mesh.Count} meshes, {mdl.material.Count} materials, {textureCount} textures, {animCount} animations)");
     }
 
     return textureCount;
