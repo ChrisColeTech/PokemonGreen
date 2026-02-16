@@ -4,11 +4,11 @@ export default function InfoBar() {
   const sceneName = useEditorStore(s => s.sceneName)
   const textures = useEditorStore(s => s.textures)
   const error = useEditorStore(s => s.error)
-  const loadFiles = useEditorStore(s => s.loadFiles)
+  const loadManifest = useEditorStore(s => s.loadManifest)
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? [])
-    if (files.length > 0) loadFiles(files)
+    const file = e.target.files?.[0]
+    if (file) loadManifest(file)
     e.target.value = ''
   }
 
@@ -49,11 +49,10 @@ export default function InfoBar() {
         color: '#aaa',
         fontSize: 12,
       }}>
-        Load Model
+        Load Manifest
         <input
           type="file"
-          multiple
-          accept=".dae,.obj,.fbx,.mtl,.png,.jpg,.jpeg,.bmp"
+          accept=".json"
           onChange={handleFileInput}
           style={{ display: 'none' }}
         />

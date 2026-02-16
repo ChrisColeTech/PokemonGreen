@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import type * as THREE from 'three'
 import type { LoadedTexture, TextureAdjustment } from '../types/editor'
 import { DEFAULT_ADJUSTMENT } from '../types/editor'
-import { loadSceneFromFiles } from '../services/sceneService'
+import { loadScene } from '../services/sceneService'
+import type { Manifest } from '../services/sceneService'
 
 interface EditorState {
   // Scene
@@ -14,7 +15,7 @@ interface EditorState {
   error: string | null
 
   // Actions
-  loadFiles: (files: File[]) => Promise<void>
+  loadManifest: (file: File) => Promise<void>
   selectTexture: (index: number) => void
   setAdjustment: (index: number, adj: Partial<TextureAdjustment>) => void
   resetTexture: (index: number) => void
@@ -30,15 +31,16 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   loading: false,
   error: null,
 
-  loadFiles: async (files: File[]) => {
+  loadManifest: async (file: File) => {
     set({ loading: true, error: null })
     try {
-      const modelFile = files.find(f => /\.(dae|obj|fbx)$/i.test(f.name))
-      const result = await loadSceneFromFiles(files)
+      const text = await file.text()
+      const manifest: Manifest = JSON.parse(text)
+      const result = await loadScene(manifest)
       set({
         scene: result.scene,
         textures: result.textures,
-        sceneName: modelFile?.name ?? 'Unknown',
+        sceneName: manifest.name,
         selectedTextureIndex: 0,
         loading: false,
       })
