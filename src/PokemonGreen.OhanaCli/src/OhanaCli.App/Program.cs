@@ -183,27 +183,67 @@ namespace OhanaCli.App
             else if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
             {
                 Console.WriteLine($"  Container with {container.content.Count} entries. Processing each...");
+
+                // Streaming grouping: merge trailing texture entries into preceding model
+                RenderBase.OModelGroup? currentModel = null;
+                int modelEntryIndex = -1;
+
                 for (int i = 0; i < container.content.Count; i++)
                 {
-                    string entryDir = Path.Combine(outDir, $"entry_{i}");
-                    Directory.CreateDirectory(entryDir);
                     try
                     {
                         byte[] entryBytes = GetEntryData(container, i);
                         FileIO.LoadedFile entry = FileIO.load(new MemoryStream(entryBytes));
+
                         if (entry.type == FileIO.formatType.model && entry.data is RenderBase.OModelGroup entryModels)
-                            ExportModelGroup(entryModels, entryDir, $"entry_{i}", format, animIndex);
+                        {
+                            // Flush previous model group
+                            if (currentModel != null)
+                            {
+                                string prevDir = Path.Combine(outDir, $"entry_{modelEntryIndex}");
+                                ExportModelGroup(currentModel, prevDir, $"entry_{modelEntryIndex}", format, animIndex);
+                            }
+                            currentModel = entryModels;
+                            modelEntryIndex = i;
+                        }
                         else if (entry.type == FileIO.formatType.texture && entry.data is RenderBase.OModelGroup entryTex)
-                            ExportTextures(entryTex.texture, entryDir);
+                        {
+                            if (currentModel != null)
+                            {
+                                foreach (var t in entryTex.texture)
+                                    currentModel.texture.Add(t);
+                            }
+                            else
+                            {
+                                string entryDir = Path.Combine(outDir, $"entry_{i}");
+                                ExportTextures(entryTex.texture, entryDir);
+                            }
+                        }
                         else if (entry.type == FileIO.formatType.image && entry.data is RenderBase.OTexture entryImg)
                         {
-                            entryImg.texture.Save(Path.Combine(entryDir, entryImg.name + ".png"), ImageFormat.Png);
+                            if (currentModel != null)
+                            {
+                                currentModel.texture.Add(entryImg);
+                            }
+                            else
+                            {
+                                string entryDir = Path.Combine(outDir, $"entry_{i}");
+                                Directory.CreateDirectory(entryDir);
+                                entryImg.texture.Save(Path.Combine(entryDir, entryImg.name + ".png"), ImageFormat.Png);
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.Error.WriteLine($"  Entry[{i}] error: {ex.Message}");
                     }
+                }
+
+                // Flush final model group
+                if (currentModel != null)
+                {
+                    string finalDir = Path.Combine(outDir, $"entry_{modelEntryIndex}");
+                    ExportModelGroup(currentModel, finalDir, $"entry_{modelEntryIndex}", format, animIndex);
                 }
             }
             else
