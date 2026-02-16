@@ -208,7 +208,7 @@ static void ConvertAllHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, s
             if (fs.Read(magic, 0, 4) == 4 && BitConverter.ToUInt32(magic, 0) == GARC_MAGIC)
                 garcFiles.Add(file);
         }
-        catch { /* skip unreadable files */ }
+        catch (Exception ex) { Console.WriteLine($"  SKIP {file.FullName}: {ex.GetType().Name}: {ex.Message}"); }
     }
 
     Console.WriteLine($"Found {garcFiles.Count} GARC archives.\n");
