@@ -73,9 +73,9 @@ public static class BattleInfoBar
             pkmn.DisplayHPPercent);
 
         // ── Status (below HP bar, if set) ──
-        if (pkmn.Status != null)
+        if (pkmn.StatusAbbreviation != null)
         {
-            DrawText(sb, fontRenderer, fallbackFont, pkmn.Status,
+            DrawText(sb, fontRenderer, fallbackFont, pkmn.StatusAbbreviation,
                 new Vector2(bounds.X + pad, hpRowY + fontH + 3), new Color(255, 100, 100), fontScale);
         }
     }
@@ -134,9 +134,9 @@ public static class BattleInfoBar
             new Vector2(bounds.Right - pad - hpTextWidth, hpTextY), HPTextColor, fontScale);
 
         // ── Status (left side of HP numbers row) ──
-        if (pkmn.Status != null)
+        if (pkmn.StatusAbbreviation != null)
         {
-            DrawText(sb, fontRenderer, fallbackFont, pkmn.Status,
+            DrawText(sb, fontRenderer, fallbackFont, pkmn.StatusAbbreviation,
                 new Vector2(bounds.X + pad, hpTextY), new Color(255, 100, 100), fontScale);
         }
 

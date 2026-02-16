@@ -23,4 +23,7 @@ public class SpeciesData
 
     // Catch rate
     public int CatchRate { get; set; } = 45;
+
+    // 3D model folder name (e.g. "pm0001_00"), relative to Pokemon3D/
+    public string? ModelFolder { get; set; }
 }

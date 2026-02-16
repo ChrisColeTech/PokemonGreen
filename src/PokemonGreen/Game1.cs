@@ -109,6 +109,7 @@ public class Game1 : Game
         _graphics.PreferredBackBufferHeight = ViewportHeight;
         _graphics.ApplyChanges();
 
+        SpeciesRegistry.Initialize();
         WorldRegistry.Initialize();
         MapRegistry.Initialize();
         _gameWorld = new GameWorld(ViewportWidth, ViewportHeight);

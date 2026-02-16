@@ -1,5 +1,3 @@
-using PokemonGreen.Core.Items;
-
 namespace PokemonGreen.Core.Items;
 
 public record ItemDefinition(
@@ -12,4 +10,7 @@ public record ItemDefinition(
     bool UsableInBattle,
     bool UsableOverworld,
     string? Effect = null
-);
+)
+{
+    public ItemEffect? ParsedEffect { get; } = ItemEffectParser.Parse(Effect);
+}

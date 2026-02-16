@@ -15,7 +15,19 @@ public class PartyPokemon
     public int CurrentHP { get; set; } = 10;
     public int MaxHP { get; set; } = 10;
     public Gender Gender { get; set; } = Gender.Unknown;
-    public string? Status { get; set; }
+    public StatusCondition StatusCondition { get; set; } = StatusCondition.None;
+
+    public string? StatusAbbreviation => StatusCondition switch
+    {
+        StatusCondition.None => null,
+        StatusCondition.Poison => "PSN",
+        StatusCondition.Burn => "BRN",
+        StatusCondition.Freeze => "FRZ",
+        StatusCondition.Sleep => "SLP",
+        StatusCondition.Paralysis => "PAR",
+        StatusCondition.Confusion => "CNF",
+        _ => null
+    };
     public int? HeldItemId { get; set; }
 
     // Stats

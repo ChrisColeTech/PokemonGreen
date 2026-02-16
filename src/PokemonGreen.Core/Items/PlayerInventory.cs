@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using PokemonGreen.Core.Pokemon;
 
 namespace PokemonGreen.Core.Items;
 
@@ -56,6 +57,40 @@ public class PlayerInventory
         }
     }
 
+    public bool RemoveItem(int itemId, int quantity = 1)
+    {
+        var def = ItemRegistry.GetItem(itemId);
+        if (def == null) return false;
+
+        if (!_pouches.TryGetValue(def.Category, out var pouch))
+            return false;
+
+        var slot = pouch.FirstOrDefault(s => s.ItemId == itemId);
+        if (slot == null || slot.Quantity < quantity)
+            return false;
+
+        slot.Quantity -= quantity;
+        if (slot.Quantity <= 0)
+            pouch.Remove(slot);
+        return true;
+    }
+
+    public ItemUseResult? UseItemOnPokemon(int itemId, PartyPokemon target,
+        bool inBattle, int? moveIndex = null)
+    {
+        var def = ItemRegistry.GetItem(itemId);
+        if (def == null)
+            return new ItemUseResult(false, "Unknown item.");
+
+        if (!ItemUseHandler.CanUseItem(def, target, inBattle, moveIndex))
+            return new ItemUseResult(false, "It won't have any effect.");
+
+        var result = ItemUseHandler.UseItem(def, target, moveIndex);
+        if (result.Success)
+            RemoveItem(itemId, 1);
+        return result;
+    }
+
     /// <summary>Remove all items. Used during save load.</summary>
     public void Clear()
     {
@@ -67,17 +102,20 @@ public class PlayerInventory
     {
         var inv = new PlayerInventory();
         // Medicine
-        inv.AddItem(1, 5);   // Potion
-        inv.AddItem(2, 2);   // Super Potion
-        inv.AddItem(3, 1);   // Antidote
+        inv.AddItem(100, 5);  // Potion
+        inv.AddItem(101, 3);  // Super Potion
+        inv.AddItem(102, 1);  // Hyper Potion
+        inv.AddItem(120, 3);  // Antidote
+        inv.AddItem(124, 2);  // Parlyz Heal
+        inv.AddItem(105, 1);  // Full Heal
+        inv.AddItem(130, 2);  // Revive
         // Pokeballs
-        inv.AddItem(10, 10); // Poke Ball
-        inv.AddItem(11, 3);  // Great Ball
-        // Battle items
-        inv.AddItem(20, 2);  // X Attack
+        inv.AddItem(0, 10);   // Poke Ball
+        inv.AddItem(1, 3);    // Great Ball
         // Berries
-        inv.AddItem(30, 5);  // Oran Berry
-        inv.AddItem(31, 3);  // Sitrus Berry
+        inv.AddItem(200, 5);  // Oran Berry
+        inv.AddItem(201, 3);  // Sitrus Berry
+        inv.AddItem(212, 2);  // Pecha Berry
         return inv;
     }
 }

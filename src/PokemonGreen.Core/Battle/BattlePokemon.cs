@@ -13,7 +13,19 @@ public class BattlePokemon
     public int CurrentHP { get; set; }
     public int MaxHP { get; set; }
     public Gender Gender { get; }
-    public string? Status { get; set; }
+    public StatusCondition StatusCondition { get; set; }
+
+    public string? StatusAbbreviation => StatusCondition switch
+    {
+        StatusCondition.None => null,
+        StatusCondition.Poison => "PSN",
+        StatusCondition.Burn => "BRN",
+        StatusCondition.Freeze => "FRZ",
+        StatusCondition.Sleep => "SLP",
+        StatusCondition.Paralysis => "PAR",
+        StatusCondition.Confusion => "CNF",
+        _ => null
+    };
     public BattleMove[] Moves { get; }
 
     /// <summary>The party Pokemon this was created from (null for wild foes).</summary>
@@ -68,7 +80,7 @@ public class BattlePokemon
     {
         if (Source == null) return;
         Source.CurrentHP = CurrentHP;
-        Source.Status = Status;
+        Source.StatusCondition = StatusCondition;
         Source.Level = Level;
         Source.MaxHP = MaxHP;
     }
@@ -84,8 +96,10 @@ public class BattlePokemon
             moves[i] = new BattleMove(pkmn.MoveIds[i],
                 i < pkmn.MovePPs.Length ? pkmn.MovePPs[i] : maxPP);
         }
-        return new BattlePokemon(pkmn.Nickname, pkmn.SpeciesId, pkmn.Level,
+        var bp = new BattlePokemon(pkmn.Nickname, pkmn.SpeciesId, pkmn.Level,
             pkmn.CurrentHP, pkmn.MaxHP, pkmn.Gender, pkmn, moves);
+        bp.StatusCondition = pkmn.StatusCondition;
+        return bp;
     }
 
     public static BattlePokemon CreateTestAlly() => new(

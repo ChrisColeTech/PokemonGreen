@@ -70,7 +70,6 @@ public class Party
         bulbasaur.MoveIds = [1, 3, 6]; // Tackle, Growl, Vine Whip
         bulbasaur.MovePPs = [35, 40, 25];
         bulbasaur.CurrentHP = 0;
-        bulbasaur.Status = "FNT";
         party.Add(bulbasaur);
 
         return party;

@@ -324,9 +324,9 @@ public class PartyScreen : IScreenOverlay
             new Vector2(rect.X + pad, barY + 10), new Color(200, 200, 200), 2);
 
         // Status
-        if (pkmn.Status != null)
+        if (pkmn.StatusAbbreviation != null)
         {
-            DrawText(sb, fontRenderer, fallbackFont, pkmn.Status,
+            DrawText(sb, fontRenderer, fallbackFont, pkmn.StatusAbbreviation,
                 new Vector2(rect.X + pad + 100, barY + 10), new Color(255, 100, 100), 2);
         }
 

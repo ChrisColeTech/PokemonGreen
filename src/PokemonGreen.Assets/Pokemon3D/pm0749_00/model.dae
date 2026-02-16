@@ -1,0 +1,353 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<COLLADA version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+	<asset>
+		<created>2026-02-16T12:38:39Z</created>
+		<modified>2026-02-16T12:38:39Z</modified>
+	</asset>
+	<library_images />
+	<library_materials>
+		<material id="PressShadowMaterial_PressShadow_mat_id" name="PressShadowMaterial_PressShadow_mat">
+			<instance_effect url="#eff_PressShadowMaterial_PressShadow_id" />
+		</material>
+	</library_materials>
+	<library_effects>
+		<effect id="eff_PressShadowMaterial_PressShadow_id" name="eff_PressShadowMaterial_PressShadow">
+			<profile_COMMON>
+				<newparam sid="img_surface">
+					<surface type="2D">
+						<init_from>??????_id</init_from>
+						<format>PNG</format>
+					</surface>
+				</newparam>
+				<newparam sid="img_sampler">
+					<sampler2D>
+						<source>img_surface</source>
+						<wrap_s>CLAMP</wrap_s>
+						<wrap_t>NONE</wrap_t>
+						<minfilter>LINEAR_MIPMAP_LINEAR</minfilter>
+						<magfilter>LINEAR</magfilter>
+						<mipfilter>LINEAR</mipfilter>
+					</sampler2D>
+				</newparam>
+				<technique sid="img_technique">
+					<phong>
+						<emission>
+							<color>0 0 0 1</color>
+						</emission>
+						<ambient>
+							<color>0 0 0 1</color>
+						</ambient>
+						<diffuse>
+							<texture texture="img_sampler" texcoord="uv" />
+						</diffuse>
+						<specular>
+							<color>1 1 1 1</color>
+						</specular>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+	</library_effects>
+	<library_geometries>
+		<geometry id="mesh_0_PressShadowMaterial_PressShadow_id" name="mesh_0_PressShadowMaterial_PressShadow">
+			<mesh>
+				<source id="mesh_0_PressShadowMaterial_PressShadow_position_id" name="mesh_0_PressShadowMaterial_PressShadow_position">
+					<float_array id="mesh_0_PressShadowMaterial_PressShadow_position_array_id" count="480">-41.340656 29.117382 -2.354256 -26.398079 38.974922 25.048206 -17.587925 47.437523 -15.785873 -35.7363 25.545605 23.828941 -35.666664 18.28122 -4.989767 -26.889153 14.945688 -21.80683 -26.052706 11.630513 -16.331509 -34.108543 27.002048 -27.954525 -17.099182 18.961582 -32.020466 -7.876756 24.855822 -38.7613 -33.778526 15.401532 16.838936 -27.653824 10.976734 -5.07001 -28.422323 19.03511 26.181284 -26.058744 47.608746 8.623123 -2.257879 12.720528 -29.789143 -16.115757 10.707453 -23.752254 -17.042192 7.421707 -9.56663 -22.442188 8.233711 11.042458 -7.11281 6.390778 5.770295 -3.826456 42.87074 -38.104347 -1.486556 33.63298 -41.262035 -13.590271 22.342201 37.304855 -10.61482 28.999413 38.86386 0.684026 27.860006 43.24894 -0.002346 19.671904 41.529842 -11.680222 16.802404 33.619476 -2E-06 43.014782 33.417725 -21.403793 15.534592 27.83891 -2.498084 13.455394 30.827984 -15.712335 10.37889 23.112072 -11.952801 7.395138 17.118351 12.239475 6.83855 14.969168 -26.01189 11.260777 16.98361 -13.803189 51.726974 21.195053 -10.64018 73.27967 -10.818366 -17.587925 47.437523 -15.785873 -5.339663 87.782974 3.798807 -13.803189 51.726974 21.195053 4.134634 84.911644 -13.538668 1.684785 61.21749 -21.72404 0.076317 46.400776 -32.24823 15.786832 10.424609 23.123081 19.008781 14.953278 28.730701 16.193062 6.762113 -8.426285 21.629026 8.397675 10.809951 12.239475 6.83855 14.969168 14.04157 8.310127 -21.587984 13.59833 22.30177 37.270744 9.594069 85.92819 1.69302 0.470185 79.02018 16.041235 -6.411885 69.71726 19.661188 -13.803189 51.726974 21.195053 11.398902 37.70405 -34.20557 10.579802 17.158125 34.2183 11.10953 29.176693 38.582855 27.661129 39.070457 24.15665 35.58117 24.471031 23.451378 37.14051 31.788479 -0.795108 34.899796 17.956331 -5.749831 33.787598 15.439484 16.787617 25.096478 9.270147 -11.292028 21.629026 8.397675 10.809951 27.16309 17.584595 25.80231 15.786832 10.424609 23.123081 24.168974 12.12079 21.7331 26.69023 46.305794 8.955342 13.895047 51.78651 21.27549 17.469967 49.609383 -21.520735 29.11623 25.405222 -29.91637 27.754417 15.50826 -20.313576 16.072815 17.373558 -30.704369 20.804838 10.763424 -23.283108 -2.257879 12.720528 -29.789143 -7.876756 24.855822 -38.7613 11.398902 37.70405 -34.20557 -1.486556 33.63298 -41.262035 0.684026 27.860006 43.24894 -2E-06 43.014782 33.417725 26.261456 11.148069 -16.250923 26.253304 11.153622 17.027294 21.629026 8.397675 10.809951 13.895047 51.78651 21.27549 -2E-06 43.014782 33.417725 1.684785 61.21749 -21.72404 -13.803189 51.726974 21.195053 -26.398079 38.974922 25.048206 -2E-06 36.51784 -46.952465 -1.486556 33.63298 -41.262035 0.089332 48.849693 -50.73427 -3.826456 42.87074 -38.104347 0.076317 46.400776 -32.24823 11.398902 37.70405 -34.20557 -23.496342 9.245543 21.52959 -15.712335 10.37889 23.112072 -21.403793 15.534592 27.83891 -26.01189 11.260777 16.98361 -6.411885 69.71726 19.661188 0.019883 71.08743 41.710804 0.016557 85.80987 44.37938 0.470185 79.02018 16.041235 -13.803189 51.726974 21.195053 -6.411885 69.71726 19.661188 -2E-06 43.014782 33.417725 13.895047 51.78651 21.27549 0.470185 79.02018 16.041235 -17.587925 47.437523 -15.785873 0.076317 46.400776 -32.24823 -3.826456 42.87074 -38.104347 -11.952801 7.395138 17.118351 -21.880564 -0.352227 19.700132 -7.11281 6.390778 5.770295 -15.712335 10.37889 23.112072 -22.442188 8.233711 11.042458 -26.01189 11.260777 16.98361 -23.496342 9.245543 21.52959 -23.496342 9.245543 21.52959 -15.712335 10.37889 23.112072 14.04157 8.310127 -21.587984 21.349064 1.628866 -17.805239 14.686848 5.381793 -16.941154 16.193062 6.762113 -8.426285 20.804838 10.763424 -23.283108 26.261456 11.148069 -16.250923 25.096478 9.270147 -11.292028 25.096478 9.270147 -11.292028 16.193062 6.762113 -8.426285 21.72087 -0.056689 19.614918 12.239475 6.83855 14.969168 21.629026 8.397675 10.809951 15.786832 10.424609 23.123081 26.253304 11.153622 17.027294 24.168974 12.12079 21.7331 15.786832 10.424609 23.123081 26.253304 11.153622 17.027294 -21.638899 -0.025583 -18.821796 -16.115757 10.707453 -23.752254 -12.387726 7.629938 -16.19983 -17.042192 7.421707 -9.56663 -26.052706 11.630513 -16.331509 -16.115757 10.707453 -23.752254 -17.042192 7.421707 -9.56663 -27.653824 10.976734 -5.07001 -26.052706 11.630513 -16.331509 13.895047 51.78651 21.27549 9.594069 85.92819 1.69302 0.470185 79.02018 16.041235 -7.11281 6.390778 5.770295 -22.442188 8.233711 11.042458 -17.042192 7.421707 -9.56663 -12.387726 7.629938 -16.19983 -16.115757 10.707453 -23.752254 16.193062 6.762113 -8.426285 14.04157 8.310127 -21.587984 14.686848 5.381793 -16.941154 -26.889153 14.945688 -21.80683 -16.115757 10.707453 -23.752254 -26.052706 11.630513 -16.331509 27.754417 15.50826 -20.313576 26.261456 11.148069 -16.250923 20.804838 10.763424 -23.283108</float_array>
+					<technique_common>
+						<accessor source="#mesh_0_PressShadowMaterial_PressShadow_position_array_id" count="160" stride="3">
+							<param name="X" type="float" />
+							<param name="Y" type="float" />
+							<param name="Z" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_0_PressShadowMaterial_PressShadow_normal_id" name="mesh_0_PressShadowMaterial_PressShadow_normal">
+					<float_array id="mesh_0_PressShadowMaterial_PressShadow_normal_array_id" count="480">-0.987309 0.133612 -0.085843 -0.651022 0.490641 0.579173 -0.706617 0.541615 -0.455352 -0.844105 -0.14493 0.516219 -0.829203 -0.54776 -0.111273 -0.458283 -0.775094 -0.434979 -0.489588 -0.724541 -0.485122 -0.692864 -0.006712 -0.721037 -0.315018 -0.608624 -0.728245 -0.048866 -0.303705 -0.951512 -0.659195 -0.690254 0.298348 -0.594872 -0.794218 0.123877 -0.528837 -0.518843 0.671665 -0.941829 0.332692 0.047686 -0.01521 -0.862575 -0.5057 -0.283621 -0.823603 -0.491158 -0.25321 -0.929956 0.266582 -0.616437 -0.772345 -0.153262 0.102061 -0.986867 -0.12521 -0.671442 0.480911 -0.563818 -0.147719 -0.372452 -0.91622 -0.455252 -0.251497 0.854105 -0.428937 0.250904 0.86779 0.012489 0.268038 0.963327 -0.003477 -0.612826 0.79021 -0.257371 -0.739498 0.622015 0.002307 0.360327 0.932823 -0.394115 -0.672035 0.626931 -0.018347 -0.868845 0.494745 0.148531 -0.806445 0.57235 0.26806 -0.937744 0.220861 -0.102061 -0.986867 -0.125208 -0.792283 -0.595838 0.131393 -0.649362 0.540851 0.534611 -0.708109 0.439312 -0.552799 -0.706617 0.541615 -0.455352 -0.576977 0.775834 0.255301 -0.649362 0.540851 0.534611 0.044949 0.710855 -0.701901 -0.097302 0.465763 -0.879544 -0.180885 0.889655 -0.419279 -0.148528 -0.806444 0.572353 0.282898 -0.740903 0.609124 0.25321 -0.929957 0.266582 0.616438 -0.772344 -0.153262 -0.102061 -0.986867 -0.125208 -0.034402 -0.870673 -0.490659 0.460707 -0.274409 0.844067 0.690402 0.692978 0.207671 0.38174 0.781904 0.49285 -0.863134 0.403937 0.303043 -0.649362 0.540851 0.534611 0.559537 0.235066 -0.794772 0.225664 -0.753906 0.61701 0.454478 0.249775 0.855021 0.596352 0.505544 0.62353 0.873381 -0.118324 0.472446 0.959338 0.257755 -0.115039 0.894703 -0.419875 -0.15235 0.64858 -0.724505 0.233315 0.601454 -0.785412 0.146224 0.616438 -0.772344 -0.153262 0.466104 -0.614035 0.636952 -0.148528 -0.806444 0.572353 0.531726 -0.524806 0.664715 0.816873 0.559604 0.139866 0.706252 0.431654 0.561145 0.689327 0.49843 -0.525733 0.642299 -0.052647 -0.764644 0.458283 -0.775094 -0.434979 0.308005 -0.535178 -0.786586 0.489587 -0.724542 -0.485122 -0.01521 -0.862575 -0.5057 -0.048866 -0.303705 -0.951512 0.559537 0.235066 -0.794772 -0.147719 -0.372452 -0.91622 0.012489 0.268038 0.963327 0.002307 0.360327 0.932823 0.600197 -0.759749 -0.250092 0.75169 -0.497434 0.433038 0.616438 -0.772344 -0.153262 0.706252 0.431654 0.561145 0.002307 0.360327 0.932823 -0.097302 0.465763 -0.879544 -0.649362 0.540851 0.534611 -0.651022 0.490641 0.579173 0 -1 0 -0.147719 -0.372452 -0.91622 -0.398324 0.648512 -0.648669 -0.671442 0.480911 -0.563818 -0.180885 0.889655 -0.419279 0.559537 0.235066 -0.794772 -0.751689 -0.497434 0.433039 0.148531 -0.806445 0.57235 -0.394115 -0.672035 0.626931 -0.792283 -0.595838 0.131393 -0.863134 0.403937 0.303043 0.009708 0.191472 0.98145 -0.831737 0.530288 0.164345 0.38174 0.781904 0.49285 -0.866956 0.102061 0.487822 -0.863134 0.403937 0.303043 0.002307 0.360327 0.932823 0.706252 0.431654 0.561145 0.38174 0.781904 0.49285 -0.706617 0.541615 -0.455352 -0.180885 0.889655 -0.419279 -0.671442 0.480911 -0.563818 0.26806 -0.937744 0.220861 -0.786397 -0.604266 0.128224 0.102061 -0.986867 -0.12521 0.148531 -0.806445 0.57235 -0.616437 -0.772345 -0.153262 -0.792283 -0.595838 0.131393 -0.751689 -0.497434 0.433039 -0.751689 -0.497434 0.433039 0.148531 -0.806445 0.57235 -0.034402 -0.870673 -0.490659 0.246992 -0.922216 0.297512 -0.12054 -0.963037 -0.240892 0.25321 -0.929957 0.266582 0.489587 -0.724542 -0.485122 0.600197 -0.759749 -0.250092 0.601454 -0.785412 0.146224 0.601454 -0.785412 0.146224 0.25321 -0.929957 0.266582 0.523529 -0.523854 0.671933 -0.102061 -0.986867 -0.125208 0.616438 -0.772344 -0.153262 -0.148528 -0.806444 0.572353 0.75169 -0.497434 0.433038 0.531726 -0.524806 0.664715 -0.148528 -0.806444 0.572353 0.75169 -0.497434 0.433038 -0.601454 -0.785412 0.146224 -0.283621 -0.823603 -0.491158 0.267417 -0.93829 -0.21932 -0.25321 -0.929956 0.266582 -0.489588 -0.724541 -0.485122 -0.283621 -0.823603 -0.491158 -0.25321 -0.929956 0.266582 -0.594872 -0.794218 0.123877 -0.489588 -0.724541 -0.485122 0.706252 0.431654 0.561145 0.690402 0.692978 0.207671 0.38174 0.781904 0.49285 0.102061 -0.986867 -0.12521 -0.616437 -0.772345 -0.153262 -0.25321 -0.929956 0.266582 0.267417 -0.93829 -0.21932 -0.283621 -0.823603 -0.491158 0.25321 -0.929957 0.266582 -0.034402 -0.870673 -0.490659 -0.12054 -0.963037 -0.240892 -0.458283 -0.775094 -0.434979 -0.283621 -0.823603 -0.491158 -0.489588 -0.724541 -0.485122 0.458283 -0.775094 -0.434979 0.600197 -0.759749 -0.250092 0.489587 -0.724542 -0.485122</float_array>
+					<technique_common>
+						<accessor source="#mesh_0_PressShadowMaterial_PressShadow_normal_array_id" count="160" stride="3">
+							<param name="X" type="float" />
+							<param name="Y" type="float" />
+							<param name="Z" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_0_PressShadowMaterial_PressShadow_color_id" name="mesh_0_PressShadowMaterial_PressShadow_color">
+					<float_array id="mesh_0_PressShadowMaterial_PressShadow_color_array_id" count="640">1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.45490196 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.4745098 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.48235294 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.4627451 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.62352943 1 1 1 0.56078434 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.43137255 1 1 1 0.35686275 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.62352943 1 1 1 0.62352943 1 1 1 0.49803922 1 1 1 0.4509804 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.4745098 1 1 1 0.49803922 1 1 1 0.62352943 1 1 1 0.56078434 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.49803922 1 1 1 0.45882353 1 1 1 0.49803922 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.63529414 1 1 1 0.63529414 1 1 1 0.49803922 1 1 1 0.5686275 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.23137255 1 1 1 0.14509805 1 1 1 0.047058824 1 1 1 0.23921569 1 1 1 0.14901961 1 1 1 0.49803922 1 1 1 0.38431373 1 1 1 0.49803922 1 1 1 0.8862745 1 1 1 1 1 1 1 0.8862745 1 1 1 0.8862745 1 1 1 0.8862745 1 1 1 0.8862745 1 1 1 0.9411765 1 1 1 1 1 1 1 1 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.105882354 1 1 1 0.16078432 1 1 1 1 1 1 1 0.8745098 1 1 1 0.8745098 1 1 1 0.8745098 1 1 1 0.9372549 1 1 1 0.8745098 1 1 1 0.9372549 1 1 1 0.8745098 1 1 1 0.047058824 1 1 1 0.105882354 1 1 1 0.16078432 1 1 1 0.105882354 1 1 1 0.047058824 1 1 1 0.047058824 1 1 1 0.16078432 1 1 1 0.16078432 1 1 1 0.105882354 1 1 1 0.43137255 1 1 1 0.49803922 1 1 1 0.37254903 1 1 1 0.63529414 1 1 1 0.5686275 1 1 1 0.49803922 1 1 1 0.38431373 1 1 1 0.44313726 1 1 1 0.49803922 1 1 1 0.44313726 1 1 1 0.38431373 1 1 1 0.38431373 1 1 1 0.32941177 1 1 1 0.27450982 1 1 1 0.38431373 1 1 1 0.32941177 1 1 1 0.27450982</float_array>
+					<technique_common>
+						<accessor source="#mesh_0_PressShadowMaterial_PressShadow_color_array_id" count="160" stride="4">
+							<param name="R" type="float" />
+							<param name="G" type="float" />
+							<param name="B" type="float" />
+							<param name="A" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<vertices id="mesh_0_PressShadowMaterial_PressShadow_vertices_id">
+					<input semantic="POSITION" source="#mesh_0_PressShadowMaterial_PressShadow_position_id" />
+				</vertices>
+				<triangles material="PressShadowMaterial_PressShadow" count="154">
+					<input semantic="VERTEX" source="#mesh_0_PressShadowMaterial_PressShadow_vertices_id" offset="0" />
+					<input semantic="NORMAL" source="#mesh_0_PressShadowMaterial_PressShadow_normal_id" offset="0" />
+					<input semantic="COLOR" source="#mesh_0_PressShadowMaterial_PressShadow_color_id" offset="0" />
+					<p>0 1 2 3 1 0 4 3 0 0 5 4 4 5 6 7 5 0 7 0 2 5 7 8 8 7 9 3 4 10 11 10 4 6 11 4 12 3 10 1 13 2 14 8 9 8 14 15 8 15 5 15 14 16 11 16 17 16 14 18 19 9 7 2 19 7 20 9 19 3 21 1 3 12 21 22 1 21 22 23 1 23 22 21 24 23 21 25 24 21 23 26 1 27 25 21 12 27 21 10 27 12 25 28 24 28 25 27 27 29 28 30 28 29 18 31 30 31 28 30 17 32 11 10 11 32 10 32 27 1 33 13 34 35 13 13 36 34 13 37 36 34 36 38 39 34 38 39 35 34 35 39 40 28 31 41 28 41 42 18 14 43 18 43 44 45 18 44 43 14 46 24 47 23 36 48 38 48 36 49 36 50 49 51 50 36 39 52 40 24 53 47 42 47 53 53 24 28 53 28 42 47 54 23 54 47 55 47 56 55 57 55 56 56 58 57 59 58 56 58 59 60 43 60 61 61 60 59 59 56 62 62 56 47 62 47 42 63 62 42 64 62 63 64 59 62 55 57 65 65 48 66 65 57 67 65 67 48 48 67 38 39 38 67 67 57 68 68 57 69 69 57 58 69 70 68 70 69 71 71 72 70 72 71 46 73 70 72 70 73 68 68 73 74 74 67 68 73 75 74 55 76 54 55 77 76 78 58 60 78 69 58 79 59 64 80 59 79 55 65 81 55 81 82 83 67 74 82 84 85 86 87 88 86 88 87 87 89 88 90 88 89 91 88 90 88 91 87 92 93 94 94 95 92 96 97 98 96 98 99 98 97 99 100 97 101 100 102 97 103 97 102 104 97 103 105 106 107 108 109 110 111 109 108 110 109 112 112 109 113 109 114 113 115 109 116 117 118 119 119 118 120 118 117 121 122 118 121 123 118 122 118 124 125 126 127 128 126 129 127 126 128 130 126 131 132 126 133 131 134 135 136 134 136 137 134 138 139 134 140 141 134 141 142 143 144 145 146 147 148 149 150 148 151 152 153 154 155 156 157 158 159</p>
+				</triangles>
+			</mesh>
+		</geometry>
+		<geometry id="mesh_1_PressShadowMaterial_PressShadow_id" name="mesh_1_PressShadowMaterial_PressShadow">
+			<mesh>
+				<source id="mesh_1_PressShadowMaterial_PressShadow_position_id" name="mesh_1_PressShadowMaterial_PressShadow_position">
+					<float_array id="mesh_1_PressShadowMaterial_PressShadow_position_array_id" count="51">-21.092909 36.57347 31.212221 -22.734657 24.763203 32.12233 -10.746902 32.724426 38.17507 -13.675438 37.649765 35.579628 -17.41078 38.689365 33.12275 -23.841423 30.82436 30.465021 -13.440241 23.702929 37.99446 -10.731615 27.797659 38.86136 -18.430183 21.72351 35.260765 11.794646 35.60309 37.064713 13.440242 23.70293 37.99446 21.092909 36.57347 31.212221 16.102959 38.55288 33.945915 10.595934 29.461739 38.736126 22.734657 24.763203 32.12233 18.430183 21.72351 35.260765 23.841423 30.82436 30.465021</float_array>
+					<technique_common>
+						<accessor source="#mesh_1_PressShadowMaterial_PressShadow_position_array_id" count="17" stride="3">
+							<param name="X" type="float" />
+							<param name="Y" type="float" />
+							<param name="Z" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_1_PressShadowMaterial_PressShadow_normal_id" name="mesh_1_PressShadowMaterial_PressShadow_normal">
+					<float_array id="mesh_1_PressShadowMaterial_PressShadow_normal_array_id" count="51">-0.517075 0.137247 0.844865 -0.517261 0.137595 0.844694 -0.504237 0.133318 0.853212 -0.517304 0.137528 0.844679 -0.517304 0.137527 0.844679 -0.516216 0.13691 0.845445 -0.499891 0.13249 0.855894 -0.463597 0.120833 0.877769 -0.51759 0.138773 0.8443 0.510982 0.136961 0.84861 0.512777 0.137298 0.847472 0.517171 0.137256 0.844805 0.517303 0.137527 0.84468 0.498254 0.135804 0.85633 0.517222 0.13758 0.844721 0.51759 0.138772 0.8443 0.516216 0.13691 0.845445</float_array>
+					<technique_common>
+						<accessor source="#mesh_1_PressShadowMaterial_PressShadow_normal_array_id" count="17" stride="3">
+							<param name="X" type="float" />
+							<param name="Y" type="float" />
+							<param name="Z" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<vertices id="mesh_1_PressShadowMaterial_PressShadow_vertices_id">
+					<input semantic="POSITION" source="#mesh_1_PressShadowMaterial_PressShadow_position_id" />
+				</vertices>
+				<triangles material="PressShadowMaterial_PressShadow" count="13">
+					<input semantic="VERTEX" source="#mesh_1_PressShadowMaterial_PressShadow_vertices_id" offset="0" />
+					<input semantic="NORMAL" source="#mesh_1_PressShadowMaterial_PressShadow_normal_id" offset="0" />
+					<p>0 1 2 2 3 0 0 3 4 1 0 5 1 6 2 2 6 7 1 8 6 9 10 11 11 12 9 9 13 10 11 10 14 10 15 14 14 16 11</p>
+				</triangles>
+			</mesh>
+		</geometry>
+		<geometry id="mesh_2_PressShadowMaterial_PressShadow_id" name="mesh_2_PressShadowMaterial_PressShadow">
+			<mesh>
+				<source id="mesh_2_PressShadowMaterial_PressShadow_position_id" name="mesh_2_PressShadowMaterial_PressShadow_position">
+					<float_array id="mesh_2_PressShadowMaterial_PressShadow_position_array_id" count="51">-21.111454 36.54861 31.306757 -22.742561 24.806324 32.211693 -10.833757 32.72086 38.223713 -13.743467 37.618923 35.645332 -17.45408 38.65258 33.20504 -23.841688 30.83207 30.564257 -13.510061 23.75161 38.046143 -10.816515 27.822132 38.908188 -18.467793 21.783215 35.330833 11.874975 35.583878 37.120205 13.510061 23.75161 38.046143 21.111454 36.54861 31.306757 16.154945 38.516884 34.022694 10.682601 29.476376 38.78276 22.742561 24.806324 32.211693 18.467793 21.783215 35.330833 23.841688 30.83207 30.564257</float_array>
+					<technique_common>
+						<accessor source="#mesh_2_PressShadowMaterial_PressShadow_position_array_id" count="17" stride="3">
+							<param name="X" type="float" />
+							<param name="Y" type="float" />
+							<param name="Z" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_2_PressShadowMaterial_PressShadow_normal_id" name="mesh_2_PressShadowMaterial_PressShadow_normal">
+					<float_array id="mesh_2_PressShadowMaterial_PressShadow_normal_array_id" count="51">-0.517155 0.137083 0.844843 -0.517347 0.137696 0.844625 -0.504292 0.133328 0.853178 -0.517335 0.137235 0.844708 -0.517332 0.137143 0.844724 -0.516492 0.136888 0.84528 -0.499968 0.132704 0.855816 -0.463746 0.121 0.877667 -0.517614 0.139124 0.844228 0.510959 0.136879 0.848638 0.512778 0.137403 0.847455 0.517263 0.137166 0.844763 0.517339 0.137172 0.844716 0.498175 0.135857 0.856367 0.51735 0.137677 0.844626 0.517614 0.139124 0.844228 0.516492 0.136888 0.84528</float_array>
+					<technique_common>
+						<accessor source="#mesh_2_PressShadowMaterial_PressShadow_normal_array_id" count="17" stride="3">
+							<param name="X" type="float" />
+							<param name="Y" type="float" />
+							<param name="Z" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<vertices id="mesh_2_PressShadowMaterial_PressShadow_vertices_id">
+					<input semantic="POSITION" source="#mesh_2_PressShadowMaterial_PressShadow_position_id" />
+				</vertices>
+				<triangles material="PressShadowMaterial_PressShadow" count="13">
+					<input semantic="VERTEX" source="#mesh_2_PressShadowMaterial_PressShadow_vertices_id" offset="0" />
+					<input semantic="NORMAL" source="#mesh_2_PressShadowMaterial_PressShadow_normal_id" offset="0" />
+					<p>0 1 2 2 3 0 0 3 4 1 0 5 1 6 2 2 6 7 1 8 6 9 10 11 11 12 9 9 13 10 11 10 14 10 15 14 14 16 11</p>
+				</triangles>
+			</mesh>
+		</geometry>
+	</library_geometries>
+	<library_controllers>
+		<controller id="mesh_0_PressShadowMaterial_PressShadow_ctrl_id">
+			<skin source="#mesh_0_PressShadowMaterial_PressShadow_id">
+				<bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+				<source id="mesh_0_PressShadowMaterial_PressShadow_ctrl_joint_names_id">
+					<Name_array id="mesh_0_PressShadowMaterial_PressShadow_ctrl_joint_names_array_id" count="11">pm0749_00 Origin Waist Hips LArm RArm LLeg RLeg pm0749_00_BodySkin pm0749_00_EyeSkin pm0749_00_IrisSkin</Name_array>
+					<technique_common>
+						<accessor source="#mesh_0_PressShadowMaterial_PressShadow_ctrl_joint_names_array_id" count="11" stride="1">
+							<param name="JOINT" type="Name" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_0_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_id">
+					<float_array id="mesh_0_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_array_id" count="176">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 1 0 -29.524752 -1 3.1391647E-07 0 -9.268306E-06 0 0 1 0 0 0 0 1 0 -1 0 29.524752 0.99999994 -6.3975784E-07 0 1.8888692E-05 0 -0 1 0 0 -0 0 1 0.24999881 -0.9330132 0.25881872 1.8114352 0.96824604 0.24090202 -0.06682632 -19.78361 0 0.26730675 0.9636115 -18.891254 0 0 0 1 -0.250001 -0.9330125 0.25881866 1.8114028 0.96824545 -0.24090418 0.06682631 19.783636 6.892286E-07 0.26730672 0.9636115 -18.89124 0 0 0 1 0.24999881 -0.9330132 -0.25881872 2.012868 0.96824604 0.24090202 0.06682632 -19.835619 0 -0.26730675 0.9636115 18.141298 0 0 0 1 -0.2500012 -0.9330121 -0.25881964 2.0128083 0.9682455 -0.24090385 -0.06682725 19.835627 0 -0.26730785 0.9636111 18.141308 0 -0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array>
+					<technique_common>
+						<accessor source="#mesh_0_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_array_id" count="11" stride="16">
+							<param name="TRANSFORM" type="float4x4" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_0_PressShadowMaterial_PressShadow_ctrl_weights_id">
+					<float_array id="mesh_0_PressShadowMaterial_PressShadow_ctrl_weights_array_id" count="25">1 0.5019608 0.49803922 0.83137256 0.16862746 0.13333334 0.8666667 0.99215686 0.007843138 0.91764706 0.08235294 0.8235294 0.1764706 0.87058824 0.12941177 0.94509804 0.05490196 0.80784315 0.19215687 0.77254903 0.22745098 0.48235294 0.5176471 0.34509805 0.654902</float_array>
+					<technique_common>
+						<accessor source="#mesh_0_PressShadowMaterial_PressShadow_ctrl_weights_array_id" count="25" stride="1">
+							<param name="WEIGHT" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<joints>
+					<input semantic="JOINT" source="#mesh_0_PressShadowMaterial_PressShadow_ctrl_joint_names_id" />
+					<input semantic="INV_BIND_MATRIX" source="#mesh_0_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_id" />
+				</joints>
+				<vertex_weights count="160">
+					<input semantic="JOINT" source="#mesh_0_PressShadowMaterial_PressShadow_ctrl_joint_names_id" offset="0" />
+					<input semantic="WEIGHT" source="#mesh_0_PressShadowMaterial_PressShadow_ctrl_weights_id" offset="1" />
+					<vcount>1 1 1 1 2 1 2 1 1 1 1 2 1 1 2 2 2 2 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 1 1 1 1 1 1 1 1 2 1 2 2 2 2 1 1 1 1 1 1 1 1 1 1 1 2 1 2 2 2 2 2 1 1 1 1 1 2 2 2 1 1 1 1 1 2 2 2 1 1 1 1 1 1 1 1 1 1 1 2 2 1 2 1 1 1 1 1 1 1 1 1 1 1 1 2 1 1 2 2 2 2 2 2 2 1 2 2 2 2 2 2 2 1 2 2 2 2 2 2 2 1 2 2 2 2 2 2 2 2 1 1 1 1 2 2 2 2 2 2 2 1 2 2 1 2 2</vcount>
+					<v>2 0 2 0 2 0 2 0 2 1 3 2 2 0 3 3 7 4 2 0 2 0 2 0 2 0 2 5 3 6 2 0 2 0 2 1 3 2 3 7 7 8 3 9 7 10 3 11 5 12 3 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 1 3 2 3 3 5 4 3 13 5 14 3 15 4 16 3 3 5 4 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 3 3 4 4 2 0 3 7 6 8 3 3 4 4 3 15 4 16 3 17 6 18 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 1 3 2 2 0 3 3 6 4 3 3 4 4 2 1 3 2 3 3 4 4 3 3 4 4 2 0 2 0 2 0 2 0 2 0 2 19 3 20 3 3 6 4 2 1 3 2 2 0 2 0 2 0 2 0 2 0 3 3 6 4 3 3 4 4 3 3 4 4 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 3 21 5 22 3 3 5 4 2 0 3 3 5 4 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 3 13 5 14 5 0 3 0 3 3 5 4 3 11 5 12 3 3 5 4 3 21 5 22 3 21 5 22 3 3 5 4 3 17 6 18 6 0 3 23 6 24 3 7 6 8 3 3 6 4 3 3 6 4 3 3 6 4 3 3 6 4 3 7 6 8 4 0 3 15 4 16 3 3 4 4 3 3 4 4 3 3 4 4 3 3 4 4 3 3 4 4 3 3 4 4 7 0 3 7 7 8 3 3 7 4 3 9 7 10 3 3 7 4 3 7 7 8 3 9 7 10 2 5 3 6 3 3 7 4 2 0 2 0 2 0 3 0 3 11 5 12 3 9 7 10 3 3 7 4 3 7 7 8 3 7 6 8 3 17 6 18 3 23 6 24 2 0 3 7 7 8 3 3 7 4 2 0 3 3 6 4 3 3 6 4</v>
+				</vertex_weights>
+			</skin>
+		</controller>
+		<controller id="mesh_1_PressShadowMaterial_PressShadow_ctrl_id">
+			<skin source="#mesh_1_PressShadowMaterial_PressShadow_id">
+				<bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+				<source id="mesh_1_PressShadowMaterial_PressShadow_ctrl_joint_names_id">
+					<Name_array id="mesh_1_PressShadowMaterial_PressShadow_ctrl_joint_names_array_id" count="11">pm0749_00 Origin Waist Hips LArm RArm LLeg RLeg pm0749_00_BodySkin pm0749_00_EyeSkin pm0749_00_IrisSkin</Name_array>
+					<technique_common>
+						<accessor source="#mesh_1_PressShadowMaterial_PressShadow_ctrl_joint_names_array_id" count="11" stride="1">
+							<param name="JOINT" type="Name" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_1_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_id">
+					<float_array id="mesh_1_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_array_id" count="176">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 1 0 -29.524752 -1 3.1391647E-07 0 -9.268306E-06 0 0 1 0 0 0 0 1 0 -1 0 29.524752 0.99999994 -6.3975784E-07 0 1.8888692E-05 0 -0 1 0 0 -0 0 1 0.24999881 -0.9330132 0.25881872 1.8114352 0.96824604 0.24090202 -0.06682632 -19.78361 0 0.26730675 0.9636115 -18.891254 0 0 0 1 -0.250001 -0.9330125 0.25881866 1.8114028 0.96824545 -0.24090418 0.06682631 19.783636 6.892286E-07 0.26730672 0.9636115 -18.89124 0 0 0 1 0.24999881 -0.9330132 -0.25881872 2.012868 0.96824604 0.24090202 0.06682632 -19.835619 0 -0.26730675 0.9636115 18.141298 0 0 0 1 -0.2500012 -0.9330121 -0.25881964 2.0128083 0.9682455 -0.24090385 -0.06682725 19.835627 0 -0.26730785 0.9636111 18.141308 0 -0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array>
+					<technique_common>
+						<accessor source="#mesh_1_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_array_id" count="11" stride="16">
+							<param name="TRANSFORM" type="float4x4" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_1_PressShadowMaterial_PressShadow_ctrl_weights_id">
+					<float_array id="mesh_1_PressShadowMaterial_PressShadow_ctrl_weights_array_id" count="1">1</float_array>
+					<technique_common>
+						<accessor source="#mesh_1_PressShadowMaterial_PressShadow_ctrl_weights_array_id" count="1" stride="1">
+							<param name="WEIGHT" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<joints>
+					<input semantic="JOINT" source="#mesh_1_PressShadowMaterial_PressShadow_ctrl_joint_names_id" />
+					<input semantic="INV_BIND_MATRIX" source="#mesh_1_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_id" />
+				</joints>
+				<vertex_weights count="17">
+					<input semantic="JOINT" source="#mesh_1_PressShadowMaterial_PressShadow_ctrl_joint_names_id" offset="0" />
+					<input semantic="WEIGHT" source="#mesh_1_PressShadowMaterial_PressShadow_ctrl_weights_id" offset="1" />
+					<vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+					<v>2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0</v>
+				</vertex_weights>
+			</skin>
+		</controller>
+		<controller id="mesh_2_PressShadowMaterial_PressShadow_ctrl_id">
+			<skin source="#mesh_2_PressShadowMaterial_PressShadow_id">
+				<bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+				<source id="mesh_2_PressShadowMaterial_PressShadow_ctrl_joint_names_id">
+					<Name_array id="mesh_2_PressShadowMaterial_PressShadow_ctrl_joint_names_array_id" count="11">pm0749_00 Origin Waist Hips LArm RArm LLeg RLeg pm0749_00_BodySkin pm0749_00_EyeSkin pm0749_00_IrisSkin</Name_array>
+					<technique_common>
+						<accessor source="#mesh_2_PressShadowMaterial_PressShadow_ctrl_joint_names_array_id" count="11" stride="1">
+							<param name="JOINT" type="Name" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_2_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_id">
+					<float_array id="mesh_2_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_array_id" count="176">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 1 0 -29.524752 -1 3.1391647E-07 0 -9.268306E-06 0 0 1 0 0 0 0 1 0 -1 0 29.524752 0.99999994 -6.3975784E-07 0 1.8888692E-05 0 -0 1 0 0 -0 0 1 0.24999881 -0.9330132 0.25881872 1.8114352 0.96824604 0.24090202 -0.06682632 -19.78361 0 0.26730675 0.9636115 -18.891254 0 0 0 1 -0.250001 -0.9330125 0.25881866 1.8114028 0.96824545 -0.24090418 0.06682631 19.783636 6.892286E-07 0.26730672 0.9636115 -18.89124 0 0 0 1 0.24999881 -0.9330132 -0.25881872 2.012868 0.96824604 0.24090202 0.06682632 -19.835619 0 -0.26730675 0.9636115 18.141298 0 0 0 1 -0.2500012 -0.9330121 -0.25881964 2.0128083 0.9682455 -0.24090385 -0.06682725 19.835627 0 -0.26730785 0.9636111 18.141308 0 -0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array>
+					<technique_common>
+						<accessor source="#mesh_2_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_array_id" count="11" stride="16">
+							<param name="TRANSFORM" type="float4x4" />
+						</accessor>
+					</technique_common>
+				</source>
+				<source id="mesh_2_PressShadowMaterial_PressShadow_ctrl_weights_id">
+					<float_array id="mesh_2_PressShadowMaterial_PressShadow_ctrl_weights_array_id" count="1">1</float_array>
+					<technique_common>
+						<accessor source="#mesh_2_PressShadowMaterial_PressShadow_ctrl_weights_array_id" count="1" stride="1">
+							<param name="WEIGHT" type="float" />
+						</accessor>
+					</technique_common>
+				</source>
+				<joints>
+					<input semantic="JOINT" source="#mesh_2_PressShadowMaterial_PressShadow_ctrl_joint_names_id" />
+					<input semantic="INV_BIND_MATRIX" source="#mesh_2_PressShadowMaterial_PressShadow_ctrl_inv_bind_poses_id" />
+				</joints>
+				<vertex_weights count="17">
+					<input semantic="JOINT" source="#mesh_2_PressShadowMaterial_PressShadow_ctrl_joint_names_id" offset="0" />
+					<input semantic="WEIGHT" source="#mesh_2_PressShadowMaterial_PressShadow_ctrl_weights_id" offset="1" />
+					<vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+					<v>2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0</v>
+				</vertex_weights>
+			</skin>
+		</controller>
+	</library_controllers>
+	<library_visual_scenes>
+		<visual_scene id="vs_model_id" name="vs_model">
+			<node id="pm0749_00_bone_id" name="pm0749_00" sid="pm0749_00" type="JOINT">
+				<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+				<node id="Origin_bone_id" name="Origin" sid="Origin" type="JOINT">
+					<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+					<node id="Waist_bone_id" name="Waist" sid="Waist" type="JOINT">
+						<matrix>3.1391647E-07 -1 0 0 1 3.1391647E-07 0 29.524752 0 0 1 0 0 0 0 1</matrix>
+						<node id="Hips_bone_id" name="Hips" sid="Hips" type="JOINT">
+							<matrix>-1 -3.2584137E-07 0 0 3.2584137E-07 -1 0 0 0 0 1 0 0 0 0 1</matrix>
+							<node id="LArm_bone_id" name="LArm" sid="LArm" type="JOINT">
+								<matrix>0.9330129 -0.24090263 -0.2673067 18.01898 0.24999969 0.968246 -2.8312206E-07 18.702557 0.2588187 -0.06682632 0.96361154 16.412931 0 0 0 1</matrix>
+							</node>
+							<node id="RArm_bone_id" name="RArm" sid="RArm" type="JOINT">
+								<matrix>0.93301266 0.24090359 -0.2673067 18.018984 -0.2500006 0.96824574 5.438924E-07 -18.702541 0.2588187 0.06682632 0.96361154 16.412922 0 0 0 1</matrix>
+							</node>
+							<node id="LLeg_bone_id" name="LLeg" sid="LLeg" type="JOINT">
+								<matrix>0.9330129 -0.24090263 0.2673067 18.01898 0.24999969 0.968246 2.8312206E-07 18.702557 -0.2588187 0.06682632 0.96361154 -15.634654 0 0 0 1</matrix>
+							</node>
+							<node id="RLeg_bone_id" name="RLeg" sid="RLeg" type="JOINT">
+								<matrix>0.9330124 0.24090327 0.26730788 18.018984 -0.25000054 0.96824574 1.6391277E-07 -18.702541 -0.25881964 -0.06682726 0.96361125 -15.634648 0 0 0 1</matrix>
+							</node>
+						</node>
+					</node>
+				</node>
+				<node id="pm0749_00_BodySkin_bone_id" name="pm0749_00_BodySkin" sid="pm0749_00_BodySkin" type="JOINT">
+					<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+				</node>
+				<node id="pm0749_00_EyeSkin_bone_id" name="pm0749_00_EyeSkin" sid="pm0749_00_EyeSkin" type="JOINT">
+					<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+				</node>
+				<node id="pm0749_00_IrisSkin_bone_id" name="pm0749_00_IrisSkin" sid="pm0749_00_IrisSkin" type="JOINT">
+					<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+				</node>
+			</node>
+			<node id="vsn_mesh_0_PressShadowMaterial_PressShadow_id" name="vsn_mesh_0_PressShadowMaterial_PressShadow" type="NODE">
+				<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+				<instance_controller url="#mesh_0_PressShadowMaterial_PressShadow_ctrl_id">
+					<skeleton>#pm0749_00_bone_id</skeleton>
+					<bind_material>
+						<technique_common>
+							<instance_material symbol="PressShadowMaterial_PressShadow" target="#PressShadowMaterial_PressShadow_mat_id" />
+						</technique_common>
+					</bind_material>
+				</instance_controller>
+			</node>
+			<node id="vsn_mesh_1_PressShadowMaterial_PressShadow_id" name="vsn_mesh_1_PressShadowMaterial_PressShadow" type="NODE">
+				<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+				<instance_controller url="#mesh_1_PressShadowMaterial_PressShadow_ctrl_id">
+					<skeleton>#pm0749_00_bone_id</skeleton>
+					<bind_material>
+						<technique_common>
+							<instance_material symbol="PressShadowMaterial_PressShadow" target="#PressShadowMaterial_PressShadow_mat_id" />
+						</technique_common>
+					</bind_material>
+				</instance_controller>
+			</node>
+			<node id="vsn_mesh_2_PressShadowMaterial_PressShadow_id" name="vsn_mesh_2_PressShadowMaterial_PressShadow" type="NODE">
+				<matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+				<instance_controller url="#mesh_2_PressShadowMaterial_PressShadow_ctrl_id">
+					<skeleton>#pm0749_00_bone_id</skeleton>
+					<bind_material>
+						<technique_common>
+							<instance_material symbol="PressShadowMaterial_PressShadow" target="#PressShadowMaterial_PressShadow_mat_id" />
+						</technique_common>
+					</bind_material>
+				</instance_controller>
+			</node>
+		</visual_scene>
+	</library_visual_scenes>
+	<scene>
+		<instance_visual_scene url="#vs_model_id" />
+	</scene>
+</COLLADA>

@@ -408,7 +408,8 @@ public class SaveManager : IDisposable
         cmd.Parameters.AddWithValue("@hp", pkmn.CurrentHP);
         cmd.Parameters.AddWithValue("@maxhp", pkmn.MaxHP);
         cmd.Parameters.AddWithValue("@gender", (int)pkmn.Gender);
-        cmd.Parameters.AddWithValue("@status", (object?)pkmn.Status ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@status", pkmn.StatusCondition != StatusCondition.None
+            ? pkmn.StatusCondition.ToString() : DBNull.Value);
         cmd.Parameters.AddWithValue("@held", pkmn.HeldItemId.HasValue ? pkmn.HeldItemId.Value : DBNull.Value);
         cmd.Parameters.AddWithValue("@atk", pkmn.Attack);
         cmd.Parameters.AddWithValue("@def", pkmn.Defense);
@@ -438,7 +439,10 @@ public class SaveManager : IDisposable
             CurrentHP = reader.GetInt32(reader.GetOrdinal("current_hp")),
             MaxHP = reader.GetInt32(reader.GetOrdinal("max_hp")),
             Gender = (Gender)reader.GetInt32(reader.GetOrdinal("gender")),
-            Status = reader.IsDBNull(reader.GetOrdinal("status")) ? null : reader.GetString(reader.GetOrdinal("status")),
+            StatusCondition = reader.IsDBNull(reader.GetOrdinal("status"))
+                ? StatusCondition.None
+                : Enum.TryParse<StatusCondition>(reader.GetString(reader.GetOrdinal("status")), out var sc)
+                    ? sc : StatusCondition.None,
             HeldItemId = reader.IsDBNull(reader.GetOrdinal("held_item_id")) ? null : reader.GetInt32(reader.GetOrdinal("held_item_id")),
             Attack = reader.GetInt32(reader.GetOrdinal("attack")),
             Defense = reader.GetInt32(reader.GetOrdinal("defense")),
