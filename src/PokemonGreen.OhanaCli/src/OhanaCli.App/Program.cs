@@ -428,6 +428,11 @@ namespace OhanaCli.App
         {
             Directory.CreateDirectory(outDir);
 
+            // Auto-export first animation when available and no explicit index given
+            int effectiveAnimIndex = animIndex;
+            if (effectiveAnimIndex == -1 && models.skeletalAnimation.list.Count > 0)
+                effectiveAnimIndex = 0;
+
             // Export textures
             ExportTextures(models.texture, outDir);
 
@@ -448,9 +453,10 @@ namespace OhanaCli.App
                     }
                     else
                     {
-                        DAE.export(models, outPath, m, animIndex);
+                        DAE.export(models, outPath, m, effectiveAnimIndex);
                     }
-                    Console.WriteLine($"  Model: {outPath} ({models.model[m].mesh.Count} meshes, {models.model[m].skeleton.Count} bones)");
+                    string animNote = effectiveAnimIndex >= 0 ? $", anim={effectiveAnimIndex}" : "";
+                    Console.WriteLine($"  Model: {outPath} ({models.model[m].mesh.Count} meshes, {models.model[m].skeleton.Count} bones{animNote})");
                 }
                 catch (Exception ex)
                 {
