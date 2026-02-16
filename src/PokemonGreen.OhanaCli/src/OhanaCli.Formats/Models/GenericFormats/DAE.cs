@@ -11,6 +11,10 @@ namespace OhanaCli.Formats.Models.GenericFormats
 {
     public class DAE
     {
+        private const float AnimationFramesPerSecond = 30f;
+
+        public static bool DiagnosticLogging { get; set; }
+
         [XmlRootAttribute("COLLADA", Namespace = "http://www.collada.org/2005/11/COLLADASchema")]
         public class COLLADA
         {
@@ -34,11 +38,11 @@ namespace OhanaCli.Formats.Models.GenericFormats
             [XmlArrayItem("controller")]
             public List<daeController> library_controllers;
 
-            [XmlArrayItem("animation")]
-            public List<daeAnimation> library_animations;
-
             [XmlArrayItem("visual_scene")]
             public List<daeVisualScene> library_visual_scenes = new List<daeVisualScene>();
+
+            [XmlArrayItem("animation")]
+            public List<daeAnimation> library_animations = new List<daeAnimation>();
 
             [XmlArrayItem("instance_visual_scene")]
             public List<daeInstaceVisualScene> scene = new List<daeInstaceVisualScene>();
@@ -505,55 +509,6 @@ namespace OhanaCli.Formats.Models.GenericFormats
             }
         }
 
-        public class daeTranslate
-        {
-            [XmlAttribute]
-            public string sid;
-
-            [XmlText]
-            public string data;
-
-            public void set(float x, float y, float z)
-            {
-                data = x.ToString(CultureInfo.InvariantCulture) + " " +
-                       y.ToString(CultureInfo.InvariantCulture) + " " +
-                       z.ToString(CultureInfo.InvariantCulture);
-            }
-        }
-
-        public class daeRotate
-        {
-            [XmlAttribute]
-            public string sid;
-
-            [XmlText]
-            public string data;
-
-            public void set(float axisX, float axisY, float axisZ, float angleDegrees)
-            {
-                data = axisX.ToString(CultureInfo.InvariantCulture) + " " +
-                       axisY.ToString(CultureInfo.InvariantCulture) + " " +
-                       axisZ.ToString(CultureInfo.InvariantCulture) + " " +
-                       angleDegrees.ToString(CultureInfo.InvariantCulture);
-            }
-        }
-
-        public class daeScale
-        {
-            [XmlAttribute]
-            public string sid;
-
-            [XmlText]
-            public string data;
-
-            public void set(float x, float y, float z)
-            {
-                data = x.ToString(CultureInfo.InvariantCulture) + " " +
-                       y.ToString(CultureInfo.InvariantCulture) + " " +
-                       z.ToString(CultureInfo.InvariantCulture);
-            }
-        }
-
         public class daeBindMaterialInstace
         {
             [XmlAttribute]
@@ -561,6 +516,21 @@ namespace OhanaCli.Formats.Models.GenericFormats
 
             [XmlAttribute]
             public string target;
+
+            [XmlElement("bind_vertex_input")]
+            public List<daeBindVertexInput> bind_vertex_input = new List<daeBindVertexInput>();
+        }
+
+        public class daeBindVertexInput
+        {
+            [XmlAttribute]
+            public string semantic;
+
+            [XmlAttribute]
+            public string input_semantic;
+
+            [XmlAttribute]
+            public uint input_set;
         }
 
         public class daeBindMaterial
@@ -604,19 +574,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
             [XmlAttribute]
             public string type = "NODE";
 
-            // Decomposed transforms for joint nodes (COLLADA order: T, Rz, Ry, Rx, S)
-            [XmlElement("translate", IsNullable = false)]
-            public daeTranslate translate;
-
-            [XmlElement("rotate", IsNullable = false)]
-            public List<daeRotate> rotate;
-
-            [XmlElement("scale", IsNullable = false)]
-            public daeScale scale;
-
-            // Matrix transform for non-joint nodes
-            [XmlElement("matrix", IsNullable = false)]
-            public daeMatrix matrix;
+            public daeMatrix matrix = new daeMatrix();
 
             [XmlElement("node", IsNullable = false)]
             public List<daeNode> childs;
@@ -646,21 +604,6 @@ namespace OhanaCli.Formats.Models.GenericFormats
             public string url;
         }
 
-        public class daeAnimation
-        {
-            [XmlAttribute]
-            public string id;
-
-            [XmlElement("source")]
-            public List<daeSource> source = new List<daeSource>();
-
-            [XmlElement("sampler")]
-            public List<daeAnimationSampler> sampler = new List<daeAnimationSampler>();
-
-            [XmlElement("channel")]
-            public List<daeChannel> channel = new List<daeChannel>();
-        }
-
         public class daeAnimationSampler
         {
             [XmlAttribute]
@@ -687,6 +630,21 @@ namespace OhanaCli.Formats.Models.GenericFormats
             public string target;
         }
 
+        public class daeAnimation
+        {
+            [XmlAttribute]
+            public string id;
+
+            [XmlAttribute]
+            public string name;
+
+            [XmlElement("source")]
+            public List<daeSource> source = new List<daeSource>();
+
+            public daeAnimationSampler sampler = new daeAnimationSampler();
+            public daeChannel channel = new daeChannel();
+        }
+
         /// <summary>
         ///     Exports a Model to the Collada format.
         ///     See: https://www.khronos.org/files/collada_spec_1_4.pdf for more information.
@@ -695,7 +653,13 @@ namespace OhanaCli.Formats.Models.GenericFormats
         /// <param name="fileName">The output File Name</param>
         /// <param name="modelIndex">Index of the model to be exported</param>
         /// <param name="skeletalAnimationIndex">(Optional) Index of the skeletal animation</param>
-        public static void export(RenderBase.OModelGroup model, string fileName, int modelIndex, int skeletalAnimationIndex = -1)
+        /// <param name="includeAllSkeletalAnimations">When true, emits all skeletal clips into one DAE file.</param>
+        public static void export(
+            RenderBase.OModelGroup model,
+            string fileName,
+            int modelIndex,
+            int skeletalAnimationIndex = -1,
+            bool includeAllSkeletalAnimations = false)
         {
             RenderBase.OModel mdl = model.model[modelIndex];
             COLLADA dae = new COLLADA();
@@ -727,9 +691,12 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 eff.id = "eff_" + mat.name + "_id";
                 eff.name = "eff_" + mat.name;
 
+                string surfaceSid = "img_surface_" + mat.name;
+                string samplerSid = "img_sampler_" + mat.name;
+
                 daeParam surface = new daeParam();
                 surface.surface = new daeParamSurfaceElement();
-                surface.sid = "img_surface_" + mat.name;
+                surface.sid = surfaceSid;
                 surface.surface.type = "2D";
                 surface.surface.init_from = mat.name0 + "_id";
                 surface.surface.format = "PNG";
@@ -737,8 +704,8 @@ namespace OhanaCli.Formats.Models.GenericFormats
 
                 daeParam sampler = new daeParam();
                 sampler.sampler2D = new daeParamSampler2DElement();
-                sampler.sid = "img_sampler_" + mat.name;
-                sampler.sampler2D.source = "img_surface_" + mat.name;
+                sampler.sid = samplerSid;
+                sampler.sampler2D.source = surfaceSid;
 
                 switch (mat.textureMapper[0].wrapU)
                 {
@@ -782,7 +749,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 eff.profile_COMMON.technique.phong.emission.set(Color.Black);
                 eff.profile_COMMON.technique.phong.ambient.set(Color.Black);
                 eff.profile_COMMON.technique.phong.specular.set(Color.White);
-                eff.profile_COMMON.technique.phong.diffuse.texture.texture = "img_sampler_" + mat.name;
+                eff.profile_COMMON.technique.phong.diffuse.texture.texture = samplerSid;
 
                 dae.library_effects.Add(eff);
             }
@@ -814,6 +781,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
             {
                 //Geometry
                 daeGeometry geometry = new daeGeometry();
+                RenderBase.OMaterial meshMaterial = mdl.material[obj.materialId];
 
                 string meshName = "mesh_" + meshIndex++ + "_" + obj.name;
                 geometry.id = meshName + "_id";
@@ -841,20 +809,23 @@ namespace OhanaCli.Formats.Models.GenericFormats
 
                     if (mesh.texUVCount > 0)
                     {
-                        uv0.Add(vtx.texture0.x);
-                        uv0.Add(vtx.texture0.y);
+                        RenderBase.OVector2 transformedUv0 = applyTextureCoordinator(vtx.texture0, meshMaterial.textureCoordinator[0]);
+                        uv0.Add(transformedUv0.x);
+                        uv0.Add(transformedUv0.y);
                     }
 
                     if (mesh.texUVCount > 1)
                     {
-                        uv1.Add(vtx.texture1.x);
-                        uv1.Add(vtx.texture1.y);
+                        RenderBase.OVector2 transformedUv1 = applyTextureCoordinator(vtx.texture1, meshMaterial.textureCoordinator[1]);
+                        uv1.Add(transformedUv1.x);
+                        uv1.Add(transformedUv1.y);
                     }
 
                     if (mesh.texUVCount > 2)
                     {
-                        uv2.Add(vtx.texture2.x);
-                        uv2.Add(vtx.texture2.y);
+                        RenderBase.OVector2 transformedUv2 = applyTextureCoordinator(vtx.texture2, meshMaterial.textureCoordinator[2]);
+                        uv2.Add(transformedUv2.x);
+                        uv2.Add(transformedUv2.y);
                     }
 
                     if (mesh.hasColor)
@@ -940,7 +911,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 geometry.mesh.vertices.addInput("POSITION", "#" + position.id);
 
 
-                geometry.mesh.triangles.material = mdl.material[obj.materialId].name;
+                geometry.mesh.triangles.material = meshMaterial.name;
                 geometry.mesh.triangles.addInput("VERTEX", "#" + geometry.mesh.vertices.id);
                 if (mesh.hasNormal) geometry.mesh.triangles.addInput("NORMAL", "#" + normal.id);
                 if (mesh.hasColor) geometry.mesh.triangles.addInput("COLOR", "#" + color.id);
@@ -1076,36 +1047,45 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 daeNode node = new daeNode();
                 node.name = "vsn_" + meshName;
                 node.id = node.name + "_id";
-                node.matrix = new daeMatrix();
                 node.matrix.set(new RenderBase.OMatrix());
                 if (hasController)
                 {
                     node.instance_controller = new daeInstanceController();
                     node.instance_controller.url = "#" + controller.id;
                     node.instance_controller.skeleton = "#" + mdl.skeleton[0].name + "_bone_id";
-                    node.instance_controller.bind_material.technique_common.instance_material.symbol = mdl.material[obj.materialId].name;
-                    node.instance_controller.bind_material.technique_common.instance_material.target = "#" + mdl.material[obj.materialId].name + "_mat_id";
+                    node.instance_controller.bind_material.technique_common.instance_material.symbol = meshMaterial.name;
+                    node.instance_controller.bind_material.technique_common.instance_material.target = "#" + meshMaterial.name + "_mat_id";
+                    addTexcoordBinding(node.instance_controller.bind_material.technique_common.instance_material, mesh.texUVCount);
                 }
                 else
                 {
                     node.instance_geometry = new daeInstanceGeometry();
                     node.instance_geometry.url = "#" + geometry.id;
-                    node.instance_geometry.bind_material.technique_common.instance_material.symbol = mdl.material[obj.materialId].name;
-                    node.instance_geometry.bind_material.technique_common.instance_material.target = "#" + mdl.material[obj.materialId].name + "_mat_id";
+                    node.instance_geometry.bind_material.technique_common.instance_material.symbol = meshMaterial.name;
+                    node.instance_geometry.bind_material.technique_common.instance_material.target = "#" + meshMaterial.name + "_mat_id";
+                    addTexcoordBinding(node.instance_geometry.bind_material.technique_common.instance_material, mesh.texUVCount);
                 }
 
                 vs.node.Add(node);
             }
+
+            if (includeAllSkeletalAnimations)
+            {
+                for (int i = 0; i < model.skeletalAnimation.list.Count; i++)
+                {
+                    exportAnimation(dae, model, mdl, i);
+                }
+            }
+            else if (skeletalAnimationIndex >= 0)
+            {
+                exportAnimation(dae, model, mdl, skeletalAnimationIndex);
+            }
+
             dae.library_visual_scenes.Add(vs);
 
             daeInstaceVisualScene scene = new daeInstaceVisualScene();
             scene.url = "#" + vs.id;
             dae.scene.Add(scene);
-
-            if (skeletalAnimationIndex > -1 && skeletalAnimationIndex < model.skeletalAnimation.list.Count)
-            {
-                exportAnimation(dae, mdl, (RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[skeletalAnimationIndex]);
-            }
 
             XmlWriterSettings settings = new XmlWriterSettings
             {
@@ -1117,11 +1097,581 @@ namespace OhanaCli.Formats.Models.GenericFormats
             XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
             ns.Add("", "http://www.collada.org/2005/11/COLLADASchema");
             XmlSerializer serializer = new XmlSerializer(typeof(COLLADA));
-            using (FileStream fs = new FileStream(fileName, FileMode.Create))
-            using (XmlWriter output = XmlWriter.Create(fs, settings))
+            using (XmlWriter output = XmlWriter.Create(new FileStream(fileName, FileMode.Create), settings))
             {
                 serializer.Serialize(output, dae, ns);
             }
+        }
+
+        public static void exportAnimation(COLLADA dae, RenderBase.OModelGroup model, RenderBase.OModel mdl, int animIndex)
+        {
+            if (model.skeletalAnimation == null) return;
+            if (animIndex < 0 || animIndex >= model.skeletalAnimation.list.Count) return;
+
+            RenderBase.OSkeletalAnimation anim = model.skeletalAnimation.list[animIndex] as RenderBase.OSkeletalAnimation;
+            if (anim == null) return;
+
+            Dictionary<string, RenderBase.OBone> skeletonByName = new Dictionary<string, RenderBase.OBone>();
+            foreach (RenderBase.OBone skeletonBone in mdl.skeleton)
+            {
+                if (!skeletonByName.ContainsKey(skeletonBone.name)) skeletonByName.Add(skeletonBone.name, skeletonBone);
+            }
+
+            for (int boneIndex = 0; boneIndex < anim.bone.Count; boneIndex++)
+            {
+                RenderBase.OSkeletalAnimationBone animBone = anim.bone[boneIndex];
+                string segmentKind = getSegmentKind(animBone);
+
+                logDiagnostic(
+                    "Bone '" + animBone.name
+                    + "' segment=" + segmentKind
+                    + " axisAngle=" + animBone.isAxisAngle
+                    + " keyframes={"
+                    + getKeyframeSummary(animBone)
+                    + "}");
+
+                if (!hasAnyAnimationData(animBone))
+                {
+                    logDiagnostic("Skipping bone '" + animBone.name + "' (no animation data, segment=" + segmentKind + ").");
+                    continue;
+                }
+
+                List<float> sampleFrames = collectSampleFrames(anim, animBone);
+                if (sampleFrames.Count == 0)
+                {
+                    logDiagnostic("Skipping bone '" + animBone.name + "' (no sample frames, segment=" + segmentKind + ").");
+                    continue;
+                }
+
+                RenderBase.OBone skeletonBone = null;
+                if (skeletonByName.ContainsKey(animBone.name)) skeletonBone = skeletonByName[animBone.name];
+
+                float defaultRotationX = skeletonBone != null ? skeletonBone.rotation.x : 0f;
+                float defaultRotationY = skeletonBone != null ? skeletonBone.rotation.y : 0f;
+                float defaultRotationZ = skeletonBone != null ? skeletonBone.rotation.z : 0f;
+                float defaultTranslationX = skeletonBone != null ? skeletonBone.translation.x : 0f;
+                float defaultTranslationY = skeletonBone != null ? skeletonBone.translation.y : 0f;
+                float defaultTranslationZ = skeletonBone != null ? skeletonBone.translation.z : 0f;
+
+                string baseName = "anim_" + animBone.name + "_transform";
+
+                List<float> outputMatrices = new List<float>(sampleFrames.Count * 16);
+                for (int sampleIndex = 0; sampleIndex < sampleFrames.Count; sampleIndex++)
+                {
+                    float frame = sampleFrames[sampleIndex];
+                    RenderBase.OMatrix localTransform;
+
+                    if (animBone.isFullBakedFormat && animBone.transform.Count > 0)
+                    {
+                        int idx = ((int)frame) % animBone.transform.Count;
+                        if (idx < 0) idx += animBone.transform.Count;
+                        localTransform = animBone.transform[idx];
+                    }
+                    else if (animBone.isFrameFormat)
+                    {
+                        RenderBase.OVector4 scale = sampleFrameVector(
+                            animBone.scale,
+                            frame,
+                            new RenderBase.OVector4(1f, 1f, 1f, 0f));
+
+                        RenderBase.OVector4 translation = sampleFrameVector(
+                            animBone.translation,
+                            frame,
+                            new RenderBase.OVector4(defaultTranslationX, defaultTranslationY, defaultTranslationZ, 0f));
+
+                        if (animBone.rotationQuaternion.exists)
+                        {
+                            RenderBase.OVector4 rotationQuaternion = sampleFrameVector(
+                                animBone.rotationQuaternion,
+                                frame,
+                                new RenderBase.OVector4(0f, 0f, 0f, 1f));
+
+                            localTransform = buildLocalMatrixFromQuaternion(
+                                scale.x,
+                                scale.y,
+                                scale.z,
+                                rotationQuaternion.x,
+                                rotationQuaternion.y,
+                                rotationQuaternion.z,
+                                rotationQuaternion.w,
+                                translation.x,
+                                translation.y,
+                                translation.z);
+                        }
+                        else
+                        {
+                            localTransform = buildLocalMatrix(
+                                scale.x,
+                                scale.y,
+                                scale.z,
+                                defaultRotationX,
+                                defaultRotationY,
+                                defaultRotationZ,
+                                translation.x,
+                                translation.y,
+                                translation.z,
+                                false);
+                        }
+                    }
+                    else
+                    {
+                        float scaleX = sampleKeyframes(animBone.scaleX, frame, 1f);
+                        float scaleY = sampleKeyframes(animBone.scaleY, frame, 1f);
+                        float scaleZ = sampleKeyframes(animBone.scaleZ, frame, 1f);
+
+                        float rotationX = sampleKeyframes(animBone.rotationX, frame, defaultRotationX);
+                        float rotationY = sampleKeyframes(animBone.rotationY, frame, defaultRotationY);
+                        float rotationZ = sampleKeyframes(animBone.rotationZ, frame, defaultRotationZ);
+
+                        float translationX = sampleKeyframes(animBone.translationX, frame, defaultTranslationX);
+                        float translationY = sampleKeyframes(animBone.translationY, frame, defaultTranslationY);
+                        float translationZ = sampleKeyframes(animBone.translationZ, frame, defaultTranslationZ);
+
+                        localTransform = buildLocalMatrix(
+                            scaleX,
+                            scaleY,
+                            scaleZ,
+                            rotationX,
+                            rotationY,
+                            rotationZ,
+                            translationX,
+                            translationY,
+                            translationZ,
+                            animBone.isAxisAngle);
+                    }
+
+                    appendMatrix(outputMatrices, localTransform);
+                }
+
+                daeSource input = new daeSource();
+                input.id = baseName + "_input";
+                input.float_array = new daeFloatArray();
+                input.float_array.id = input.id + "_array";
+                List<float> sampleTimes = new List<float>(sampleFrames.Count);
+                for (int i = 0; i < sampleFrames.Count; i++)
+                {
+                    sampleTimes.Add(frameToSeconds(sampleFrames[i]));
+                }
+
+                input.float_array.set(sampleTimes);
+                input.technique_common.accessor.source = "#" + input.float_array.id;
+                input.technique_common.accessor.count = (uint)sampleTimes.Count;
+                input.technique_common.accessor.stride = 1;
+                input.technique_common.accessor.addParam("TIME", "float");
+
+                daeSource output = new daeSource();
+                output.id = baseName + "_output";
+                output.float_array = new daeFloatArray();
+                output.float_array.id = output.id + "_array";
+                output.float_array.set(outputMatrices);
+                output.technique_common.accessor.source = "#" + output.float_array.id;
+                output.technique_common.accessor.count = (uint)sampleFrames.Count;
+                output.technique_common.accessor.stride = 16;
+                output.technique_common.accessor.addParam("TRANSFORM", "float4x4");
+
+                daeSource interpolation = new daeSource();
+                interpolation.id = baseName + "_interpolation";
+                interpolation.Name_array = new daeNameArray();
+                interpolation.Name_array.id = interpolation.id + "_array";
+                List<string> interpolationData = new List<string>();
+                for (int i = 0; i < sampleTimes.Count; i++) interpolationData.Add("LINEAR");
+                interpolation.Name_array.set(interpolationData);
+                interpolation.technique_common.accessor.source = "#" + interpolation.Name_array.id;
+                interpolation.technique_common.accessor.count = (uint)sampleTimes.Count;
+                interpolation.technique_common.accessor.stride = 1;
+                interpolation.technique_common.accessor.addParam("INTERPOLATION", "Name");
+
+                daeAnimation animation = new daeAnimation();
+                animation.id = baseName;
+                animation.name = baseName;
+                animation.source.Add(input);
+                animation.source.Add(output);
+                animation.source.Add(interpolation);
+                animation.sampler.id = baseName + "_sampler";
+                animation.sampler.addInput("INPUT", "#" + input.id);
+                animation.sampler.addInput("OUTPUT", "#" + output.id);
+                animation.sampler.addInput("INTERPOLATION", "#" + interpolation.id);
+                animation.channel.source = "#" + animation.sampler.id;
+                animation.channel.target = animBone.name + "_bone_id/transform";
+
+                dae.library_animations.Add(animation);
+                logDiagnostic("Exported matrix animation for bone '" + animBone.name + "' with " + sampleFrames.Count + " samples.");
+            }
+        }
+
+        private static string getSegmentKind(RenderBase.OSkeletalAnimationBone bone)
+        {
+            if (bone.isFullBakedFormat) return "transformMatrix";
+            if (bone.isFrameFormat)
+            {
+                return bone.rotationQuaternion.exists ? "transformQuaternion" : "transformFrame";
+            }
+
+            return bone.isAxisAngle ? "transformAxisAngle" : "transformEuler";
+        }
+
+        private static string getKeyframeSummary(RenderBase.OSkeletalAnimationBone bone)
+        {
+            return "rx=" + getKeyCount(bone.rotationX)
+                + ",ry=" + getKeyCount(bone.rotationY)
+                + ",rz=" + getKeyCount(bone.rotationZ)
+                + ",tx=" + getKeyCount(bone.translationX)
+                + ",ty=" + getKeyCount(bone.translationY)
+                + ",tz=" + getKeyCount(bone.translationZ)
+                + ",sx=" + getKeyCount(bone.scaleX)
+                + ",sy=" + getKeyCount(bone.scaleY)
+                + ",sz=" + getKeyCount(bone.scaleZ)
+                + ",quat=" + getFrameVectorCount(bone.rotationQuaternion)
+                + ",frameT=" + getFrameVectorCount(bone.translation)
+                + ",frameS=" + getFrameVectorCount(bone.scale)
+                + ",matrix=" + bone.transform.Count;
+        }
+
+        private static int getKeyCount(RenderBase.OAnimationKeyFrameGroup group)
+        {
+            return group.exists ? group.keyFrames.Count : 0;
+        }
+
+        private static int getFrameVectorCount(RenderBase.OAnimationFrame frame)
+        {
+            return frame.exists ? frame.vector.Count : 0;
+        }
+
+        private static bool hasAnyAnimationData(RenderBase.OSkeletalAnimationBone bone)
+        {
+            return bone.isFullBakedFormat
+                || bone.isFrameFormat
+                || hasKeyFrames(bone.scaleX)
+                || hasKeyFrames(bone.scaleY)
+                || hasKeyFrames(bone.scaleZ)
+                || hasKeyFrames(bone.rotationX)
+                || hasKeyFrames(bone.rotationY)
+                || hasKeyFrames(bone.rotationZ)
+                || hasKeyFrames(bone.translationX)
+                || hasKeyFrames(bone.translationY)
+                || hasKeyFrames(bone.translationZ);
+        }
+
+        private static bool hasKeyFrames(RenderBase.OAnimationKeyFrameGroup group)
+        {
+            return group.exists && group.keyFrames.Count > 0;
+        }
+
+        private static List<float> collectSampleFrames(RenderBase.OSkeletalAnimation animation, RenderBase.OSkeletalAnimationBone bone)
+        {
+            List<float> frames = new List<float>();
+
+            addGroupFrames(frames, bone.scaleX);
+            addGroupFrames(frames, bone.scaleY);
+            addGroupFrames(frames, bone.scaleZ);
+            addGroupFrames(frames, bone.rotationX);
+            addGroupFrames(frames, bone.rotationY);
+            addGroupFrames(frames, bone.rotationZ);
+            addGroupFrames(frames, bone.translationX);
+            addGroupFrames(frames, bone.translationY);
+            addGroupFrames(frames, bone.translationZ);
+
+            if (bone.isFrameFormat)
+            {
+                addFrameRange(frames, bone.scale, animation.frameSize);
+                addFrameRange(frames, bone.rotationQuaternion, animation.frameSize);
+                addFrameRange(frames, bone.translation, animation.frameSize);
+            }
+
+            if (bone.isFullBakedFormat && bone.transform.Count > 0)
+            {
+                for (int i = 0; i < bone.transform.Count; i++) frames.Add(i);
+            }
+
+            if (frames.Count == 0) return frames;
+
+            frames.Sort();
+            List<float> uniqueFrames = new List<float>();
+            float last = frames[0];
+            uniqueFrames.Add(last);
+
+            for (int i = 1; i < frames.Count; i++)
+            {
+                if (Math.Abs(frames[i] - last) < 0.0001f) continue;
+                uniqueFrames.Add(frames[i]);
+                last = frames[i];
+            }
+
+            if (bone.isFullBakedFormat)
+            {
+                return uniqueFrames;
+            }
+
+            int denseStart = Math.Max(0, (int)Math.Floor(uniqueFrames[0]));
+            int denseEnd = Math.Max(
+                denseStart,
+                (int)Math.Ceiling(Math.Max(animation.frameSize, uniqueFrames[uniqueFrames.Count - 1])));
+
+            List<float> denseFrames = new List<float>(Math.Max(uniqueFrames.Count, denseEnd - denseStart + 1));
+            for (int frame = denseStart; frame <= denseEnd; frame++)
+            {
+                denseFrames.Add(frame);
+            }
+
+            for (int i = 0; i < uniqueFrames.Count; i++)
+            {
+                float keyFrame = uniqueFrames[i];
+                bool alreadyExists = false;
+                for (int j = 0; j < denseFrames.Count; j++)
+                {
+                    if (Math.Abs(denseFrames[j] - keyFrame) < 0.0001f)
+                    {
+                        alreadyExists = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyExists)
+                {
+                    denseFrames.Add(keyFrame);
+                }
+            }
+
+            denseFrames.Sort();
+            return denseFrames;
+        }
+
+        private static float frameToSeconds(float frame)
+        {
+            return frame / AnimationFramesPerSecond;
+        }
+
+        private static void addGroupFrames(List<float> frames, RenderBase.OAnimationKeyFrameGroup group)
+        {
+            if (!group.exists || group.keyFrames.Count == 0) return;
+            for (int i = 0; i < group.keyFrames.Count; i++) frames.Add(group.keyFrames[i].frame);
+        }
+
+        private static void addFrameRange(List<float> frames, RenderBase.OAnimationFrame frame, float animationFrameSize)
+        {
+            if (!frame.exists || frame.vector.Count == 0) return;
+
+            if (frame.vector.Count == 1)
+            {
+                frames.Add(frame.startFrame);
+                return;
+            }
+
+            float start = frame.startFrame;
+            float end = frame.endFrame;
+            if (end <= start) end = Math.Max(start + frame.vector.Count - 1, animationFrameSize);
+
+            float step = (end - start) / (frame.vector.Count - 1);
+            for (int i = 0; i < frame.vector.Count; i++)
+            {
+                frames.Add(start + (step * i));
+            }
+        }
+
+        private static float sampleKeyframes(RenderBase.OAnimationKeyFrameGroup group, float frame, float defaultValue)
+        {
+            if (!group.exists || group.keyFrames.Count == 0) return defaultValue;
+            if (group.keyFrames.Count == 1) return group.keyFrames[0].value;
+
+            RenderBase.OAnimationKeyFrame first = group.keyFrames[0];
+            RenderBase.OAnimationKeyFrame last = group.keyFrames[group.keyFrames.Count - 1];
+
+            if (frame <= first.frame) return first.value;
+            if (frame >= last.frame) return last.value;
+
+            for (int i = 0; i < group.keyFrames.Count - 1; i++)
+            {
+                RenderBase.OAnimationKeyFrame left = group.keyFrames[i];
+                RenderBase.OAnimationKeyFrame right = group.keyFrames[i + 1];
+                if (frame > right.frame) continue;
+
+                float delta = right.frame - left.frame;
+                if (Math.Abs(delta) < 0.0001f) return right.value;
+
+                float mu = (frame - left.frame) / delta;
+                return left.value + ((right.value - left.value) * mu);
+            }
+
+            return last.value;
+        }
+
+        private static RenderBase.OVector4 sampleFrameVector(RenderBase.OAnimationFrame frameData, float frame, RenderBase.OVector4 defaultValue)
+        {
+            if (!frameData.exists || frameData.vector.Count == 0) return defaultValue;
+            if (frameData.vector.Count == 1) return frameData.vector[0];
+
+            float mappedFrame = frame;
+            if (frameData.endFrame > frameData.startFrame)
+            {
+                float normalized = (frame - frameData.startFrame) / (frameData.endFrame - frameData.startFrame);
+                mappedFrame = normalized * (frameData.vector.Count - 1);
+            }
+
+            mappedFrame = Math.Clamp(mappedFrame, 0f, frameData.vector.Count - 1);
+            int left = (int)Math.Floor(mappedFrame);
+            int right = Math.Min(left + 1, frameData.vector.Count - 1);
+            float mu = mappedFrame - left;
+
+            RenderBase.OVector4 leftValue = frameData.vector[left];
+            RenderBase.OVector4 rightValue = frameData.vector[right];
+
+            return new RenderBase.OVector4(
+                leftValue.x + ((rightValue.x - leftValue.x) * mu),
+                leftValue.y + ((rightValue.y - leftValue.y) * mu),
+                leftValue.z + ((rightValue.z - leftValue.z) * mu),
+                leftValue.w + ((rightValue.w - leftValue.w) * mu));
+        }
+
+        private static RenderBase.OMatrix buildLocalMatrix(
+            float sx,
+            float sy,
+            float sz,
+            float rx,
+            float ry,
+            float rz,
+            float tx,
+            float ty,
+            float tz,
+            bool isAxisAngle)
+        {
+            RenderBase.OMatrix output = new RenderBase.OMatrix();
+            output *= RenderBase.OMatrix.scale(new RenderBase.OVector3(sx, sy, sz));
+
+            if (isAxisAngle)
+            {
+                output *= buildAxisAngleMatrix(rx, ry, rz);
+            }
+            else
+            {
+                output *= RenderBase.OMatrix.rotateZ(rz);
+                output *= RenderBase.OMatrix.rotateY(ry);
+                output *= RenderBase.OMatrix.rotateX(rx);
+            }
+
+            output *= RenderBase.OMatrix.translate(new RenderBase.OVector3(tx, ty, tz));
+            return output;
+        }
+
+        private static RenderBase.OMatrix buildLocalMatrixFromQuaternion(
+            float sx,
+            float sy,
+            float sz,
+            float qx,
+            float qy,
+            float qz,
+            float qw,
+            float tx,
+            float ty,
+            float tz)
+        {
+            RenderBase.OMatrix output = new RenderBase.OMatrix();
+            output *= RenderBase.OMatrix.scale(new RenderBase.OVector3(sx, sy, sz));
+            output *= buildQuaternionMatrix(qx, qy, qz, qw);
+            output *= RenderBase.OMatrix.translate(new RenderBase.OVector3(tx, ty, tz));
+            return output;
+        }
+
+        private static RenderBase.OMatrix buildAxisAngleMatrix(float x, float y, float z)
+        {
+            float angle = (float)Math.Sqrt((x * x) + (y * y) + (z * z));
+            if (angle <= 0.000001f) return new RenderBase.OMatrix();
+
+            System.Numerics.Vector3 axis = new System.Numerics.Vector3(x / angle, y / angle, z / angle);
+            System.Numerics.Quaternion q = System.Numerics.Quaternion.CreateFromAxisAngle(axis, angle);
+            return buildQuaternionMatrix(q.X, q.Y, q.Z, q.W);
+        }
+
+        private static RenderBase.OMatrix buildQuaternionMatrix(float x, float y, float z, float w)
+        {
+            System.Numerics.Quaternion q = new System.Numerics.Quaternion(x, y, z, w);
+            if (q.LengthSquared() <= 0.0000001f) return new RenderBase.OMatrix();
+
+            q = System.Numerics.Quaternion.Normalize(q);
+            System.Numerics.Matrix4x4 matrix = System.Numerics.Matrix4x4.CreateFromQuaternion(q);
+            return toOMatrix(matrix);
+        }
+
+        private static RenderBase.OMatrix toOMatrix(System.Numerics.Matrix4x4 matrix)
+        {
+            RenderBase.OMatrix output = new RenderBase.OMatrix();
+
+            output.M11 = matrix.M11;
+            output.M12 = matrix.M12;
+            output.M13 = matrix.M13;
+            output.M14 = matrix.M14;
+
+            output.M21 = matrix.M21;
+            output.M22 = matrix.M22;
+            output.M23 = matrix.M23;
+            output.M24 = matrix.M24;
+
+            output.M31 = matrix.M31;
+            output.M32 = matrix.M32;
+            output.M33 = matrix.M33;
+            output.M34 = matrix.M34;
+
+            output.M41 = matrix.M41;
+            output.M42 = matrix.M42;
+            output.M43 = matrix.M43;
+            output.M44 = matrix.M44;
+
+            return output;
+        }
+
+        private static void appendMatrix(List<float> destination, RenderBase.OMatrix matrix)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    destination.Add(matrix[j, i]);
+                }
+            }
+        }
+
+        private static RenderBase.OVector2 applyTextureCoordinator(RenderBase.OVector2 uv, RenderBase.OTextureCoordinator coordinator)
+        {
+            float scaleU = coordinator.scaleU;
+            float scaleV = coordinator.scaleV;
+            if (scaleU == 0f && scaleV == 0f)
+            {
+                scaleU = 1f;
+                scaleV = 1f;
+            }
+
+            float centeredU = uv.x - 0.5f;
+            float centeredV = uv.y - 0.5f;
+
+            float cos = (float)Math.Cos(coordinator.rotate);
+            float sin = (float)Math.Sin(coordinator.rotate);
+
+            float rotatedU = (centeredU * cos) - (centeredV * sin);
+            float rotatedV = (centeredU * sin) + (centeredV * cos);
+
+            float transformedU = (rotatedU + 0.5f) * scaleU - coordinator.translateU;
+            float transformedV = (rotatedV + 0.5f) * scaleV - coordinator.translateV;
+
+            return new RenderBase.OVector2(transformedU, transformedV);
+        }
+
+        private static void addTexcoordBinding(daeBindMaterialInstace instanceMaterial, int texUvCount)
+        {
+            if (texUvCount <= 0)
+            {
+                return;
+            }
+
+            daeBindVertexInput binding = new daeBindVertexInput();
+            binding.semantic = "uv";
+            binding.input_semantic = "TEXCOORD";
+            binding.input_set = 0;
+            instanceMaterial.bind_vertex_input.Add(binding);
+        }
+
+        private static void logDiagnostic(string message)
+        {
+            if (!DiagnosticLogging) return;
+            Console.Error.WriteLine("[DAE] " + message);
         }
 
         /// <summary>
@@ -1132,16 +1682,11 @@ namespace OhanaCli.Formats.Models.GenericFormats
         /// <param name="target">Target matrix to save bone transformation</param>
         private static void transformSkeleton(List<RenderBase.OBone> skeleton, int index, ref RenderBase.OMatrix target)
         {
-            RenderBase.OBone bone = skeleton[index];
-            float sx = bone.scale.x == 0 ? 1 : bone.scale.x;
-            float sy = bone.scale.y == 0 ? 1 : bone.scale.y;
-            float sz = bone.scale.z == 0 ? 1 : bone.scale.z;
-            target *= RenderBase.OMatrix.scale(new RenderBase.OVector3(sx, sy, sz));
-            target *= RenderBase.OMatrix.rotateZ(bone.rotation.z);
-            target *= RenderBase.OMatrix.rotateY(bone.rotation.y);
-            target *= RenderBase.OMatrix.rotateX(bone.rotation.x);
-            target *= RenderBase.OMatrix.translate(bone.translation);
-            if (bone.parentId > -1) transformSkeleton(skeleton, bone.parentId, ref target);
+            target *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
+            target *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
+            target *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);
+            target *= RenderBase.OMatrix.translate(skeleton[index].translation);
+            if (skeleton[index].parentId > -1) transformSkeleton(skeleton, skeleton[index].parentId, ref target);
         }
 
         /// <summary>
@@ -1150,68 +1695,6 @@ namespace OhanaCli.Formats.Models.GenericFormats
         /// <param name="skeleton">The skeleton</param>
         /// <param name="index">Index of the current bone (root bone when it's not a recursive call)</param>
         /// <param name="nodes">List with the DAE nodes</param>
-        private static RenderBase.OMatrix buildLocalBoneMatrix(RenderBase.OBone bone)
-        {
-            float sx = bone.scale.x == 0 ? 1 : bone.scale.x;
-            float sy = bone.scale.y == 0 ? 1 : bone.scale.y;
-            float sz = bone.scale.z == 0 ? 1 : bone.scale.z;
-            RenderBase.OMatrix m = new RenderBase.OMatrix();
-            m *= RenderBase.OMatrix.scale(new RenderBase.OVector3(sx, sy, sz));
-            m *= RenderBase.OMatrix.rotateZ(bone.rotation.z);
-            m *= RenderBase.OMatrix.rotateY(bone.rotation.y);
-            m *= RenderBase.OMatrix.rotateX(bone.rotation.x);
-            m *= RenderBase.OMatrix.translate(bone.translation);
-            return m;
-        }
-
-        private static RenderBase.OMatrix buildLocalMatrix(
-            float sx, float sy, float sz,
-            float rx, float ry, float rz,
-            float tx, float ty, float tz)
-        {
-            RenderBase.OMatrix m = new RenderBase.OMatrix();
-            m *= RenderBase.OMatrix.scale(new RenderBase.OVector3(sx, sy, sz));
-            m *= RenderBase.OMatrix.rotateZ(rz);
-            m *= RenderBase.OMatrix.rotateY(ry);
-            m *= RenderBase.OMatrix.rotateX(rx);
-            m *= RenderBase.OMatrix.translate(new RenderBase.OVector3(tx, ty, tz));
-            return m;
-        }
-
-        private static float sampleKeyframes(RenderBase.OAnimationKeyFrameGroup group, float frame)
-        {
-            var kfs = group.keyFrames;
-            if (kfs.Count == 0) return 0;
-            if (kfs.Count == 1) return kfs[0].value;
-            if (frame <= kfs[0].frame) return kfs[0].value;
-            if (frame >= kfs[kfs.Count - 1].frame) return kfs[kfs.Count - 1].value;
-            for (int i = 0; i < kfs.Count - 1; i++)
-            {
-                if (frame >= kfs[i].frame && frame <= kfs[i + 1].frame)
-                {
-                    float t = (frame - kfs[i].frame) / (kfs[i + 1].frame - kfs[i].frame);
-                    return kfs[i].value + t * (kfs[i + 1].value - kfs[i].value);
-                }
-            }
-            return kfs[kfs.Count - 1].value;
-        }
-
-        private static float radToDeg(float radians)
-        {
-            return radians * (180f / (float)Math.PI);
-        }
-
-        /// <summary>
-        ///     Converts a quaternion (x, y, z, w) to Euler angles (x, y, z) in radians.
-        ///     Uses the same formula as SPICA's ToEuler() for compatibility.
-        /// </summary>
-        private static void quaternionToEuler(float qx, float qy, float qz, float qw, out float ex, out float ey, out float ez)
-        {
-            ex = (float)Math.Atan2(2 * (qx * qw + qy * qz), 1 - 2 * (qx * qx + qy * qy));
-            ey = -(float)Math.Asin(Math.Max(-1, Math.Min(1, 2 * (qx * qz - qw * qy))));
-            ez = (float)Math.Atan2(2 * (qx * qy + qz * qw), 1 - 2 * (qy * qy + qz * qz));
-        }
-
         private static void writeSkeleton(List<RenderBase.OBone> skeleton, int index, ref List<daeNode> nodes)
         {
             daeNode node = new daeNode();
@@ -1219,28 +1702,15 @@ namespace OhanaCli.Formats.Models.GenericFormats
             node.id = node.name + "_bone_id";
             node.sid = node.name;
             node.type = "JOINT";
+            node.matrix.sid = "transform";
 
-            RenderBase.OBone bone = skeleton[index];
-            float sx = bone.scale.x == 0 ? 1 : bone.scale.x;
-            float sy = bone.scale.y == 0 ? 1 : bone.scale.y;
-            float sz = bone.scale.z == 0 ? 1 : bone.scale.z;
+            RenderBase.OMatrix transform = new RenderBase.OMatrix();
+            transform *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
+            transform *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
+            transform *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);
+            transform *= RenderBase.OMatrix.translate(skeleton[index].translation);
 
-            // Per-component transforms (COLLADA document order: translate, rotateZ, rotateY, rotateX, scale)
-            node.translate = new daeTranslate();
-            node.translate.sid = "translate";
-            node.translate.set(bone.translation.x, bone.translation.y, bone.translation.z);
-
-            node.rotate = new List<daeRotate>();
-            daeRotate rz = new daeRotate(); rz.sid = "rotateZ"; rz.set(0, 0, 1, radToDeg(bone.rotation.z));
-            daeRotate ry = new daeRotate(); ry.sid = "rotateY"; ry.set(0, 1, 0, radToDeg(bone.rotation.y));
-            daeRotate rx = new daeRotate(); rx.sid = "rotateX"; rx.set(1, 0, 0, radToDeg(bone.rotation.x));
-            node.rotate.Add(rz);
-            node.rotate.Add(ry);
-            node.rotate.Add(rx);
-
-            node.scale = new daeScale();
-            node.scale.sid = "scale";
-            node.scale.set(sx, sy, sz);
+            node.matrix.set(transform);
 
             for (int i = 0; i < skeleton.Count; i++)
             {
@@ -1252,268 +1722,6 @@ namespace OhanaCli.Formats.Models.GenericFormats
             }
 
             nodes.Add(node);
-        }
-
-        /// <summary>
-        ///     Creates a single per-component animation channel.
-        /// </summary>
-        private static daeAnimation createAnimChannel(
-            string boneName, string channelName, string targetSuffix,
-            List<float> times, List<float> values,
-            uint stride, string[] paramNames, string paramType)
-        {
-            string animId = "anim_" + boneName + "_" + channelName;
-            daeAnimation animNode = new daeAnimation();
-            animNode.id = animId;
-
-            // INPUT source (time)
-            daeSource inputSrc = new daeSource();
-            inputSrc.id = animId + "_input";
-            inputSrc.float_array = new daeFloatArray();
-            inputSrc.float_array.id = animId + "_input_array";
-            inputSrc.float_array.set(times);
-            inputSrc.technique_common.accessor.source = "#" + inputSrc.float_array.id;
-            inputSrc.technique_common.accessor.count = (uint)times.Count;
-            inputSrc.technique_common.accessor.stride = 1;
-            inputSrc.technique_common.accessor.addParam("TIME", "float");
-            animNode.source.Add(inputSrc);
-
-            // OUTPUT source
-            daeSource outputSrc = new daeSource();
-            outputSrc.id = animId + "_output";
-            outputSrc.float_array = new daeFloatArray();
-            outputSrc.float_array.id = animId + "_output_array";
-            outputSrc.float_array.set(values);
-            outputSrc.technique_common.accessor.source = "#" + outputSrc.float_array.id;
-            outputSrc.technique_common.accessor.count = (uint)times.Count;
-            outputSrc.technique_common.accessor.stride = stride;
-            foreach (string pn in paramNames)
-                outputSrc.technique_common.accessor.addParam(pn, paramType);
-            animNode.source.Add(outputSrc);
-
-            // INTERPOLATION source
-            daeSource interpSrc = new daeSource();
-            interpSrc.id = animId + "_interpolation";
-            interpSrc.Name_array = new daeNameArray();
-            interpSrc.Name_array.id = animId + "_interpolation_array";
-            List<string> interps = new List<string>();
-            for (int k = 0; k < times.Count; k++)
-                interps.Add("LINEAR");
-            interpSrc.Name_array.set(interps);
-            interpSrc.technique_common.accessor.source = "#" + interpSrc.Name_array.id;
-            interpSrc.technique_common.accessor.count = (uint)interps.Count;
-            interpSrc.technique_common.accessor.stride = 1;
-            interpSrc.technique_common.accessor.addParam("INTERPOLATION", "Name");
-            animNode.source.Add(interpSrc);
-
-            // Sampler
-            daeAnimationSampler samp = new daeAnimationSampler();
-            samp.id = animId + "_sampler";
-            samp.addInput("INPUT", "#" + inputSrc.id);
-            samp.addInput("OUTPUT", "#" + outputSrc.id);
-            samp.addInput("INTERPOLATION", "#" + interpSrc.id);
-            animNode.sampler.Add(samp);
-
-            // Channel
-            daeChannel chan = new daeChannel();
-            chan.source = "#" + samp.id;
-            chan.target = boneName + "_bone_id/" + targetSuffix;
-            animNode.channel.Add(chan);
-
-            return animNode;
-        }
-
-        /// <summary>
-        ///     Samples a quaternion animation frame vector at an integer frame index.
-        ///     Clamps to valid range (no interpolation needed for integer frames).
-        /// </summary>
-        private static RenderBase.OVector4 sampleFrameVector(RenderBase.OAnimationFrame af, int frame)
-        {
-            if (!af.exists || af.vector.Count == 0) return null;
-            int idx = Math.Min(frame, af.vector.Count - 1);
-            return af.vector[Math.Max(0, idx)];
-        }
-
-        private static void exportAnimation(
-            COLLADA dae,
-            RenderBase.OModel mdl,
-            RenderBase.OSkeletalAnimation anim)
-        {
-            if (dae.library_animations == null) dae.library_animations = new List<daeAnimation>();
-
-            int framesCount = (int)anim.frameSize + 1;
-            int eulerCount = 0, quatCount = 0, matrixCount = 0, skippedCount = 0;
-
-            foreach (RenderBase.OSkeletalAnimationBone bone in anim.bone)
-            {
-                // Find skeleton bone index
-                int boneIndex = -1;
-                for (int i = 0; i < mdl.skeleton.Count; i++)
-                {
-                    if (mdl.skeleton[i].name == bone.name) { boneIndex = i; break; }
-                }
-                if (boneIndex == -1) { skippedCount++; continue; }
-
-                RenderBase.OBone restBone = mdl.skeleton[boneIndex];
-                float restSx = restBone.scale.x == 0 ? 1 : restBone.scale.x;
-                float restSy = restBone.scale.y == 0 ? 1 : restBone.scale.y;
-                float restSz = restBone.scale.z == 0 ? 1 : restBone.scale.z;
-
-                // Bake all frames (like SPICA) at 30fps
-                List<float> times = new List<float>();
-                List<float> translateValues = new List<float>();
-                List<float> rotateXValues = new List<float>();
-                List<float> rotateYValues = new List<float>();
-                List<float> rotateZValues = new List<float>();
-                List<float> scaleValues = new List<float>();
-
-                if (bone.isFullBakedFormat)
-                {
-                    // Baked matrix format — skip (same as SPICA)
-                    matrixCount++;
-                    continue;
-                }
-                else if (bone.isFrameFormat)
-                {
-                    // Quaternion format: per-frame vectors for rotation, translation, scale
-                    quatCount++;
-                    for (int frame = 0; frame < framesCount; frame++)
-                    {
-                        times.Add(frame / 30f);
-
-                        // Translation
-                        RenderBase.OVector4 tv = sampleFrameVector(bone.translation, frame);
-                        float tx = tv != null ? tv.x : restBone.translation.x;
-                        float ty = tv != null ? tv.y : restBone.translation.y;
-                        float tz = tv != null ? tv.z : restBone.translation.z;
-                        translateValues.Add(tx);
-                        translateValues.Add(ty);
-                        translateValues.Add(tz);
-
-                        // Rotation (quaternion → Euler)
-                        RenderBase.OVector4 rv = sampleFrameVector(bone.rotationQuaternion, frame);
-                        float ex, ey, ez;
-                        if (rv != null)
-                        {
-                            quaternionToEuler(rv.x, rv.y, rv.z, rv.w, out ex, out ey, out ez);
-                        }
-                        else
-                        {
-                            ex = restBone.rotation.x;
-                            ey = restBone.rotation.y;
-                            ez = restBone.rotation.z;
-                        }
-                        rotateXValues.Add(radToDeg(ex));
-                        rotateYValues.Add(radToDeg(ey));
-                        rotateZValues.Add(radToDeg(ez));
-
-                        // Scale
-                        RenderBase.OVector4 sv = sampleFrameVector(bone.scale, frame);
-                        float sx = sv != null ? sv.x : restSx;
-                        float sy = sv != null ? sv.y : restSy;
-                        float sz = sv != null ? sv.z : restSz;
-                        scaleValues.Add(sx);
-                        scaleValues.Add(sy);
-                        scaleValues.Add(sz);
-                    }
-                }
-                else
-                {
-                    // Euler keyframe format: per-component keyframe groups
-                    eulerCount++;
-                    bool hasAnyKeyframes = false;
-                    RenderBase.OAnimationKeyFrameGroup[] groups = {
-                        bone.scaleX, bone.scaleY, bone.scaleZ,
-                        bone.rotationX, bone.rotationY, bone.rotationZ,
-                        bone.translationX, bone.translationY, bone.translationZ
-                    };
-                    foreach (var group in groups)
-                    {
-                        if (group.exists && group.keyFrames.Count > 0)
-                        {
-                            hasAnyKeyframes = true;
-                            break;
-                        }
-                    }
-                    if (!hasAnyKeyframes) continue;
-
-                    for (int frame = 0; frame < framesCount; frame++)
-                    {
-                        times.Add(frame / 30f);
-
-                        // Translation
-                        float tx = bone.translationX.exists ? sampleKeyframes(bone.translationX, frame) : restBone.translation.x;
-                        float ty = bone.translationY.exists ? sampleKeyframes(bone.translationY, frame) : restBone.translation.y;
-                        float tz = bone.translationZ.exists ? sampleKeyframes(bone.translationZ, frame) : restBone.translation.z;
-                        translateValues.Add(tx);
-                        translateValues.Add(ty);
-                        translateValues.Add(tz);
-
-                        // Rotation (already in radians, convert to degrees)
-                        float rx = bone.rotationX.exists ? sampleKeyframes(bone.rotationX, frame) : restBone.rotation.x;
-                        float ry = bone.rotationY.exists ? sampleKeyframes(bone.rotationY, frame) : restBone.rotation.y;
-                        float rz = bone.rotationZ.exists ? sampleKeyframes(bone.rotationZ, frame) : restBone.rotation.z;
-
-                        if (bone.isAxisAngle)
-                        {
-                            // Axis-angle: vector magnitude = angle, normalized vector = axis
-                            float len = (float)Math.Sqrt(rx * rx + ry * ry + rz * rz);
-                            if (len > 0.0001f)
-                            {
-                                float ax = rx / len, ay = ry / len, az = rz / len;
-                                float halfAngle = len * 0.5f;
-                                float sinH = (float)Math.Sin(halfAngle);
-                                float cosH = (float)Math.Cos(halfAngle);
-                                quaternionToEuler(ax * sinH, ay * sinH, az * sinH, cosH, out rx, out ry, out rz);
-                            }
-                            else
-                            {
-                                rx = restBone.rotation.x;
-                                ry = restBone.rotation.y;
-                                rz = restBone.rotation.z;
-                            }
-                        }
-
-                        rotateXValues.Add(radToDeg(rx));
-                        rotateYValues.Add(radToDeg(ry));
-                        rotateZValues.Add(radToDeg(rz));
-
-                        // Scale
-                        float sx = bone.scaleX.exists ? sampleKeyframes(bone.scaleX, frame) : restSx;
-                        float sy = bone.scaleY.exists ? sampleKeyframes(bone.scaleY, frame) : restSy;
-                        float sz = bone.scaleZ.exists ? sampleKeyframes(bone.scaleZ, frame) : restSz;
-                        scaleValues.Add(sx);
-                        scaleValues.Add(sy);
-                        scaleValues.Add(sz);
-                    }
-                }
-
-                // Create 5 per-component animation channels (matching SPICA format)
-                string[] vec3Params = { "X", "Y", "Z" };
-                string[] angleParam = { "ANGLE" };
-
-                dae.library_animations.Add(createAnimChannel(
-                    bone.name, "translate", "translate",
-                    times, translateValues, 3, vec3Params, "float"));
-
-                dae.library_animations.Add(createAnimChannel(
-                    bone.name, "rotateX", "rotateX.ANGLE",
-                    times, rotateXValues, 1, angleParam, "float"));
-
-                dae.library_animations.Add(createAnimChannel(
-                    bone.name, "rotateY", "rotateY.ANGLE",
-                    times, rotateYValues, 1, angleParam, "float"));
-
-                dae.library_animations.Add(createAnimChannel(
-                    bone.name, "rotateZ", "rotateZ.ANGLE",
-                    times, rotateZValues, 1, angleParam, "float"));
-
-                dae.library_animations.Add(createAnimChannel(
-                    bone.name, "scale", "scale",
-                    times, scaleValues, 3, vec3Params, "float"));
-            }
-
-            Console.Error.WriteLine($"  Animation: {eulerCount} Euler, {quatCount} Quaternion, {matrixCount} BakedMatrix (skipped), {skippedCount} unmatched");
         }
     }
 }

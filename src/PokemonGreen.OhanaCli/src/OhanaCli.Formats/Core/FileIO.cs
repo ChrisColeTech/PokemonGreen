@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Text;
 
+using OhanaCli.Formats.Compressions;
+using OhanaCli.Formats.Containers;
 using OhanaCli.Formats.Models;
 using OhanaCli.Formats.Models.PocketMonsters;
 using OhanaCli.Formats.Textures.PocketMonsters;
-using OhanaCli.Formats.Compressions;
-using OhanaCli.Formats.Containers;
 
 namespace OhanaCli.Formats
 {
@@ -33,12 +33,16 @@ namespace OhanaCli.Formats
 
         public static LoadedFile load(string fileName)
         {
-            return load(new FileStream(fileName, FileMode.Open));
+            switch (Path.GetExtension(fileName).ToLower())
+            {
+                //case ".mbn": return new LoadedFile { data = MBN.load(fileName), type = formatType.model };
+                //case ".xml": return new LoadedFile { data = NLP.load(fileName), type = formatType.model };
+                default: return load(new FileStream(fileName, FileMode.Open));
+            }
         }
 
         public static LoadedFile load(Stream data)
         {
-            //Too small
             if (data.Length < 0x10)
             {
                 data.Close();
@@ -46,7 +50,8 @@ namespace OhanaCli.Formats
             }
 
             BinaryReader input = new BinaryReader(data);
-            uint magic, length;
+            uint magic;
+            uint length;
 
             switch (peek(input))
             {
@@ -59,6 +64,12 @@ namespace OhanaCli.Formats
                     return new LoadedFile { data = mdls, type = formatType.model };
             }
 
+            _ = getMagic(input, 7);
+            //if (magic7 == "texture") return new LoadedFile { data = _3DST.load(data), type = formatType.image };
+
+            _ = getMagic(input, 5);
+            //if (magic5 == "MODEL") return new LoadedFile { data = DQVIIPack.load(data), type = formatType.container };
+
             switch (getMagic(input, 4))
             {
                 case "CRAG": return new LoadedFile { data = GARC.load(data), type = formatType.container };
@@ -66,13 +77,31 @@ namespace OhanaCli.Formats
                     magic = input.ReadUInt32();
                     length = input.ReadUInt32();
                     return load(new MemoryStream(LZSS.decompress(data, length)));
+                //case "CGFX": return new LoadedFile { data = CGFX.load(data), type = formatType.model };
+                //case "darc": return new LoadedFile { data = DARC.load(data), type = formatType.container };
+                //case "FPT0": return new LoadedFile { data = FPT0.load(data), type = formatType.container };
+                //case "NLK2":
+                //    data.Seek(0x80, SeekOrigin.Begin);
+                //    return new LoadedFile
+                //    {
+                //        data = CGFX.load(data),
+                //        type = formatType.model
+                //    };
+                //case "SARC": return new LoadedFile { data = SARC.load(data), type = formatType.container };
+                //case "SMES": return new LoadedFile { data = NLP.loadMesh(data), type = formatType.model };
+                //case "Yaz0":
+                //    magic = input.ReadUInt32();
+                //    length = IOUtils.endianSwap(input.ReadUInt32());
+                //    data.Seek(8, SeekOrigin.Current);
+                //    return load(new MemoryStream(Yaz0.decompress(data, length)));
+                //case "zmdl": return new LoadedFile { data = ZMDL.load(data), type = formatType.model };
+                //case "ztex": return new LoadedFile { data = ZTEX.load(data), type = formatType.texture };
             }
 
             switch (getMagic(input, 3))
             {
                 case "BCH":
                     byte[] buffer = new byte[data.Length];
-                    data.Seek(0, SeekOrigin.Begin);
                     input.Read(buffer, 0, buffer.Length);
                     data.Close();
                     return new LoadedFile
@@ -80,6 +109,7 @@ namespace OhanaCli.Formats
                         data = BCH.load(new MemoryStream(buffer)),
                         type = formatType.model
                     };
+                //case "DMP": return new LoadedFile { data = DMP.load(data), type = formatType.image };
             }
 
             string magic2b = getMagic(input, 2);
@@ -94,6 +124,7 @@ namespace OhanaCli.Formats
                 case "MM": return new LoadedFile { data = MM.load(data), type = formatType.model };
                 case "PC": return new LoadedFile { data = PC.load(data), type = formatType.model };
                 case "PT": return new LoadedFile { data = PT.load(data), type = formatType.texture };
+                //case "BS": return new LoadedFile { data = BS.load(data), type = formatType.anims };
             }
 
             if (magic2b.Length == 2)
@@ -105,7 +136,6 @@ namespace OhanaCli.Formats
                 }
             }
 
-            //Compressions
             data.Seek(0, SeekOrigin.Begin);
             uint cmp = input.ReadUInt32();
             if ((cmp & 0xff) == 0x13) cmp = input.ReadUInt32();

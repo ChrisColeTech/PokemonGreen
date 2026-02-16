@@ -27,15 +27,19 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 output.AppendLine("g " + mdl.mesh[objIndex].name);
                 output.AppendLine(null);
 
-                output.AppendLine("usemtl " + mdl.material[mdl.mesh[objIndex].materialId].name0 + ".png");
+                RenderBase.OMaterial meshMaterial = mdl.material[mdl.mesh[objIndex].materialId];
+
+                output.AppendLine("usemtl " + meshMaterial.name0 + ".png");
                 output.AppendLine(null);
 
                 MeshUtils.optimizedMesh obj = MeshUtils.optimizeMesh(mdl.mesh[objIndex]);
                 foreach (RenderBase.OVertex vertex in obj.vertices)
                 {
+                    RenderBase.OVector2 transformedUv0 = applyTextureCoordinator(vertex.texture0, meshMaterial.textureCoordinator[0]);
+
                     output.AppendLine("v " + getString(vertex.position.x) + " " + getString(vertex.position.y) + " " + getString(vertex.position.z));
                     output.AppendLine("vn " + getString(vertex.normal.x) + " " + getString(vertex.normal.y) + " " + getString(vertex.normal.z));
-                    output.AppendLine("vt " + getString(vertex.texture0.x) + " " + getString(vertex.texture0.y));
+                    output.AppendLine("vt " + getString(transformedUv0.x) + " " + getString(transformedUv0.y));
                 }
                 output.AppendLine(null);
 
@@ -54,11 +58,47 @@ namespace OhanaCli.Formats.Models.GenericFormats
             File.WriteAllText(fileName, output.ToString());
         }
 
+        /// <summary>
+        ///     Transforms a Float into a String that will always have "." into decimal places,
+        ///     even if the region uses ",".
+        /// </summary>
+        /// <param name="value">The Float value</param>
+        /// <returns></returns>
         private static string getString(float value)
         {
             return value.ToString(CultureInfo.InvariantCulture);
         }
 
+        private static RenderBase.OVector2 applyTextureCoordinator(RenderBase.OVector2 uv, RenderBase.OTextureCoordinator coordinator)
+        {
+            float scaleU = coordinator.scaleU;
+            float scaleV = coordinator.scaleV;
+            if (scaleU == 0f && scaleV == 0f)
+            {
+                scaleU = 1f;
+                scaleV = 1f;
+            }
+
+            float centeredU = uv.x - 0.5f;
+            float centeredV = uv.y - 0.5f;
+
+            float cos = (float)Math.Cos(coordinator.rotate);
+            float sin = (float)Math.Sin(coordinator.rotate);
+
+            float rotatedU = (centeredU * cos) - (centeredV * sin);
+            float rotatedV = (centeredU * sin) + (centeredV * cos);
+
+            float transformedU = (rotatedU + 0.5f) * scaleU - coordinator.translateU;
+            float transformedV = (rotatedV + 0.5f) * scaleV - coordinator.translateV;
+
+            return new RenderBase.OVector2(transformedU, transformedV);
+        }
+
+        /// <summary>
+        ///     Imports a Wavefront OBJ model from file.
+        /// </summary>
+        /// <param name="fileName">The complete file name</param>
+        /// <returns></returns>
         public static RenderBase.OModelGroup import(string fileName)
         {
             RenderBase.OModelGroup output = new RenderBase.OModelGroup();

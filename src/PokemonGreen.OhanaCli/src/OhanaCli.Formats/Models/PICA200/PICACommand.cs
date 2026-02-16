@@ -1,4 +1,4 @@
-﻿namespace OhanaCli.Formats.Models.PICA200
+namespace OhanaCli.Formats.Models.PICA200
 {
     class PICACommand
     {

@@ -1,601 +1,1102 @@
-using System;
-using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Drawing.Imaging;
-using System.IO;
+using System.Linq;
 
 using OhanaCli.Formats;
-using OhanaCli.Formats.Compressions;
 using OhanaCli.Formats.Containers;
-using OhanaCli.Formats.Models;
 using OhanaCli.Formats.Models.GenericFormats;
 using OhanaCli.Formats.Models.PocketMonsters;
-using OhanaCli.Formats.Textures.PocketMonsters;
 
-namespace OhanaCli.App
+var rootCommand = new RootCommand("OhanaCli rewrite command pipeline.");
+
+var infoFileArgument = new Argument<FileInfo>("file", "Input file path.");
+var convertFileArgument = new Argument<FileInfo>("file", "Input file path.");
+var batchInputArgument = new Argument<DirectoryInfo>("inputDir", "Input directory.");
+var diagnoseFileArgument = new Argument<FileInfo>("file", "Input GARC/container file path.");
+
+var outputOption = new Option<DirectoryInfo>(new[] { "-o", "--output" }, "Output directory.")
 {
-    class Program
+    IsRequired = true
+};
+
+var formatOption = new Option<string>(new[] { "-f", "--format" }, () => "dae", "Export format: dae or obj.");
+var animationIndexOption = new Option<int?>(new[] { "-a", "--animation-index" }, "Skeletal animation index for DAE export. Overrides --consolidate-animations when provided.");
+var consolidateAnimationsOption = new Option<bool>("--consolidate-animations", "For DAE export, emit one model DAE containing all skeletal clips instead of per-clip .anim_### outputs.");
+var limitOption = new Option<int?>(new[] { "-n", "--limit" }, "Maximum container entries to process.");
+var diagnosticAnimationOption = new Option<bool>("--diag-anim", "Emit per-bone animation segment diagnostics during export.");
+var startOption = new Option<int>("--start", () => 0, "Diagnose start entry index (inclusive).");
+var endOption = new Option<int>("--end", () => 10, "Diagnose end entry index (inclusive).");
+
+var infoCommand = new Command("info", "Print file metadata and quick inspection details.");
+infoCommand.AddArgument(infoFileArgument);
+infoCommand.SetHandler((InvocationContext ctx) =>
+{
+    FileInfo file = ctx.ParseResult.GetValueForArgument(infoFileArgument);
+    ctx.ExitCode = RunFatalSafe(() => InfoHandler(file));
+});
+
+var convertCommand = new Command("convert", "Convert one file/container to DAE or OBJ.");
+convertCommand.AddArgument(convertFileArgument);
+convertCommand.AddOption(outputOption);
+convertCommand.AddOption(formatOption);
+convertCommand.AddOption(animationIndexOption);
+convertCommand.AddOption(consolidateAnimationsOption);
+convertCommand.AddOption(limitOption);
+convertCommand.AddOption(diagnosticAnimationOption);
+convertCommand.SetHandler((InvocationContext ctx) =>
+{
+    FileInfo file = ctx.ParseResult.GetValueForArgument(convertFileArgument);
+    DirectoryInfo? output = ctx.ParseResult.GetValueForOption(outputOption);
+    if (output is null)
     {
-        static int Main(string[] args)
+        Console.Error.WriteLine("missing required option: --output");
+        ctx.ExitCode = CliConventions.ExitFatal;
+        return;
+    }
+
+    string format = ctx.ParseResult.GetValueForOption(formatOption) ?? "dae";
+    int? animationIndex = ctx.ParseResult.GetValueForOption(animationIndexOption);
+    bool consolidateAnimations = ctx.ParseResult.GetValueForOption(consolidateAnimationsOption);
+    int? limit = ctx.ParseResult.GetValueForOption(limitOption);
+    bool diagAnim = ctx.ParseResult.GetValueForOption(diagnosticAnimationOption);
+    ctx.ExitCode = RunFatalSafe(() => RunWithAnimationDiagnostics(diagAnim, () => ConvertHandler(file, output, format, animationIndex, consolidateAnimations, limit)));
+});
+
+var batchCommand = new Command("batch", "Batch-convert files from a directory.");
+batchCommand.AddArgument(batchInputArgument);
+batchCommand.AddOption(outputOption);
+batchCommand.AddOption(formatOption);
+batchCommand.AddOption(animationIndexOption);
+batchCommand.AddOption(consolidateAnimationsOption);
+batchCommand.AddOption(limitOption);
+batchCommand.AddOption(diagnosticAnimationOption);
+batchCommand.SetHandler((InvocationContext ctx) =>
+{
+    DirectoryInfo inputDir = ctx.ParseResult.GetValueForArgument(batchInputArgument);
+    DirectoryInfo? output = ctx.ParseResult.GetValueForOption(outputOption);
+    if (output is null)
+    {
+        Console.Error.WriteLine("missing required option: --output");
+        ctx.ExitCode = CliConventions.ExitFatal;
+        return;
+    }
+
+    string format = ctx.ParseResult.GetValueForOption(formatOption) ?? "dae";
+    int? animationIndex = ctx.ParseResult.GetValueForOption(animationIndexOption);
+    bool consolidateAnimations = ctx.ParseResult.GetValueForOption(consolidateAnimationsOption);
+    int? limit = ctx.ParseResult.GetValueForOption(limitOption);
+    bool diagAnim = ctx.ParseResult.GetValueForOption(diagnosticAnimationOption);
+    ctx.ExitCode = RunFatalSafe(() => RunWithAnimationDiagnostics(diagAnim, () => BatchHandler(inputDir, output, format, animationIndex, consolidateAnimations, limit)));
+});
+
+var diagnoseCommand = new Command("diagnose", "Inspect container entries and detected content types.");
+diagnoseCommand.AddArgument(diagnoseFileArgument);
+diagnoseCommand.AddOption(startOption);
+diagnoseCommand.AddOption(endOption);
+diagnoseCommand.SetHandler((InvocationContext ctx) =>
+{
+    FileInfo file = ctx.ParseResult.GetValueForArgument(diagnoseFileArgument);
+    int start = ctx.ParseResult.GetValueForOption(startOption);
+    int end = ctx.ParseResult.GetValueForOption(endOption);
+    ctx.ExitCode = RunFatalSafe(() => DiagnoseHandler(file, start, end));
+});
+
+rootCommand.AddCommand(infoCommand);
+rootCommand.AddCommand(convertCommand);
+rootCommand.AddCommand(batchCommand);
+rootCommand.AddCommand(diagnoseCommand);
+
+return await rootCommand.InvokeAsync(args);
+
+static int RunFatalSafe(Func<int> action)
+{
+    try
+    {
+        return action();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"fatal: {ex.Message}");
+        return CliConventions.ExitFatal;
+    }
+}
+
+static int RunWithAnimationDiagnostics(bool enabled, Func<int> action)
+{
+    bool previousDae = DAE.DiagnosticLogging;
+    bool previousGfModel = GfModel.DiagnosticLogging;
+
+    DAE.DiagnosticLogging = enabled;
+    GfModel.DiagnosticLogging = enabled;
+
+    try
+    {
+        return action();
+    }
+    finally
+    {
+        DAE.DiagnosticLogging = previousDae;
+        GfModel.DiagnosticLogging = previousGfModel;
+    }
+}
+
+static int InfoHandler(FileInfo file)
+{
+    if (!file.Exists)
+    {
+        Console.Error.WriteLine($"missing file: {file.FullName}");
+        return CliConventions.ExitFatal;
+    }
+
+    FileIO.LoadedFile loaded = FileIO.load(file.FullName);
+    Console.WriteLine($"file={file.FullName}");
+    Console.WriteLine($"detectedType={loaded.type}");
+
+    if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup modelGroup)
+    {
+        WriteModelGroupSummary(modelGroup);
+        return 0;
+    }
+
+    if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
+    {
+        try
         {
-            var rootCommand = new RootCommand("OhanaCli - Pokemon 3DS model extraction tool");
+            Console.WriteLine($"entries={container.content.Count}");
+            int inspected = 0;
+            int modelEntries = 0;
+            int imageEntries = 0;
+            int textureEntries = 0;
+            int animEntries = 0;
 
-            // --- info command ---
-            var infoFileArg = new Argument<string>("file", "Path to the file to inspect");
-            var infoCommand = new Command("info", "Display format information about a file") { infoFileArg };
-            infoCommand.SetHandler((string file) => RunInfo(file), infoFileArg);
-            rootCommand.AddCommand(infoCommand);
-
-            // --- convert command ---
-            var convertFileArg = new Argument<string>("file", "Path to the file to convert");
-            var convertOutOpt = new Option<string>(new[] { "-o", "--output" }, "Output directory") { IsRequired = true };
-            var convertFmtOpt = new Option<string>(new[] { "-f", "--format" }, () => "dae", "Output format (dae or obj)");
-            var convertAnimOpt = new Option<int>(new[] { "-a", "--anim" }, () => -1, "Skeletal animation index (-1 = none)");
-            var convertDiagOpt = new Option<bool>("--diag", "Enable GfModel diagnostic logging");
-            var convertLimitOpt = new Option<int>(new[] { "-n", "--limit" }, () => -1, "Max container entries to process (-1 = all)");
-            var convertCommand = new Command("convert", "Convert a file to DAE or OBJ")
+            for (int i = 0; i < container.content.Count; i++)
             {
-                convertFileArg, convertOutOpt, convertFmtOpt, convertAnimOpt, convertDiagOpt, convertLimitOpt
-            };
-            convertCommand.SetHandler(
-                (string file, string output, string format, int anim, bool diag, int limit) =>
-                    RunConvert(file, output, format, anim, diag, limit),
-                convertFileArg, convertOutOpt, convertFmtOpt, convertAnimOpt, convertDiagOpt, convertLimitOpt);
-            rootCommand.AddCommand(convertCommand);
+                byte[] entryData = ReadEntryData(container, container.content[i]);
+                if (entryData.Length == 0)
+                {
+                    continue;
+                }
 
-            // --- batch command ---
-            var batchDirArg = new Argument<string>("inputDir", "Directory containing files to convert");
-            var batchOutOpt = new Option<string>(new[] { "-o", "--output" }, "Output directory") { IsRequired = true };
-            var batchFmtOpt = new Option<string>(new[] { "-f", "--format" }, () => "dae", "Output format (dae or obj)");
-            var batchCommand = new Command("batch", "Batch convert all files in a directory")
-            {
-                batchDirArg, batchOutOpt, batchFmtOpt
-            };
-            batchCommand.SetHandler(
-                (string inputDir, string output, string format) => RunBatch(inputDir, output, format),
-                batchDirArg, batchOutOpt, batchFmtOpt);
-            rootCommand.AddCommand(batchCommand);
+                FileIO.LoadedFile entryLoaded = FileIO.load(new MemoryStream(entryData));
+                inspected++;
+                if (entryLoaded.type == FileIO.formatType.model) modelEntries++;
+                if (entryLoaded.type == FileIO.formatType.image) imageEntries++;
+                if (entryLoaded.type == FileIO.formatType.texture) textureEntries++;
+                if (entryLoaded.type == FileIO.formatType.anims) animEntries++;
+            }
 
-            // --- convert-all command ---
-            var convertAllDirArg = new Argument<string>("garcDir", "Directory containing .garc files");
-            var convertAllOutOpt = new Option<string>(new[] { "-o", "--output" }, "Output directory") { IsRequired = true };
-            var convertAllFmtOpt = new Option<string>(new[] { "-f", "--format" }, () => "dae", "Output format (dae or obj)");
-            var convertAllCommand = new Command("convert-all", "Mass-extract all GARC files in a directory")
-            {
-                convertAllDirArg, convertAllOutOpt, convertAllFmtOpt
-            };
-            convertAllCommand.SetHandler(
-                (string garcDir, string output, string format) => RunConvertAll(garcDir, output, format),
-                convertAllDirArg, convertAllOutOpt, convertAllFmtOpt);
-            rootCommand.AddCommand(convertAllCommand);
-
-            // --- diagnose command ---
-            var diagFileArg = new Argument<string>("file", "Path to the GARC file to diagnose");
-            var diagStartOpt = new Option<int>("--start", () => 0, "Start entry index");
-            var diagEndOpt = new Option<int>("--end", () => -1, "End entry index (-1 = last)");
-            var diagnoseCommand = new Command("diagnose", "Hex dump and analyze GARC entries")
-            {
-                diagFileArg, diagStartOpt, diagEndOpt
-            };
-            diagnoseCommand.SetHandler(
-                (string file, int start, int end) => RunDiagnose(file, start, end),
-                diagFileArg, diagStartOpt, diagEndOpt);
-            rootCommand.AddCommand(diagnoseCommand);
-
-            return rootCommand.Invoke(args);
+            Console.WriteLine($"inspected={inspected} modelEntries={modelEntries} imageEntries={imageEntries} textureEntries={textureEntries} animEntries={animEntries}");
+        }
+        finally
+        {
+            container.data?.Dispose();
         }
 
-        // =========================================================
-        // info
-        // =========================================================
-        static void RunInfo(string filePath)
+        return 0;
+    }
+
+    if (loaded.type == FileIO.formatType.image && loaded.data is RenderBase.OTexture texture)
+    {
+        Console.WriteLine($"texture=1 name={texture.name}");
+        return 0;
+    }
+
+    if (loaded.type == FileIO.formatType.texture && loaded.data is List<RenderBase.OTexture> textures)
+    {
+        Console.WriteLine($"textureListCount={textures.Count}");
+        return 0;
+    }
+
+    if (loaded.type == FileIO.formatType.anims)
+    {
+        Console.WriteLine("animationData=1");
+        return 0;
+    }
+
+    Console.Error.WriteLine("unsupported input file for info");
+    return CliConventions.ExitFatal;
+}
+
+static int ConvertHandler(FileInfo file, DirectoryInfo outputDir, string format, int? animationIndex, bool consolidateAnimations, int? limit)
+{
+    if (!file.Exists)
+    {
+        Console.Error.WriteLine($"missing file: {file.FullName}");
+        return CliConventions.ExitFatal;
+    }
+
+    if (!TryNormalizeFormat(format, out string normalizedFormat))
+    {
+        Console.Error.WriteLine($"unsupported format: {format}. expected: dae or obj");
+        return CliConventions.ExitFatal;
+    }
+
+    if (limit.HasValue && limit.Value <= 0)
+    {
+        Console.Error.WriteLine("limit must be > 0 when provided");
+        return CliConventions.ExitFatal;
+    }
+
+    Directory.CreateDirectory(outputDir.FullName);
+
+    FileIO.LoadedFile loaded = FileIO.load(file.FullName);
+    string baseName = Path.GetFileNameWithoutExtension(file.Name);
+
+    if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup modelGroup)
+    {
+        string folderPath = Path.Combine(outputDir.FullName, SanitizeName(baseName));
+        ExportStats stats = ExportModelGroup(modelGroup, folderPath, normalizedFormat, animationIndex, consolidateAnimations);
+        Console.WriteLine($"convert summary: groupsTotal=1 groupsSucceeded=1 groupsFailed=0 models={stats.Models} textures={stats.Textures} clipsFound={stats.ClipsFound} clipsExported={stats.ClipsExported} clipsSkipped={stats.ClipsSkipped} out={folderPath}");
+        if (stats.Models > 0)
         {
-            if (!File.Exists(filePath))
-            {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                return;
-            }
-
-            Console.WriteLine($"File: {filePath}");
-            Console.WriteLine($"Size: {new FileInfo(filePath).Length:N0} bytes");
-
-            FileIO.LoadedFile loaded = FileIO.load(filePath);
-            Console.WriteLine($"Format: {loaded.type}");
-
-            if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup models)
-            {
-                for (int m = 0; m < models.model.Count; m++)
-                {
-                    var mdl = models.model[m];
-                    Console.WriteLine($"  Model[{m}]: \"{mdl.name}\"");
-                    Console.WriteLine($"    Meshes:    {mdl.mesh.Count}");
-                    Console.WriteLine($"    Materials: {mdl.material.Count}");
-                    Console.WriteLine($"    Bones:     {mdl.skeleton.Count}");
-                }
-                Console.WriteLine($"  Textures: {models.texture.Count}");
-                Console.WriteLine($"  Skeletal animations: {models.skeletalAnimation.list.Count}");
-                Console.WriteLine($"  Material animations: {models.materialAnimation.list.Count}");
-            }
-            else if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
-            {
-                Console.WriteLine($"  Entries: {container.content.Count}");
-                for (int i = 0; i < container.content.Count; i++)
-                {
-                    try
-                    {
-                        byte[] entryData = GetEntryData(container, i);
-                        string ext = FileIO.getExtension(entryData);
-                        Console.WriteLine($"    [{i}] {entryData.Length:N0} bytes  {ext}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"    [{i}] error: {ex.Message}");
-                    }
-                }
-            }
-            else if (loaded.type == FileIO.formatType.image && loaded.data is RenderBase.OTexture tex)
-            {
-                Console.WriteLine($"  Texture: \"{tex.name}\" {tex.texture.Width}x{tex.texture.Height}");
-            }
-            else if (loaded.type == FileIO.formatType.texture && loaded.data is RenderBase.OModelGroup texGroup)
-            {
-                Console.WriteLine($"  Textures: {texGroup.texture.Count}");
-                foreach (var t in texGroup.texture)
-                    Console.WriteLine($"    \"{t.name}\" {t.texture.Width}x{t.texture.Height}");
-            }
-            else if (loaded.type == FileIO.formatType.unsupported)
-            {
-                Console.Error.WriteLine("  Unsupported format.");
-            }
+            return CliConventions.ExitSuccess;
         }
 
-        // =========================================================
-        // convert
-        // =========================================================
-        static void RunConvert(string filePath, string outDir, string format, int animIndex, bool diag, int entryLimit = -1)
+        return stats.Textures > 0 ? CliConventions.ExitPartial : CliConventions.ExitFatal;
+    }
+
+    if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
+    {
+        try
         {
-            if (!File.Exists(filePath))
+            GroupingOutcome grouping = GroupContainerEntries(container, limit);
+            List<GroupedEntry> groups = grouping.Groups;
+            if (groups.Count == 0)
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                return;
+                Console.Error.WriteLine("no exportable model groups found in container");
+                return CliConventions.ExitFatal;
             }
 
-            GfModel.DiagnosticLogging = diag;
-            Directory.CreateDirectory(outDir);
+            int groupsSucceeded = 0;
+            int groupsFailed = 0;
+            int modelTotal = 0;
+            int textureTotal = 0;
+            int clipsFoundTotal = 0;
+            int clipsExportedTotal = 0;
+            int clipsSkippedTotal = 0;
+            string containerRoot = Path.Combine(outputDir.FullName, SanitizeName(baseName));
+            Directory.CreateDirectory(containerRoot);
 
-            FileIO.LoadedFile loaded = FileIO.load(filePath);
-            string baseName = Path.GetFileNameWithoutExtension(filePath);
-
-            if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup models)
+            for (int i = 0; i < groups.Count; i++)
             {
-                ExportModelGroup(models, outDir, baseName, format, animIndex);
-            }
-            else if (loaded.type == FileIO.formatType.texture && loaded.data is RenderBase.OModelGroup texGroup)
-            {
-                ExportTextures(texGroup.texture, outDir);
-            }
-            else if (loaded.type == FileIO.formatType.image && loaded.data is RenderBase.OTexture tex)
-            {
-                string texPath = Path.Combine(outDir, tex.name + ".png");
-                tex.texture.Save(texPath, ImageFormat.Png);
-                Console.WriteLine($"  Texture: {texPath}");
-            }
-            else if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
-            {
-                int maxEntries = entryLimit > 0 ? Math.Min(entryLimit, container.content.Count) : container.content.Count;
-                Console.WriteLine($"  Container with {container.content.Count} entries. Processing {maxEntries}...");
-
-                // Streaming grouping: merge trailing texture/animation entries into preceding model
-                RenderBase.OModelGroup? currentModel = null;
-                int modelEntryIndex = -1;
-
-                for (int i = 0; i < maxEntries; i++)
-                {
-                    try
-                    {
-                        byte[] entryBytes = GetEntryData(container, i);
-                        FileIO.LoadedFile entry = FileIO.load(new MemoryStream(entryBytes));
-
-                        if (entry.type == FileIO.formatType.model && entry.data is RenderBase.OModelGroup entryModels)
-                        {
-                            bool hasMeshes = false;
-                            foreach (var m in entryModels.model)
-                                if (m.mesh.Count > 0) { hasMeshes = true; break; }
-
-                            if (hasMeshes)
-                            {
-                                // New model with geometry — flush previous
-                                if (currentModel != null)
-                                {
-                                    string prevDir = Path.Combine(outDir, $"entry_{modelEntryIndex}");
-                                    ExportModelGroup(currentModel, prevDir, $"entry_{modelEntryIndex}", format, animIndex);
-                                }
-                                currentModel = entryModels;
-                                modelEntryIndex = i;
-                            }
-                            else if (currentModel != null)
-                            {
-                                // Animation-only model entry — merge animations + textures into preceding model
-                                foreach (var a in entryModels.skeletalAnimation.list)
-                                    currentModel.skeletalAnimation.list.Add(a);
-                                foreach (var t in entryModels.texture)
-                                    currentModel.texture.Add(t);
-                            }
-                        }
-                        else if (entry.type == FileIO.formatType.texture && entry.data is RenderBase.OModelGroup entryTex)
-                        {
-                            if (currentModel != null)
-                            {
-                                foreach (var t in entryTex.texture)
-                                    currentModel.texture.Add(t);
-                            }
-                            else
-                            {
-                                string entryDir = Path.Combine(outDir, $"entry_{i}");
-                                ExportTextures(entryTex.texture, entryDir);
-                            }
-                        }
-                        else if (entry.type == FileIO.formatType.image && entry.data is RenderBase.OTexture entryImg)
-                        {
-                            if (currentModel != null)
-                            {
-                                currentModel.texture.Add(entryImg);
-                            }
-                            else
-                            {
-                                string entryDir = Path.Combine(outDir, $"entry_{i}");
-                                Directory.CreateDirectory(entryDir);
-                                entryImg.texture.Save(Path.Combine(entryDir, entryImg.name + ".png"), ImageFormat.Png);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"  Entry[{i}] error: {ex.Message}");
-                    }
-                }
-
-                // Flush final model group
-                if (currentModel != null)
-                {
-                    string finalDir = Path.Combine(outDir, $"entry_{modelEntryIndex}");
-                    ExportModelGroup(currentModel, finalDir, $"entry_{modelEntryIndex}", format, animIndex);
-                }
-            }
-            else
-            {
-                Console.Error.WriteLine($"Unsupported format: {loaded.type}");
-            }
-        }
-
-        // =========================================================
-        // batch
-        // =========================================================
-        static void RunBatch(string inputDir, string outDir, string format)
-        {
-            if (!Directory.Exists(inputDir))
-            {
-                Console.Error.WriteLine($"Directory not found: {inputDir}");
-                return;
-            }
-
-            string[] files = Directory.GetFiles(inputDir);
-            Console.WriteLine($"Batch converting {files.Length} files...");
-
-            int converted = 0, errors = 0;
-            foreach (string file in files)
-            {
-                string baseName = Path.GetFileNameWithoutExtension(file);
-                string fileOutDir = Path.Combine(outDir, baseName);
+                GroupedEntry group = groups[i];
+                string folderName = DeriveGroupFolderName(group.ModelGroup, i, group.StartEntry);
+                string folderPath = Path.Combine(containerRoot, folderName);
                 try
                 {
-                    RunConvert(file, fileOutDir, format, -1, false);
-                    converted++;
+                    ExportStats stats = ExportModelGroup(group.ModelGroup, folderPath, normalizedFormat, animationIndex, consolidateAnimations);
+                    modelTotal += stats.Models;
+                    textureTotal += stats.Textures;
+                    clipsFoundTotal += stats.ClipsFound;
+                    clipsExportedTotal += stats.ClipsExported;
+                    clipsSkippedTotal += stats.ClipsSkipped;
+                    groupsSucceeded++;
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine($"Error converting {file}: {ex.Message}");
-                    errors++;
+                    groupsFailed++;
+                    Console.Error.WriteLine($"convert group-failure: startEntry={group.StartEntry} endEntry={group.EndEntry} reason={SanitizeNote(ex.Message)}");
                 }
             }
 
-            Console.WriteLine($"Batch complete: {converted} converted, {errors} errors.");
+            Console.WriteLine($"convert summary: groupsTotal={groups.Count} groupsSucceeded={groupsSucceeded} groupsFailed={groupsFailed} models={modelTotal} textures={textureTotal} clipsFound={clipsFoundTotal} clipsExported={clipsExportedTotal} clipsSkipped={clipsSkippedTotal} out={containerRoot}");
+
+            if (grouping.LimitExcludedAnimations)
+            {
+                Console.Error.WriteLine($"warning: no skeletal animations were included because --limit={limit} ended before animation entries. Increase or remove --limit and rerun to export all clips.");
+            }
+
+            if (groupsSucceeded == 0)
+            {
+                return CliConventions.ExitFatal;
+            }
+
+            if (groupsFailed > 0 || modelTotal == 0)
+            {
+                return CliConventions.ExitPartial;
+            }
+
+            return CliConventions.ExitSuccess;
+        }
+        finally
+        {
+            container.data?.Dispose();
+        }
+    }
+
+    Console.Error.WriteLine($"unsupported input type for convert: {loaded.type}");
+    return CliConventions.ExitFatal;
+}
+
+static int BatchHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, string format, int? animationIndex, bool consolidateAnimations, int? limit)
+{
+    if (!inputDir.Exists)
+    {
+        Console.Error.WriteLine($"missing directory: {inputDir.FullName}");
+        return CliConventions.ExitFatal;
+    }
+
+    if (!TryNormalizeFormat(format, out _))
+    {
+        Console.Error.WriteLine($"unsupported format: {format}. expected: dae or obj");
+        return CliConventions.ExitFatal;
+    }
+
+    Directory.CreateDirectory(outputDir.FullName);
+
+    string[] files = Directory.GetFiles(inputDir.FullName, "*", SearchOption.AllDirectories);
+    if (files.Length == 0)
+    {
+        Console.Error.WriteLine("no files found in input directory");
+        return CliConventions.ExitFatal;
+    }
+
+    int succeeded = 0;
+    int partial = 0;
+    int fatal = 0;
+
+    for (int i = 0; i < files.Length; i++)
+    {
+        string filePath = files[i];
+        int result;
+
+        try
+        {
+            result = ConvertHandler(new FileInfo(filePath), outputDir, format, animationIndex, consolidateAnimations, limit);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"batch error: file={filePath} reason={ex.Message}");
+            result = CliConventions.ExitFatal;
         }
 
-        // =========================================================
-        // convert-all (mass GARC extraction)
-        // =========================================================
-        static void RunConvertAll(string garcDir, string outDir, string format)
+        if (result == CliConventions.ExitSuccess)
         {
-            if (!Directory.Exists(garcDir))
-            {
-                Console.Error.WriteLine($"Directory not found: {garcDir}");
-                return;
-            }
+            succeeded++;
+        }
+        else if (result == CliConventions.ExitPartial)
+        {
+            partial++;
+        }
+        else
+        {
+            fatal++;
+        }
+    }
 
-            string[] garcFiles = Directory.GetFiles(garcDir, "*.garc");
-            if (garcFiles.Length == 0)
-                garcFiles = Directory.GetFiles(garcDir); // try all files
+    int failed = partial + fatal;
+    Console.WriteLine($"batch summary: totalFiles={files.Length} succeeded={succeeded} partial={partial} fatal={fatal} failedTotal={failed}");
+    return CliConventions.AggregateExitCode(succeeded, partial, fatal);
+}
 
-            Console.WriteLine($"Processing {garcFiles.Length} files from {garcDir}...");
+static int DiagnoseHandler(FileInfo file, int start, int end)
+{
+    if (!file.Exists)
+    {
+        Console.Error.WriteLine($"missing file: {file.FullName}");
+        return CliConventions.ExitFatal;
+    }
 
-            int totalModels = 0, totalTextures = 0, totalErrors = 0;
+    if (start < 0)
+    {
+        Console.Error.WriteLine("start must be >= 0");
+        return CliConventions.ExitFatal;
+    }
 
-            foreach (string garcPath in garcFiles)
-            {
-                string garcName = Path.GetFileNameWithoutExtension(garcPath);
-                Console.WriteLine($"\n=== {garcName} ===");
+    if (end < start)
+    {
+        Console.Error.WriteLine("end must be >= start");
+        return CliConventions.ExitFatal;
+    }
 
-                try
-                {
-                    FileIO.LoadedFile loaded = FileIO.load(garcPath);
+    FileIO.LoadedFile loaded = FileIO.load(file.FullName);
+    if (loaded.type != FileIO.formatType.container || loaded.data is not OContainer container)
+    {
+        Console.Error.WriteLine("diagnose currently supports container inputs only");
+        return CliConventions.ExitFatal;
+    }
 
-                    if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
-                    {
-                        // Streaming single-pass grouping:
-                        // Track current model group + trailing textures
-                        RenderBase.OModelGroup? currentModel = null;
-                        string currentModelName = "";
-                        int modelEntryIndex = -1;
-
-                        for (int i = 0; i < container.content.Count; i++)
-                        {
-                            try
-                            {
-                                byte[] entryBytes = GetEntryData(container, i);
-                                FileIO.LoadedFile entry = FileIO.load(new MemoryStream(entryBytes));
-
-                                if (entry.type == FileIO.formatType.model && entry.data is RenderBase.OModelGroup mdl)
-                                {
-                                    // Flush previous group
-                                    if (currentModel != null)
-                                    {
-                                        FlushModelGroup(currentModel, outDir, garcName, currentModelName, modelEntryIndex, format, ref totalModels, ref totalTextures, ref totalErrors);
-                                    }
-
-                                    currentModel = mdl;
-                                    currentModelName = mdl.model.Count > 0 ? mdl.model[0].name : $"model_{i}";
-                                    modelEntryIndex = i;
-                                }
-                                else if (entry.type == FileIO.formatType.texture && entry.data is RenderBase.OModelGroup texMdl)
-                                {
-                                    // Merge textures into current model group
-                                    if (currentModel != null)
-                                    {
-                                        foreach (var tex in texMdl.texture)
-                                            currentModel.texture.Add(tex);
-                                    }
-                                }
-                                else if (entry.type == FileIO.formatType.image && entry.data is RenderBase.OTexture singleTex)
-                                {
-                                    if (currentModel != null)
-                                        currentModel.texture.Add(singleTex);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.Error.WriteLine($"  [{i}] Error: {ex.Message}");
-                                totalErrors++;
-                            }
-                        }
-
-                        // Flush final group
-                        if (currentModel != null)
-                        {
-                            FlushModelGroup(currentModel, outDir, garcName, currentModelName, modelEntryIndex, format, ref totalModels, ref totalTextures, ref totalErrors);
-                        }
-                    }
-                    else if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup directModel)
-                    {
-                        string modelDir = Path.Combine(outDir, garcName);
-                        ExportModelGroup(directModel, modelDir, garcName, format, -1);
-                        totalModels++;
-                        totalTextures += directModel.texture.Count;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"  Error loading {garcPath}: {ex.Message}");
-                    totalErrors++;
-                }
-            }
-
-            Console.WriteLine($"\n=== Summary ===");
-            Console.WriteLine($"Models exported:   {totalModels}");
-            Console.WriteLine($"Textures exported: {totalTextures}");
-            Console.WriteLine($"Errors:            {totalErrors}");
+    try
+    {
+        if (container.content.Count == 0)
+        {
+            Console.Error.WriteLine("container has no entries");
+            return CliConventions.ExitFatal;
         }
 
-        // =========================================================
-        // diagnose
-        // =========================================================
-        static void RunDiagnose(string filePath, int start, int end)
+        int maxIndex = container.content.Count - 1;
+        int startIndex = Math.Min(start, maxIndex);
+        int endIndex = Math.Min(end, maxIndex);
+
+        Console.WriteLine($"diagnose file={file.FullName}");
+        Console.WriteLine($"entries={container.content.Count} range={startIndex}-{endIndex}");
+
+        int modelEntries = 0;
+        int imageEntries = 0;
+        int textureEntries = 0;
+        int containerEntries = 0;
+        int animationEntries = 0;
+        int errorEntries = 0;
+        int totalModels = 0;
+        int totalMeshes = 0;
+        int totalTextures = 0;
+
+        for (int i = startIndex; i <= endIndex; i++)
         {
-            if (!File.Exists(filePath))
+            OContainer.fileEntry entry = container.content[i];
+            byte[] entryData = ReadEntryData(container, entry);
+
+            if (entryData.Length == 0)
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                return;
+                Console.WriteLine($"[{i}] name={entry.name} type=empty models=0 meshes=0 textures=0 segmentSummary=- notes=empty");
+                continue;
             }
 
-            FileIO.LoadedFile loaded = FileIO.load(filePath);
-
-            if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
-            {
-                if (end < 0 || end >= container.content.Count) end = container.content.Count - 1;
-
-                Console.WriteLine($"GARC: {container.content.Count} entries");
-                Console.WriteLine();
-
-                for (int i = start; i <= end; i++)
-                {
-                    byte[] data = GetEntryData(container, i);
-                    string ext = FileIO.getExtension(data);
-                    string magic = data.Length >= 4
-                        ? $"0x{data[0]:X2}{data[1]:X2}{data[2]:X2}{data[3]:X2}"
-                        : "N/A";
-
-                    Console.WriteLine($"--- Entry [{i}] ---");
-                    Console.WriteLine($"  Size:      {data.Length:N0} bytes");
-                    Console.WriteLine($"  Magic:     {magic}");
-                    Console.WriteLine($"  Extension: {ext}");
-
-                    // Try format detection
-                    try
-                    {
-                        FileIO.LoadedFile entry = FileIO.load(new MemoryStream(data));
-                        Console.WriteLine($"  Detected:  {entry.type}");
-
-                        if (entry.type == FileIO.formatType.model && entry.data is RenderBase.OModelGroup mdl)
-                        {
-                            for (int m = 0; m < mdl.model.Count; m++)
-                            {
-                                Console.WriteLine($"    Model[{m}] \"{mdl.model[m].name}\" meshes={mdl.model[m].mesh.Count} bones={mdl.model[m].skeleton.Count}");
-                            }
-                            Console.WriteLine($"    Textures: {mdl.texture.Count}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"  Parse error: {ex.Message}");
-                    }
-
-                    // Hex dump first 64 bytes
-                    int dumpLen = Math.Min(data.Length, 64);
-                    Console.Write("  Hex: ");
-                    for (int b = 0; b < dumpLen; b++)
-                    {
-                        if (b > 0 && b % 16 == 0) Console.Write("\n       ");
-                        Console.Write($"{data[b]:X2} ");
-                    }
-                    Console.WriteLine();
-                    Console.WriteLine();
-                }
-            }
-            else
-            {
-                Console.Error.WriteLine($"File is not a container (detected: {loaded.type})");
-            }
-        }
-
-        // =========================================================
-        // Helpers
-        // =========================================================
-        static void ExportModelGroup(RenderBase.OModelGroup models, string outDir, string baseName, string format, int animIndex)
-        {
-            Directory.CreateDirectory(outDir);
-
-            // Auto-export first animation when available and no explicit index given
-            int effectiveAnimIndex = animIndex;
-            if (effectiveAnimIndex == -1 && models.skeletalAnimation.list.Count > 0)
-                effectiveAnimIndex = 0;
-
-            // Export textures
-            ExportTextures(models.texture, outDir);
-
-            // Export each model
-            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            for (int m = 0; m < models.model.Count; m++)
-            {
-                string modelName = models.model[m].name ?? baseName;
-                if (string.IsNullOrEmpty(modelName)) modelName = baseName;
-
-                // Deduplicate names: append _1, _2, etc. on collision
-                string uniqueName = modelName;
-                int suffix = 1;
-                while (!usedNames.Add(uniqueName))
-                    uniqueName = $"{modelName}_{suffix++}";
-
-                string ext = format.ToLowerInvariant() == "obj" ? ".obj" : ".dae";
-                string outPath = Path.Combine(outDir, uniqueName + ext);
-
-                try
-                {
-                    if (format.ToLowerInvariant() == "obj")
-                    {
-                        OBJ.export(models, outPath, m);
-                    }
-                    else
-                    {
-                        DAE.export(models, outPath, m, effectiveAnimIndex);
-                    }
-                    string animNote = effectiveAnimIndex >= 0 ? $", anim={effectiveAnimIndex}" : "";
-                    Console.WriteLine($"  Model: {outPath} ({models.model[m].mesh.Count} meshes, {models.model[m].skeleton.Count} bones{animNote})");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"  Export error [{modelName}]: {ex.Message}");
-                }
-            }
-        }
-
-        static void ExportTextures(List<RenderBase.OTexture> textures, string outDir)
-        {
-            Directory.CreateDirectory(outDir);
-            foreach (var tex in textures)
-            {
-                try
-                {
-                    string texPath = Path.Combine(outDir, tex.name + ".png");
-                    tex.texture.Save(texPath, ImageFormat.Png);
-                    Console.WriteLine($"  Texture: {texPath} ({tex.texture.Width}x{tex.texture.Height})");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"  Texture error [{tex.name}]: {ex.Message}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Materializes a container entry's data, handling lazy-loaded GARC entries.
-        /// </summary>
-        static byte[] GetEntryData(OContainer container, int index)
-        {
-            var entry = container.content[index];
-            if (entry.data != null) return entry.data;
-
-            // Lazy-loaded from stream (GARC)
-            if (entry.loadFromDisk && container.data != null)
-            {
-                container.data.Seek(entry.fileOffset, SeekOrigin.Begin);
-                byte[] buffer = new byte[entry.fileLength];
-                container.data.Read(buffer, 0, buffer.Length);
-                return buffer;
-            }
-
-            return Array.Empty<byte>();
-        }
-
-        static void FlushModelGroup(
-            RenderBase.OModelGroup model,
-            string outDir,
-            string garcName,
-            string modelName,
-            int entryIndex,
-            string format,
-            ref int totalModels,
-            ref int totalTextures,
-            ref int totalErrors)
-        {
-            // Sanitize folder name
-            string safeName = modelName;
-            foreach (char c in Path.GetInvalidFileNameChars())
-                safeName = safeName.Replace(c, '_');
-            if (string.IsNullOrWhiteSpace(safeName)) safeName = $"entry_{entryIndex}";
-
-            string modelDir = Path.Combine(outDir, garcName, safeName);
+            FileIO.LoadedFile entryLoaded;
             try
             {
-                ExportModelGroup(model, modelDir, safeName, format, -1);
-                totalModels++;
-                totalTextures += model.texture.Count;
+                entryLoaded = FileIO.load(new MemoryStream(entryData));
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"  Flush error [{safeName}]: {ex.Message}");
-                totalErrors++;
+                errorEntries++;
+                Console.WriteLine($"[{i}] name={entry.name} type=error models=0 meshes=0 textures=0 segmentSummary=- notes={SanitizeNote(ex.Message)}");
+                continue;
             }
+
+            EntryDiagnostics diagnostics = BuildEntryDiagnostics(entryLoaded);
+            if (entryLoaded.type == FileIO.formatType.model) modelEntries++;
+            if (entryLoaded.type == FileIO.formatType.image) imageEntries++;
+            if (entryLoaded.type == FileIO.formatType.texture) textureEntries++;
+            if (entryLoaded.type == FileIO.formatType.container) containerEntries++;
+            if (entryLoaded.type == FileIO.formatType.anims) animationEntries++;
+
+            totalModels += diagnostics.ModelCount;
+            totalMeshes += diagnostics.MeshCount;
+            totalTextures += diagnostics.TextureCount;
+
+            Console.WriteLine(
+                $"[{i}] name={entry.name} type={entryLoaded.type} models={diagnostics.ModelCount} meshes={diagnostics.MeshCount} textures={diagnostics.TextureCount} segmentSummary={diagnostics.SegmentSummary} notes={diagnostics.Note}");
+        }
+
+        Console.WriteLine($"diagnose summary: inspected={endIndex - startIndex + 1} modelEntries={modelEntries} imageEntries={imageEntries} textureEntries={textureEntries} containerEntries={containerEntries} animationEntries={animationEntries} errorEntries={errorEntries} totalModels={totalModels} totalMeshes={totalMeshes} totalTextures={totalTextures}");
+    }
+    finally
+    {
+        container.data?.Dispose();
+    }
+
+    return CliConventions.ExitSuccess;
+}
+
+static GroupingOutcome GroupContainerEntries(OContainer container, int? limit)
+{
+    int entryCount = container.content.Count;
+    int max = limit.HasValue ? Math.Min(entryCount, limit.Value) : entryCount;
+    List<GroupedEntry> groups = new List<GroupedEntry>();
+
+    GroupedEntry? current = null;
+    RenderBase.OModelGroup pendingPrefix = new RenderBase.OModelGroup();
+
+    for (int i = 0; i < max; i++)
+    {
+        OContainer.fileEntry entry = container.content[i];
+        byte[] entryData = ReadEntryData(container, entry);
+        if (entryData.Length == 0)
+        {
+            continue;
+        }
+
+        FileIO.LoadedFile loaded;
+        try
+        {
+            loaded = FileIO.load(new MemoryStream(entryData));
+        }
+        catch
+        {
+            continue;
+        }
+
+        RenderBase.OModelGroup part = BuildModelGroupFromLoaded(loaded, 0);
+        if (part.model.Count == 0 && part.texture.Count == 0 && part.skeletalAnimation.list.Count == 0)
+        {
+            continue;
+        }
+
+        int meshCount = CountMeshes(part);
+        bool hasModels = part.model.Count > 0;
+        bool hasMeshes = meshCount > 0;
+
+        if (hasModels && hasMeshes)
+        {
+            if (current is not null)
+            {
+                DeduplicateTextures(current.ModelGroup);
+                groups.Add(current);
+            }
+
+            if (pendingPrefix.model.Count > 0 || pendingPrefix.texture.Count > 0 || pendingPrefix.skeletalAnimation.list.Count > 0)
+            {
+                part.merge(pendingPrefix);
+                pendingPrefix = new RenderBase.OModelGroup();
+            }
+
+            current = new GroupedEntry
+            {
+                StartEntry = i,
+                EndEntry = i,
+                ModelGroup = part
+            };
+            continue;
+        }
+
+        if (current is not null)
+        {
+            current.ModelGroup.merge(part);
+            current.EndEntry = i;
+        }
+        else
+        {
+            pendingPrefix.merge(part);
         }
     }
+
+    if (current is not null)
+    {
+        DeduplicateTextures(current.ModelGroup);
+        groups.Add(current);
+    }
+
+    bool limitExcludedAnimations = false;
+    if (limit.HasValue && max < entryCount)
+    {
+        int groupedClipCount = groups.Sum(static g => g.ModelGroup.skeletalAnimation.list.OfType<RenderBase.OSkeletalAnimation>().Count());
+        if (groupedClipCount == 0)
+        {
+            limitExcludedAnimations = DetectAnimationBeyondLimit(container, max);
+        }
+    }
+
+    return new GroupingOutcome
+    {
+        Groups = groups,
+        LimitExcludedAnimations = limitExcludedAnimations
+    };
+}
+
+static bool DetectAnimationBeyondLimit(OContainer container, int startIndex)
+{
+    for (int i = startIndex; i < container.content.Count; i++)
+    {
+        OContainer.fileEntry entry = container.content[i];
+        byte[] entryData = ReadEntryData(container, entry);
+        if (entryData.Length == 0)
+        {
+            continue;
+        }
+
+        FileIO.LoadedFile loaded;
+        try
+        {
+            loaded = FileIO.load(new MemoryStream(entryData));
+        }
+        catch
+        {
+            continue;
+        }
+
+        if (loaded.type == FileIO.formatType.anims)
+        {
+            return true;
+        }
+
+        RenderBase.OModelGroup group = BuildModelGroupFromLoaded(loaded, 0);
+        if (group.skeletalAnimation.list.OfType<RenderBase.OSkeletalAnimation>().Any())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static RenderBase.OModelGroup BuildModelGroupFromLoaded(FileIO.LoadedFile loaded, int depth)
+{
+    const int maxDepth = 3;
+    RenderBase.OModelGroup output = new RenderBase.OModelGroup();
+
+    if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup modelGroup)
+    {
+        output.merge(modelGroup);
+        return output;
+    }
+
+    if (loaded.type == FileIO.formatType.image && loaded.data is RenderBase.OTexture texture)
+    {
+        output.texture.Add(texture);
+        return output;
+    }
+
+    if (loaded.type == FileIO.formatType.texture && loaded.data is List<RenderBase.OTexture> textures)
+    {
+        output.texture.AddRange(textures);
+        return output;
+    }
+
+    if (loaded.type == FileIO.formatType.anims && loaded.data is RenderBase.OSkeletalAnimation animation)
+    {
+        output.skeletalAnimation.list.Add(animation);
+        return output;
+    }
+
+    if (loaded.type == FileIO.formatType.anims && loaded.data is List<RenderBase.OSkeletalAnimation> animations)
+    {
+        for (int i = 0; i < animations.Count; i++)
+        {
+            output.skeletalAnimation.list.Add(animations[i]);
+        }
+
+        return output;
+    }
+
+    if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container && depth < maxDepth)
+    {
+        try
+        {
+            for (int i = 0; i < container.content.Count; i++)
+            {
+                byte[] nestedData = ReadEntryData(container, container.content[i]);
+                if (nestedData.Length == 0)
+                {
+                    continue;
+                }
+
+                FileIO.LoadedFile nestedLoaded;
+                try
+                {
+                    nestedLoaded = FileIO.load(new MemoryStream(nestedData));
+                }
+                catch
+                {
+                    continue;
+                }
+
+                RenderBase.OModelGroup nestedGroup = BuildModelGroupFromLoaded(nestedLoaded, depth + 1);
+                output.merge(nestedGroup);
+            }
+        }
+        finally
+        {
+            container.data?.Dispose();
+        }
+    }
+
+    return output;
+}
+
+static ExportStats ExportModelGroup(RenderBase.OModelGroup modelGroup, string outputDir, string format, int? animationIndex, bool consolidateAnimations)
+{
+    Directory.CreateDirectory(outputDir);
+    DeduplicateTextures(modelGroup);
+
+    int writtenTextures = WriteTextures(modelGroup, outputDir);
+    int writtenModels = 0;
+    int clipsFound = modelGroup.skeletalAnimation.list.OfType<RenderBase.OSkeletalAnimation>().Count();
+    int clipsExported = 0;
+    int clipsSkipped = 0;
+
+    List<int> clipIndicesToExport = new List<int>();
+    bool exportConsolidatedAnimations = false;
+    if (format == "dae")
+    {
+        if (animationIndex.HasValue)
+        {
+            if (animationIndex.Value >= 0 && animationIndex.Value < clipsFound)
+            {
+                clipIndicesToExport.Add(animationIndex.Value);
+                clipsExported = 1;
+                clipsSkipped = clipsFound - 1;
+            }
+            else
+            {
+                clipsSkipped = clipsFound;
+                Console.Error.WriteLine($"warning: animation index {animationIndex.Value} is out of range (clipsFound={clipsFound}); exporting static DAE without animation.");
+            }
+        }
+        else if (consolidateAnimations)
+        {
+            exportConsolidatedAnimations = true;
+            clipsExported = clipsFound;
+        }
+        else
+        {
+            for (int i = 0; i < clipsFound; i++)
+            {
+                clipIndicesToExport.Add(i);
+            }
+
+            clipsExported = clipsFound;
+        }
+    }
+    else
+    {
+        clipsSkipped = clipsFound;
+    }
+
+    HashSet<string> usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    for (int i = 0; i < modelGroup.model.Count; i++)
+    {
+        RenderBase.OModel model = modelGroup.model[i];
+        if (model.mesh.Count == 0)
+        {
+            continue;
+        }
+
+        string baseName = string.IsNullOrWhiteSpace(model.name) ? $"model_{i}" : SanitizeName(model.name);
+        string uniqueName = EnsureUniqueName(baseName, usedNames);
+
+        if (format == "dae")
+        {
+            if (animationIndex.HasValue)
+            {
+                string modelPath = Path.Combine(outputDir, $"{uniqueName}.{format}");
+                int selectedAnimation = clipIndicesToExport.Count > 0 ? clipIndicesToExport[0] : -1;
+                DAE.export(modelGroup, modelPath, i, selectedAnimation);
+                writtenModels++;
+            }
+            else if (exportConsolidatedAnimations)
+            {
+                string modelPath = Path.Combine(outputDir, $"{uniqueName}.{format}");
+                DAE.export(modelGroup, modelPath, i, -1, includeAllSkeletalAnimations: true);
+                writtenModels++;
+            }
+            else if (clipIndicesToExport.Count > 0)
+            {
+                for (int clipIdx = 0; clipIdx < clipIndicesToExport.Count; clipIdx++)
+                {
+                    int selectedAnimation = clipIndicesToExport[clipIdx];
+                    string modelPath = Path.Combine(outputDir, $"{uniqueName}.anim_{selectedAnimation:D3}.{format}");
+                    DAE.export(modelGroup, modelPath, i, selectedAnimation);
+                    writtenModels++;
+                }
+            }
+            else
+            {
+                string modelPath = Path.Combine(outputDir, $"{uniqueName}.{format}");
+                DAE.export(modelGroup, modelPath, i, -1);
+                writtenModels++;
+            }
+        }
+        else
+        {
+            string modelPath = Path.Combine(outputDir, $"{uniqueName}.{format}");
+            OBJ.export(modelGroup, modelPath, i);
+            writtenModels++;
+        }
+    }
+
+    return new ExportStats(writtenModels, writtenTextures, clipsFound, clipsExported, clipsSkipped);
+}
+
+static int WriteTextures(RenderBase.OModelGroup modelGroup, string outputDir)
+{
+    int count = 0;
+    HashSet<string> usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    for (int i = 0; i < modelGroup.texture.Count; i++)
+    {
+        RenderBase.OTexture texture = modelGroup.texture[i];
+        if (texture == null || texture.texture == null)
+        {
+            continue;
+        }
+
+        string baseName = string.IsNullOrWhiteSpace(texture.name) ? $"texture_{i}" : SanitizeName(texture.name);
+        string uniqueName = EnsureUniqueName(baseName, usedNames);
+        string path = Path.Combine(outputDir, uniqueName + ".png");
+
+        texture.texture.Save(path, ImageFormat.Png);
+        count++;
+    }
+
+    return count;
+}
+
+static void DeduplicateTextures(RenderBase.OModelGroup modelGroup)
+{
+    HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    List<RenderBase.OTexture> deduped = new List<RenderBase.OTexture>();
+
+    for (int i = 0; i < modelGroup.texture.Count; i++)
+    {
+        RenderBase.OTexture texture = modelGroup.texture[i];
+        if (texture == null)
+        {
+            continue;
+        }
+
+        string key = string.IsNullOrWhiteSpace(texture.name) ? $"__null_{i}" : texture.name;
+        if (seen.Add(key))
+        {
+            deduped.Add(texture);
+        }
+    }
+
+    modelGroup.texture = deduped;
+}
+
+static byte[] ReadEntryData(OContainer container, OContainer.fileEntry entry)
+{
+    if (!entry.loadFromDisk)
+    {
+        return entry.data ?? Array.Empty<byte>();
+    }
+
+    if (container.data == null)
+    {
+        return Array.Empty<byte>();
+    }
+
+    if (!container.data.CanSeek || !container.data.CanRead)
+    {
+        return Array.Empty<byte>();
+    }
+
+    if (entry.fileLength == 0)
+    {
+        return Array.Empty<byte>();
+    }
+
+    if (entry.fileLength > int.MaxValue)
+    {
+        throw new InvalidDataException("entry too large to read into memory");
+    }
+
+    byte[] buffer = new byte[(int)entry.fileLength];
+    long originalPosition = container.data.Position;
+
+    try
+    {
+        container.data.Seek(entry.fileOffset, SeekOrigin.Begin);
+
+        int totalRead = 0;
+        while (totalRead < buffer.Length)
+        {
+            int read = container.data.Read(buffer, totalRead, buffer.Length - totalRead);
+            if (read == 0)
+            {
+                break;
+            }
+
+            totalRead += read;
+        }
+
+        if (totalRead == buffer.Length)
+        {
+            return buffer;
+        }
+
+        byte[] resized = new byte[totalRead];
+        Buffer.BlockCopy(buffer, 0, resized, 0, totalRead);
+        return resized;
+    }
+    finally
+    {
+        container.data.Seek(originalPosition, SeekOrigin.Begin);
+    }
+}
+
+static EntryDiagnostics BuildEntryDiagnostics(FileIO.LoadedFile loaded)
+{
+    EntryDiagnostics diagnostics = new EntryDiagnostics
+    {
+        SegmentSummary = "-",
+        Note = "-"
+    };
+
+    if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup modelGroup)
+    {
+        diagnostics.ModelCount = modelGroup.model.Count;
+        diagnostics.MeshCount = CountMeshes(modelGroup);
+        diagnostics.TextureCount = modelGroup.texture.Count;
+
+        List<RenderBase.OSkeletalAnimation> skeletalAnimations = modelGroup.skeletalAnimation.list
+            .OfType<RenderBase.OSkeletalAnimation>()
+            .ToList();
+
+        if (skeletalAnimations.Count > 0)
+        {
+            int eulerBones = 0;
+            int axisAngleBones = 0;
+            int frameFormatBones = 0;
+            int fullBakedBones = 0;
+
+            foreach (RenderBase.OSkeletalAnimation animation in skeletalAnimations)
+            {
+                foreach (RenderBase.OSkeletalAnimationBone bone in animation.bone)
+                {
+                    if (!bone.isFrameFormat && !bone.isFullBakedFormat) eulerBones++;
+                    if (bone.isAxisAngle) axisAngleBones++;
+                    if (bone.isFrameFormat) frameFormatBones++;
+                    if (bone.isFullBakedFormat) fullBakedBones++;
+                }
+            }
+
+            diagnostics.SegmentSummary = $"euler={eulerBones},quaternion={frameFormatBones},matrix={fullBakedBones},axisAngle={axisAngleBones}";
+            diagnostics.Note = $"skelAnims={skeletalAnimations.Count};axisAngleBones={axisAngleBones};frameBones={frameFormatBones};bakedBones={fullBakedBones}";
+        }
+
+        return diagnostics;
+    }
+
+    if (loaded.type == FileIO.formatType.image && loaded.data is RenderBase.OTexture)
+    {
+        diagnostics.TextureCount = 1;
+        return diagnostics;
+    }
+
+    if (loaded.type == FileIO.formatType.texture && loaded.data is List<RenderBase.OTexture> textures)
+    {
+        diagnostics.TextureCount = textures.Count;
+        return diagnostics;
+    }
+
+    if (loaded.type == FileIO.formatType.container && loaded.data is OContainer container)
+    {
+        diagnostics.Note = $"nestedEntries={container.content.Count}";
+        return diagnostics;
+    }
+
+    if (loaded.type == FileIO.formatType.anims && loaded.data is RenderBase.OSkeletalAnimation skeletalAnimation)
+    {
+        int eulerBones = 0;
+        int axisAngleBones = 0;
+        int frameFormatBones = 0;
+        int fullBakedBones = 0;
+        foreach (RenderBase.OSkeletalAnimationBone bone in skeletalAnimation.bone)
+        {
+            if (!bone.isFrameFormat && !bone.isFullBakedFormat) eulerBones++;
+            if (bone.isAxisAngle) axisAngleBones++;
+            if (bone.isFrameFormat) frameFormatBones++;
+            if (bone.isFullBakedFormat) fullBakedBones++;
+        }
+
+        diagnostics.SegmentSummary = $"euler={eulerBones},quaternion={frameFormatBones},matrix={fullBakedBones},axisAngle={axisAngleBones}";
+        diagnostics.Note = "animationPayload";
+    }
+
+    return diagnostics;
+}
+
+static int CountMeshes(RenderBase.OModelGroup modelGroup)
+{
+    int meshCount = 0;
+    for (int i = 0; i < modelGroup.model.Count; i++)
+    {
+        meshCount += modelGroup.model[i].mesh.Count;
+    }
+
+    return meshCount;
+}
+
+static void WriteModelGroupSummary(RenderBase.OModelGroup modelGroup)
+{
+    int modelCount = modelGroup.model.Count;
+    int meshCount = CountMeshes(modelGroup);
+    int textureCount = modelGroup.texture.Count;
+    int boneCount = 0;
+
+    for (int i = 0; i < modelGroup.model.Count; i++)
+    {
+        boneCount += modelGroup.model[i].skeleton.Count;
+    }
+
+    int skeletalAnimationCount = modelGroup.skeletalAnimation.list.OfType<RenderBase.OSkeletalAnimation>().Count();
+    Console.WriteLine($"models={modelCount} meshes={meshCount} textures={textureCount} bones={boneCount} skeletalAnimations={skeletalAnimationCount}");
+}
+
+static string DeriveGroupFolderName(RenderBase.OModelGroup modelGroup, int groupIndex, int startEntry)
+{
+    string modelName = modelGroup.model.FirstOrDefault(m => m.mesh.Count > 0)?.name ?? string.Empty;
+    if (!string.IsNullOrWhiteSpace(modelName))
+    {
+        return $"{groupIndex:D4}_{SanitizeName(modelName)}";
+    }
+
+    string textureName = modelGroup.texture.FirstOrDefault()?.name ?? string.Empty;
+    if (!string.IsNullOrWhiteSpace(textureName))
+    {
+        return $"{groupIndex:D4}_{SanitizeName(textureName)}";
+    }
+
+    return $"{groupIndex:D4}_entry_{startEntry:D5}";
+}
+
+static string EnsureUniqueName(string baseName, HashSet<string> usedNames)
+{
+    string candidate = baseName;
+    int suffix = 1;
+
+    while (!usedNames.Add(candidate))
+    {
+        candidate = $"{baseName}_{suffix}";
+        suffix++;
+    }
+
+    return candidate;
+}
+
+static string SanitizeName(string value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return "unnamed";
+    }
+
+    char[] invalid = Path.GetInvalidFileNameChars();
+    string sanitized = value;
+
+    for (int i = 0; i < invalid.Length; i++)
+    {
+        sanitized = sanitized.Replace(invalid[i], '_');
+    }
+
+    sanitized = sanitized.Trim();
+    return string.IsNullOrWhiteSpace(sanitized) ? "unnamed" : sanitized;
+}
+
+static bool TryNormalizeFormat(string format, out string normalized)
+{
+    return CliConventions.TryNormalizeFormat(format, out normalized);
+}
+
+static string SanitizeNote(string message)
+{
+    return message.Replace('\r', ' ').Replace('\n', ' ').Trim();
+}
+
+readonly record struct ExportStats(int Models, int Textures, int ClipsFound, int ClipsExported, int ClipsSkipped);
+
+sealed class GroupingOutcome
+{
+    public required List<GroupedEntry> Groups { get; set; }
+    public bool LimitExcludedAnimations { get; set; }
+}
+
+sealed class GroupedEntry
+{
+    public int StartEntry { get; set; }
+    public int EndEntry { get; set; }
+    public required RenderBase.OModelGroup ModelGroup { get; set; }
+}
+
+sealed class EntryDiagnostics
+{
+    public int ModelCount { get; set; }
+    public int MeshCount { get; set; }
+    public int TextureCount { get; set; }
+    public required string SegmentSummary { get; set; }
+    public required string Note { get; set; }
 }

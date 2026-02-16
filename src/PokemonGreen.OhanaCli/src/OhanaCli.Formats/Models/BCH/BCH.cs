@@ -1,4 +1,4 @@
-﻿/*
+/*
  * BCH Importer made by gdkchan for Ohana3DS.
  * Please add credits if you use in your project.
  * It is about 92% complete, information here is not guaranteed to be accurate.

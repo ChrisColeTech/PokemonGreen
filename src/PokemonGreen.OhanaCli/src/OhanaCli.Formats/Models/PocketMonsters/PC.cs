@@ -1,4 +1,4 @@
-﻿using OhanaCli.Formats.Containers;
+using OhanaCli.Formats.Containers;
 
 using System;
 using System.Diagnostics;

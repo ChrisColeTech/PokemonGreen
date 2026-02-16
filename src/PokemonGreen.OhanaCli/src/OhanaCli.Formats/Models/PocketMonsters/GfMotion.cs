@@ -143,9 +143,9 @@ namespace OhanaCli.Formats.Models.PocketMonsters
         private static void addFrame(
             RenderBase.OSkeletalAnimationBone bone,
             bool mul2,
-            int axis,
-            float val,
-            float frame = 0,
+            int axis, 
+            float val, 
+            float frame = 0, 
             float slope = 0)
         {
             RenderBase.OAnimationKeyFrame frm = new RenderBase.OAnimationKeyFrame();
