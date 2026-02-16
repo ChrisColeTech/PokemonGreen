@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Ohana3DS_Rebirth.Ohana
+namespace OhanaCli.Formats
 {
     public class RenderBase
     {

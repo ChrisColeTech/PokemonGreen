@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.IO;
 
-namespace Ohana3DS_Rebirth.Ohana.Models
+namespace OhanaCli.Formats.Models
 {
     class MeshUtils
     {

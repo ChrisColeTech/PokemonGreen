@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Ohana3DS_Rebirth.Ohana.Compressions
+namespace OhanaCli.Formats.Compressions
 {
     class BLZ
     {

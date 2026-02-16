@@ -1,17 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-using Ohana3DS_Rebirth.Ohana.Models;
-using Ohana3DS_Rebirth.Ohana.Models.GenericFormats;
-using Ohana3DS_Rebirth.Ohana.Models.PocketMonsters;
-using Ohana3DS_Rebirth.Ohana.Textures.PocketMonsters;
-using Ohana3DS_Rebirth.Ohana.Textures;
-using Ohana3DS_Rebirth.Ohana.Compressions;
-using Ohana3DS_Rebirth.Ohana.Containers;
+using OhanaCli.Formats.Models;
+using OhanaCli.Formats.Models.PocketMonsters;
+using OhanaCli.Formats.Textures.PocketMonsters;
+using OhanaCli.Formats.Compressions;
+using OhanaCli.Formats.Containers;
 
-namespace Ohana3DS_Rebirth.Ohana
+namespace OhanaCli.Formats
 {
     public class FileIO
     {
@@ -36,13 +33,7 @@ namespace Ohana3DS_Rebirth.Ohana
 
         public static LoadedFile load(string fileName)
         {
-            switch (Path.GetExtension(fileName).ToLower())
-            {
-                // TODO: format not yet ported
-                // case ".mbn": return new LoadedFile { data = MBN.load(fileName), type = formatType.model };
-                // case ".xml": return new LoadedFile { data = NLP.load(fileName), type = formatType.model };
-                default: return load(new FileStream(fileName, FileMode.Open));
-            }
+            return load(new FileStream(fileName, FileMode.Open));
         }
 
         public static LoadedFile load(Stream data)
@@ -68,63 +59,20 @@ namespace Ohana3DS_Rebirth.Ohana
                     return new LoadedFile { data = mdls, type = formatType.model };
             }
 
-            switch (getMagic(input, 7))
-            {
-                // TODO: format not yet ported
-                // case "texture": return new LoadedFile { data = _3DST.load(data), type = formatType.image };
-            }
-
-            switch (getMagic(input, 5))
-            {
-                // TODO: format not yet ported
-                // case "MODEL": return new LoadedFile { data = DQVIIPack.load(data), type = formatType.container };
-            }
-
             switch (getMagic(input, 4))
             {
-                // TODO: format not yet ported
-                // case "CGFX": return new LoadedFile { data = CGFX.load(data), type = formatType.model };
                 case "CRAG": return new LoadedFile { data = GARC.load(data), type = formatType.container };
-                // TODO: format not yet ported
-                // case "darc": return new LoadedFile { data = DARC.load(data), type = formatType.container };
-                // case "FPT0": return new LoadedFile { data = FPT0.load(data), type = formatType.container };
                 case "IECP":
                     magic = input.ReadUInt32();
                     length = input.ReadUInt32();
                     return load(new MemoryStream(LZSS.decompress(data, length)));
-                // TODO: format not yet ported
-                // case "NLK2":
-                //     data.Seek(0x80, SeekOrigin.Begin);
-                //     return new LoadedFile
-                //     {
-                //         data = CGFX.load(data),
-                //         type = formatType.model
-                //     };
-                // case "SARC": return new LoadedFile { data = SARC.load(data), type = formatType.container };
-                // case "SMES": return new LoadedFile { data = NLP.loadMesh(data), type = formatType.model };
-                // TODO: format not yet ported (Yaz0 compression not available)
-                // case "Yaz0":
-                //     magic = input.ReadUInt32();
-                //     length = IOUtils.endianSwap(input.ReadUInt32());
-                //     data.Seek(8, SeekOrigin.Current);
-                //     return load(new MemoryStream(Yaz0.decompress(data, length)));
-                // case "zmdl": return new LoadedFile { data = ZMDL.load(data), type = formatType.model };
-                // case "ztex": return new LoadedFile { data = ZTEX.load(data), type = formatType.texture };
             }
-
-            // TODO: format not yet ported
-            //Check if is a BCLIM or BFLIM file (header on the end)
-            // if (data.Length > 0x28)
-            // {
-            //     data.Seek(-0x28, SeekOrigin.End);
-            //     string clim = IOUtils.readStringWithLength(input, 4);
-            //     if (clim == "CLIM" || clim == "FLIM") return new LoadedFile { data = BCLIM.load(data), type = formatType.image };
-            // }
 
             switch (getMagic(input, 3))
             {
                 case "BCH":
                     byte[] buffer = new byte[data.Length];
+                    data.Seek(0, SeekOrigin.Begin);
                     input.Read(buffer, 0, buffer.Length);
                     data.Close();
                     return new LoadedFile
@@ -132,8 +80,6 @@ namespace Ohana3DS_Rebirth.Ohana
                         data = BCH.load(new MemoryStream(buffer)),
                         type = formatType.model
                     };
-                // TODO: format not yet ported
-                // case "DMP": return new LoadedFile { data = DMP.load(data), type = formatType.image };
             }
 
             string magic2b = getMagic(input, 2);
@@ -142,8 +88,6 @@ namespace Ohana3DS_Rebirth.Ohana
             {
                 case "AD": return new LoadedFile { data = AD.load(data), type = formatType.model };
                 case "BM": return new LoadedFile { data = MM.load(data), type = formatType.model };
-                // TODO: animation support
-                // case "BS": return new LoadedFile { data = BS.load(data), type = formatType.anims };
                 case "CM": return new LoadedFile { data = CM.load(data), type = formatType.model };
                 case "CP": return new LoadedFile { data = CP.load(data), type = formatType.model };
                 case "GR": return new LoadedFile { data = GR.load(data), type = formatType.model };

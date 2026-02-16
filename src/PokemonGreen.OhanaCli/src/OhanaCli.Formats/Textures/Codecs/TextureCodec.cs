@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Drawing;
 
-namespace Ohana3DS_Rebirth.Ohana
+namespace OhanaCli.Formats
 {
     class TextureCodec
     {

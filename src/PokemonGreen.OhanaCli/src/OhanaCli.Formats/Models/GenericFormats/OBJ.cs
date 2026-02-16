@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
+namespace OhanaCli.Formats.Models.GenericFormats
 {
     public class OBJ
     {
@@ -54,22 +54,11 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             File.WriteAllText(fileName, output.ToString());
         }
 
-        /// <summary>
-        ///     Transforms a Float into a String that will always have "." into decimal places,
-        ///     even if the region uses ",".
-        /// </summary>
-        /// <param name="value">The Float value</param>
-        /// <returns></returns>
         private static string getString(float value)
         {
             return value.ToString(CultureInfo.InvariantCulture);
         }
 
-        /// <summary>
-        ///     Imports a Wavefront OBJ model from file.
-        /// </summary>
-        /// <param name="fileName">The complete file name</param>
-        /// <returns></returns>
         public static RenderBase.OModelGroup import(string fileName)
         {
             RenderBase.OModelGroup output = new RenderBase.OModelGroup();

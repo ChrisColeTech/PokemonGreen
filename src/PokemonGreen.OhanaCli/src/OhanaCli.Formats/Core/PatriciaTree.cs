@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Ohana3DS_Rebirth.Ohana
+namespace OhanaCli.Formats
 {
     class PatriciaTree
     {

@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.IO;
 
-namespace Ohana3DS_Rebirth.Ohana.Textures.PocketMonsters
+namespace OhanaCli.Formats.Textures.PocketMonsters
 {
     class GfTexture
     {

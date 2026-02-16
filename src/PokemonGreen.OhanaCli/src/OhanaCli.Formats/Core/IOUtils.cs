@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace Ohana3DS_Rebirth.Ohana
+namespace OhanaCli.Formats
 {
     class IOUtils
     {

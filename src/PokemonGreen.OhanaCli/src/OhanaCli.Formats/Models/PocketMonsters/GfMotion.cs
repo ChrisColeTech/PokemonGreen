@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
-namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
+namespace OhanaCli.Formats.Models.PocketMonsters
 {
     public class GfMotion
     {

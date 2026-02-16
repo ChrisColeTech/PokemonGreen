@@ -20,9 +20,9 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 
-using Ohana3DS_Rebirth.Ohana.Models.PICA200;
+using OhanaCli.Formats.Models.PICA200;
 
-namespace Ohana3DS_Rebirth.Ohana.Models
+namespace OhanaCli.Formats.Models
 {
     public class BCH
     {

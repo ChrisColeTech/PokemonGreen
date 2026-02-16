@@ -1,10 +1,10 @@
-﻿using Ohana3DS_Rebirth.Ohana.Containers;
+﻿using OhanaCli.Formats.Containers;
 
 using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
+namespace OhanaCli.Formats.Models.PocketMonsters
 {
     class PC
     {

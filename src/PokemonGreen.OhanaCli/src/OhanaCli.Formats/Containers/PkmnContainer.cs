@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Ohana3DS_Rebirth.Ohana.Containers
+namespace OhanaCli.Formats.Containers
 {
     public class PkmnContainer
     {

@@ -1,21 +1,19 @@
-﻿using Ohana3DS_Rebirth.Ohana.Models.PICA200;
-using Ohana3DS_Rebirth.Ohana.Textures.PocketMonsters;
+using OhanaCli.Formats.Models.PICA200;
+using OhanaCli.Formats.Textures.PocketMonsters;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 
-namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
+namespace OhanaCli.Formats.Models.PocketMonsters
 {
     public class GfModel
     {
-        /// <summary>
-        ///     When true, loadModel() prints detailed parsing diagnostics to Console.Error.
-        /// </summary>
         public static bool DiagnosticLogging = false;
+
         /// <summary>
-        ///     Loads a Pokémon Sun/Moon Model file.
+        ///     Loads a Pokemon Sun/Moon Model file.
         /// </summary>
         /// <param name="fileName">File Name of the Model file</param>
         /// <returns></returns>
@@ -25,7 +23,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
         }
 
         /// <summary>
-        ///     Loads a Pokémon Sun/Moon Model  file.
+        ///     Loads a Pokemon Sun/Moon Model file.
         ///     Note that Model must start at offset 0x0.
         /// </summary>
         /// <param name="data">Stream of the Model file.</param>
@@ -36,13 +34,18 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
             BinaryReader input = new BinaryReader(data);
 
-            input.ReadUInt32();
+            uint preHeaderMagic = input.ReadUInt32();
 
             uint[] sectionsCnt = new uint[5];
 
             for (int i = 0; i < 5; i++)
             {
-                sectionsCnt[i] = input.ReadUInt32(); //Count for each section on the file (total 5)
+                sectionsCnt[i] = input.ReadUInt32();
+            }
+
+            if (DiagnosticLogging)
+            {
+                Console.Error.WriteLine($"  GfModel container: magic=0x{preHeaderMagic:X8} sections=[{string.Join(",", sectionsCnt)}]");
             }
 
             uint baseAddr = (uint)data.Position;
@@ -68,13 +71,17 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
                     switch (sect)
                     {
                         case MODEL_SECT:
+                            if (DiagnosticLogging) Console.Error.WriteLine($"  Loading model section '{name}' at 0x{descAddress:X}");
                             RenderBase.OModel mdl = loadModel(data, true);
                             mdl.name = name;
 
                             mdls.model.Add(mdl);
                             break;
 
-                        case TEXTURE_SECT: mdls.texture.Add(GfTexture.load(data, true)); break;
+                        case TEXTURE_SECT:
+                            if (DiagnosticLogging) Console.Error.WriteLine($"  Loading texture section '{name}' at 0x{descAddress:X}");
+                            mdls.texture.Add(GfTexture.load(data, true));
+                            break;
                     }
                 }
 
@@ -95,19 +102,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
             long mdlStart = data.Position;
 
-            uint preHeaderMagic = input.ReadUInt32();
-            uint preHeaderSectionsCount = input.ReadUInt32();
-            data.Seek(mdlStart + 0x10, SeekOrigin.Begin); // skip to section header (aligned to 16)
-
+            data.Seek(0x10, SeekOrigin.Current);
             ulong mdlMagic = input.ReadUInt64(); //gfmodel string
             uint mdlLength = input.ReadUInt32();
             input.ReadUInt32(); //-1
-
-            if (DiagnosticLogging)
-            {
-                Console.Error.WriteLine($"    [loadModel] mdlStart=0x{mdlStart:X}, preHeaderMagic=0x{preHeaderMagic:X8}, sectionsCount={preHeaderSectionsCount}");
-                Console.Error.WriteLine($"    [loadModel] mdlMagic=0x{mdlMagic:X16}, mdlLength=0x{mdlLength:X} ({mdlLength}), pos=0x{data.Position:X}");
-            }
 
             string[] effectNames = getStrTable(input);
             string[] textureNames = getStrTable(input);
@@ -116,11 +114,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
             if (DiagnosticLogging)
             {
-                Console.Error.WriteLine($"    [loadModel] effects={effectNames.Length}, textures={textureNames.Length}, materials={materialNames.Length}, meshes={meshNames.Length}");
-                Console.Error.WriteLine($"    [loadModel] after string tables pos=0x{data.Position:X}");
+                Console.Error.WriteLine($"    effects={effectNames.Length} textures={textureNames.Length} materials={materialNames.Length} meshes={meshNames.Length}");
             }
 
-            input.BaseStream.Seek(0x20, SeekOrigin.Current); //2 float4 (Maybe 2 Quaternions?)
+            input.BaseStream.Seek(0x20, SeekOrigin.Current);
 
             mdl.transform = new RenderBase.OMatrix();
             mdl.transform.M11 = input.ReadSingle();
@@ -148,15 +145,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
             input.ReadUInt32();
             input.ReadUInt32();
 
-            input.BaseStream.Seek(unkDataRelStart + unkDataLen, SeekOrigin.Current); //???
+            input.BaseStream.Seek(unkDataRelStart + unkDataLen, SeekOrigin.Current);
 
             uint bonesCount = input.ReadUInt32();
             input.BaseStream.Seek(0xc, SeekOrigin.Current);
-
-            if (DiagnosticLogging)
-            {
-                Console.Error.WriteLine($"    [loadModel] bonesCount={bonesCount}, pos=0x{data.Position:X}");
-            }
 
             List<string> boneNames = new List<string>();
 
@@ -192,14 +184,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
                 boneNames.Add(boneName);
             }
 
+            if (DiagnosticLogging) Console.Error.WriteLine($"    bones={bonesCount}");
+
             //Materials
             List<string> matMeshBinding = new List<string>();
-
-            if (DiagnosticLogging)
-            {
-                Console.Error.WriteLine($"    [loadModel] after bones pos=0x{data.Position:X}");
-                Console.Error.WriteLine($"    [loadModel] seeking to materials at mdlStart(0x{mdlStart:X}) + mdlLength(0x{mdlLength:X}) + 0x20 = 0x{mdlStart + mdlLength + 0x20:X}");
-            }
 
             input.BaseStream.Seek(mdlStart + mdlLength + 0x20, SeekOrigin.Begin);
 
@@ -275,7 +263,6 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
                 input.ReadUInt32(); //-1
 
                 long meshStart = data.Position;
-                //Mesh name and other stuff goes here
 
                 input.BaseStream.Seek(0x80, SeekOrigin.Current);
 
@@ -291,7 +278,6 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
                     ushort[] nodeList = info.nodeLists[sm];
 
-                    //NOTE: All Addresses on commands are set to 0x99999999 and are probably relocated by game engine
                     PICACommandReader vtxCmdReader = info.cmdBuffers[sm * 3 + 0];
                     PICACommandReader idxCmdReader = info.cmdBuffers[sm * 3 + 2];
 
@@ -342,7 +328,6 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
                         RenderBase.OVertex vertex = new RenderBase.OVertex();
                         vertex.diffuseColor = 0xffffffff;
-                        // Fix weight problems
                         vertex.weight.Add(1);
                         vertex.weight.Add(0);
                         vertex.weight.Add(0);
@@ -350,7 +335,6 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
 
                         for (int attribute = 0; attribute < vshTotalAttributes; attribute++)
                         {
-                            //gdkchan self note: The Attribute type flags are used for something else on Bone Weight (and bone index?)
                             PICACommand.vshAttribute att = vshMainAttributesBufferPermutation[vshAttributesBufferPermutation[attribute]];
                             PICACommand.attributeFormat format = vshAttributesBufferFormat[vshAttributesBufferPermutation[attribute]];
                             if (att == PICACommand.vshAttribute.boneWeight) format.type = PICACommand.attributeFormatType.unsignedByte;
@@ -398,8 +382,6 @@ namespace Ohana3DS_Rebirth.Ohana.Models.PocketMonsters
                             }
                         }
 
-                        //If the node list have 4 or less bones, then there is no need to store the indices per vertex
-                        //Instead, the entire list is used, since it supports up to 4 bones.
                         if (vertex.node.Count == 0 && nodeList.Length <= 4)
                         {
                             for (int n = 0; n < nodeList.Length; n++) vertex.node.Add(nodeList[n]);
