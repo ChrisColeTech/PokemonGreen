@@ -1128,15 +1128,15 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 string boneSid = bone.name;
                 string[] axisNames = { "scaleX", "scaleY", "scaleZ", "rotationX", "rotationY", "rotationZ", "translationX", "translationY", "translationZ" };
                 string[] targetPaths = {
-                    boneSid + "_bone_id/transform.scaleX",
-                    boneSid + "_bone_id/transform.scaleY",
-                    boneSid + "_bone_id/transform.scaleZ",
-                    boneSid + "_bone_id/transform.rotateX",
-                    boneSid + "_bone_id/transform.rotateY",
-                    boneSid + "_bone_id/transform.rotateZ",
-                    boneSid + "_bone_id/transform.translateX",
-                    boneSid + "_bone_id/transform.translateY",
-                    boneSid + "_bone_id/transform.translateZ"
+                    boneSid + "_bone_id/scale.X",
+                    boneSid + "_bone_id/scale.Y",
+                    boneSid + "_bone_id/scale.Z",
+                    boneSid + "_bone_id/rotation.X",
+                    boneSid + "_bone_id/rotation.Y",
+                    boneSid + "_bone_id/rotation.Z",
+                    boneSid + "_bone_id/translation.X",
+                    boneSid + "_bone_id/translation.Y",
+                    boneSid + "_bone_id/translation.Z"
                 };
 
                 RenderBase.OAnimationKeyFrameGroup[] groups = {
