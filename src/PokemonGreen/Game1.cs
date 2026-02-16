@@ -76,6 +76,7 @@ public class Game1 : Game
     // Pokemon 3D models on battle field
     private BattleModelData? _allyModel;
     private BattleModelData? _foeModel;
+    private double _battleIdleTimer;
 
     // Battle camera animation
     private static readonly Vector3 BattleCamFoe = new(6.9f, 7f, 4.6f);   // zoomed on foe
@@ -86,6 +87,7 @@ public class Game1 : Game
     private float _battleCamLerp = 1f; // 1 = arrived
     private const float BattleCamSpeed = 0.4f; // seconds for full transition
     private GameWorld.GameState _prevGameState;
+    private string? _lastSavedMapId;
 
     // Day/night cycle
     private readonly DayNightCycle _dayNightCycle = new();
@@ -140,9 +142,11 @@ public class Game1 : Game
         _playerRenderer = new PlayerRenderer();
 
         // Load save or create test data
+        Console.WriteLine($"[Load] Looking for save at: {SaveManager.GetSavePath(_currentSaveSlot)}");
         var saveData = _saveManager.Load(_currentSaveSlot);
         if (saveData != null)
         {
+            Console.WriteLine($"[Load] Save found: map={saveData.MapId}, pos=({saveData.PlayerX:F1},{saveData.PlayerY:F1}), party={saveData.Party.Count}");
             _playerParty = saveData.Party;
             _playerBag = saveData.Inventory;
             _pcBoxes = saveData.PCBoxes;
@@ -157,15 +161,22 @@ public class Game1 : Game
             {
                 _gameWorld.LoadMap(savedMap, saveData.PlayerX, saveData.PlayerY);
                 _gameWorld.Player.SetFacing((PokemonGreen.Core.Player.Direction)saveData.Facing);
+                Console.WriteLine($"[Load] Restored map {saveData.MapId} at ({saveData.PlayerX:F1},{saveData.PlayerY:F1})");
+            }
+            else
+            {
+                Console.WriteLine($"[Load] WARNING: Map '{saveData.MapId}' not found in catalog, using default");
             }
         }
         else
         {
+            Console.WriteLine("[Load] No save file found, creating test data");
             _playerParty = Party.CreateTestParty();
             _playerBag = PlayerInventory.CreateTestInventory();
             _pcBoxes = new PCBoxes();
         }
         _gameWorld.Progress.UpdateFromParty(_playerParty);
+        _lastSavedMapId = _gameWorld.CurrentMapDefinition?.Id;
 
         // Set up battle menus
         _battleMainMenu.SetItems(
@@ -517,12 +528,22 @@ public class Game1 : Game
         {
             _allyPokemon?.UpdateDisplayHP(deltaTime);
             _foePokemon?.UpdateDisplayHP(deltaTime);
+            _battleIdleTimer += deltaTime;
         }
 
         _playtimeSeconds += deltaTime;
         _dayNightCycle.Update(deltaTime);
         TileRenderer.Update(deltaTime);
         _gameWorld.Update(deltaTime);
+
+        // Auto-save when the player transitions to a new map
+        var currentMapId = _gameWorld.CurrentMapDefinition?.Id;
+        if (currentMapId != null && currentMapId != _lastSavedMapId
+            && _gameWorld.State == GameWorld.GameState.Overworld)
+        {
+            _lastSavedMapId = currentMapId;
+            AutoSave();
+        }
 
         base.Update(gameTime);
     }
@@ -862,21 +883,24 @@ public class Game1 : Game
             _activePlatformAlly.Draw(device, _battleEffect);
         }
 
-        // Foe Pokemon model
+        // Foe Pokemon model — faces toward ally/camera (+Z direction, no rotation needed)
         if (_foeModel != null)
         {
             float scale = FitModelScale(_foeModel, 3.0f);
+            float bobFoe = MathF.Sin((float)_battleIdleTimer * 1.8f) * 0.15f;
             _battleEffect.World = Matrix.CreateScale(scale) *
-                Matrix.CreateTranslation(0f, -0.20f - _foeModel.BoundsMin.Y * scale, -15f);
+                Matrix.CreateTranslation(0f, -0.20f - _foeModel.BoundsMin.Y * scale + bobFoe, -15f);
             _foeModel.Draw(device, _battleEffect);
         }
 
-        // Ally Pokemon model
+        // Ally Pokemon model — faces away from camera toward foe (rotate 180°)
         if (_allyModel != null)
         {
             float scale = FitModelScale(_allyModel, 3.5f);
+            float bobAlly = MathF.Sin((float)_battleIdleTimer * 2.0f + 1.0f) * 0.15f;
             _battleEffect.World = Matrix.CreateScale(scale) *
-                Matrix.CreateTranslation(0f, -0.20f - _allyModel.BoundsMin.Y * scale, 3f);
+                Matrix.CreateRotationY(MathF.PI) *
+                Matrix.CreateTranslation(0f, -0.20f - _allyModel.BoundsMin.Y * scale + bobAlly, 3f);
             _allyModel.Draw(device, _battleEffect);
         }
 
@@ -1045,6 +1069,7 @@ public class Game1 : Game
         // Load 3D models for the battling Pokemon
         _allyModel = LoadPokemonModel(_allyPokemon.SpeciesId);
         _foeModel = LoadPokemonModel(_foePokemon.SpeciesId);
+        _battleIdleTimer = 0;
 
         _battleTurnManager = new BattleTurnManager(
             _allyPokemon, _foePokemon,
@@ -1135,25 +1160,64 @@ public class Game1 : Game
 
     private void PerformSave()
     {
-        var data = new GameSaveData
+        try
         {
-            PlayerName = "Red",
-            Money = 0,
-            PlaytimeSeconds = _playtimeSeconds,
-            GameTimeSeconds = _dayNightCycle.ElapsedSeconds,
-            MapId = _gameWorld.CurrentMapDefinition?.Id ?? "",
-            PlayerX = _gameWorld.Player.X,
-            PlayerY = _gameWorld.Player.Y,
-            Facing = (int)_gameWorld.Player.Facing,
-            BadgeCount = _gameWorld.Progress.BadgeCount,
-            StoryFlags = _gameWorld.Progress.StoryFlags,
-            Party = _playerParty,
-            PCBoxes = _pcBoxes,
-            Inventory = _playerBag,
-            SavedAt = DateTime.UtcNow,
-        };
-        _saveManager.Save(_currentSaveSlot, data);
+            var data = new GameSaveData
+            {
+                PlayerName = "Red",
+                Money = 0,
+                PlaytimeSeconds = _playtimeSeconds,
+                GameTimeSeconds = _dayNightCycle.ElapsedSeconds,
+                MapId = _gameWorld.CurrentMapDefinition?.Id ?? "",
+                PlayerX = _gameWorld.Player.X,
+                PlayerY = _gameWorld.Player.Y,
+                Facing = (int)_gameWorld.Player.Facing,
+                BadgeCount = _gameWorld.Progress.BadgeCount,
+                StoryFlags = _gameWorld.Progress.StoryFlags,
+                Party = _playerParty,
+                PCBoxes = _pcBoxes,
+                Inventory = _playerBag,
+                SavedAt = DateTime.UtcNow,
+            };
+            Console.WriteLine($"[Save] Saving to slot {_currentSaveSlot}: map={data.MapId}, pos=({data.PlayerX:F1},{data.PlayerY:F1}), party={data.Party.Count}");
+            _saveManager.Save(_currentSaveSlot, data);
+            Console.WriteLine($"[Save] Save complete: {SaveManager.GetSavePath(_currentSaveSlot)}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Save] ERROR: {ex}");
+        }
         ClosePauseMenu();
+    }
+
+    private void AutoSave()
+    {
+        try
+        {
+            var data = new GameSaveData
+            {
+                PlayerName = "Red",
+                Money = 0,
+                PlaytimeSeconds = _playtimeSeconds,
+                GameTimeSeconds = _dayNightCycle.ElapsedSeconds,
+                MapId = _gameWorld.CurrentMapDefinition?.Id ?? "",
+                PlayerX = _gameWorld.Player.X,
+                PlayerY = _gameWorld.Player.Y,
+                Facing = (int)_gameWorld.Player.Facing,
+                BadgeCount = _gameWorld.Progress.BadgeCount,
+                StoryFlags = _gameWorld.Progress.StoryFlags,
+                Party = _playerParty,
+                PCBoxes = _pcBoxes,
+                Inventory = _playerBag,
+                SavedAt = DateTime.UtcNow,
+            };
+            _saveManager.Save(_currentSaveSlot, data);
+            Console.WriteLine($"[AutoSave] map={data.MapId}, pos=({data.PlayerX:F1},{data.PlayerY:F1})");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutoSave] ERROR: {ex}");
+        }
     }
 
     /// <summary>

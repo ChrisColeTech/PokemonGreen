@@ -52,10 +52,17 @@ public class BattleModelData : IDisposable
 
     public void Draw(GraphicsDevice device, Effect effect)
     {
+        var alphaTest = effect as AlphaTestEffect;
+
         foreach (var mesh in Meshes)
         {
             if (mesh.Texture != null)
-                effect.Parameters["Texture"]?.SetValue(mesh.Texture);
+            {
+                if (alphaTest != null)
+                    alphaTest.Texture = mesh.Texture;
+                else
+                    effect.Parameters["Texture"]?.SetValue(mesh.Texture);
+            }
 
             device.SetVertexBuffer(mesh.VertexBuffer);
             device.Indices = mesh.IndexBuffer;
@@ -127,14 +134,29 @@ public static class BattleModelLoader
             if (mesh.MaterialIndex >= 0 && mesh.MaterialIndex < scene.MaterialCount)
             {
                 var material = scene.Materials[mesh.MaterialIndex];
-                if (material.HasTextureDiffuse)
+                string? texturePath = null;
+
+                // Try Assimp's standard diffuse texture path
+                if (material.HasTextureDiffuse && !string.IsNullOrEmpty(material.TextureDiffuse.FilePath))
                 {
-                    string texturePath = Path.Combine(directory, material.TextureDiffuse.FilePath);
-                    if (File.Exists(texturePath))
-                    {
-                        using var stream = File.OpenRead(texturePath);
-                        texture = Texture2D.FromStream(graphicsDevice, stream);
-                    }
+                    var candidate = Path.Combine(directory, material.TextureDiffuse.FilePath);
+                    if (File.Exists(candidate))
+                        texturePath = candidate;
+                }
+
+                // Fallback: match material name to texture files on disk
+                // Ohana3DS exports DAE with empty library_images; textures are loose PNGs
+                if (texturePath == null && !string.IsNullOrEmpty(material.Name))
+                {
+                    string matName = material.Name.Replace("_mat", "");
+                    string folderName = Path.GetFileName(directory) ?? "";
+                    texturePath = FindTextureForMaterial(directory, folderName, matName);
+                }
+
+                if (texturePath != null)
+                {
+                    using var stream = File.OpenRead(texturePath);
+                    texture = Texture2D.FromStream(graphicsDevice, stream);
                 }
             }
 
@@ -158,5 +180,74 @@ public static class BattleModelLoader
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Match a material name to a texture file on disk.
+    /// Ohana3DS exports textures as loose PNGs but doesn't reference them in the DAE.
+    /// Naming conventions:
+    ///   Material "Body00" → texture "pm0004_00_Body1.tga.png" (index 0 → suffix 1)
+    ///   Material "Body01" → texture "pm0004_00_Body2.tga.png" (index 1 → suffix 2)
+    ///   Material "Eye"    → texture "pm0004_00_Eye1.tga.png"
+    ///   Material "LEye"   → texture "pm0025_00_Eye1.tga.png"  (L/R prefix stripped)
+    /// </summary>
+    private static string? FindTextureForMaterial(string directory, string folderName, string matName)
+    {
+        // Split material name into base + trailing digits: Body00 → ("Body", "00"), Eye → ("Eye", "")
+        string baseName = matName.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+        string digitStr = matName.Substring(baseName.Length);
+        if (string.IsNullOrEmpty(baseName))
+            baseName = matName;
+
+        // Material digit index → texture file suffix (0-based → 1-based)
+        int texSuffix = 1;
+        if (digitStr.Length > 0 && int.TryParse(digitStr, out int matIndex))
+            texSuffix = matIndex + 1;
+
+        // 1. Exact match with folder prefix + texture number: pm0004_00_Body1*.png
+        var match = SearchTexture(directory, $"{folderName}_{baseName}{texSuffix}");
+        if (match != null) return match;
+
+        // 2. Folder prefix + base name (any suffix): pm0004_00_Body*.png
+        match = SearchTexture(directory, $"{folderName}_{baseName}");
+        if (match != null) return match;
+
+        // 3. Generic name with texture number: FireStenA1*.png
+        match = SearchTexture(directory, $"{baseName}{texSuffix}");
+        if (match != null) return match;
+
+        // 4. Generic base name: FireStenA*.png
+        match = SearchTexture(directory, $"{baseName}");
+        if (match != null) return match;
+
+        // 5. Handle L/R prefixed eye materials: LEye → Eye, REye → Eye
+        if (baseName.Length > 1 && (baseName[0] == 'L' || baseName[0] == 'R') && char.IsUpper(baseName[1]))
+        {
+            string stripped = baseName.Substring(1);
+            match = SearchTexture(directory, $"{folderName}_{stripped}{texSuffix}");
+            if (match != null) return match;
+            match = SearchTexture(directory, $"{folderName}_{stripped}");
+            if (match != null) return match;
+            match = SearchTexture(directory, $"{stripped}");
+            if (match != null) return match;
+        }
+
+        // 6. Exact material name as prefix
+        match = SearchTexture(directory, matName);
+        return match;
+    }
+
+    private static string? SearchTexture(string directory, string prefix)
+    {
+        foreach (var file in Directory.EnumerateFiles(directory, $"{prefix}*.png"))
+        {
+            string name = Path.GetFileName(file);
+            if (name.Contains("Nor", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("Mask", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("Dummy", StringComparison.OrdinalIgnoreCase))
+                continue;
+            return file;
+        }
+        return null;
     }
 }
