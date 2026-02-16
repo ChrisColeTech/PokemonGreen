@@ -48,6 +48,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
         {
             public string created;
             public string modified;
+            public string up_axis;
         }
 
         public class daeImage
@@ -640,6 +641,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
 
             dae.asset.created = DateTime.Now.ToString("yyyy-MM-ddThh:mm:ssZ");
             dae.asset.modified = dae.asset.created;
+            dae.asset.up_axis = "Y_UP";
 
             foreach (RenderBase.OTexture tex in model.texture)
             {
@@ -779,19 +781,19 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                     if (mesh.texUVCount > 0)
                     {
                         uv0.Add(vtx.texture0.x);
-                        uv0.Add(vtx.texture0.y);
+                        uv0.Add(1.0f - vtx.texture0.y);
                     }
 
                     if (mesh.texUVCount > 1)
                     {
                         uv1.Add(vtx.texture1.x);
-                        uv1.Add(vtx.texture1.y);
+                        uv1.Add(1.0f - vtx.texture1.y);
                     }
 
                     if (mesh.texUVCount > 2)
                     {
                         uv2.Add(vtx.texture2.x);
-                        uv2.Add(vtx.texture2.y);
+                        uv2.Add(1.0f - vtx.texture2.y);
                     }
 
                     if (mesh.hasColor)
@@ -1173,6 +1175,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
         /// <param name="target">Target matrix to save bone transformation</param>
         private static void transformSkeleton(List<RenderBase.OBone> skeleton, int index, ref RenderBase.OMatrix target)
         {
+            target *= RenderBase.OMatrix.scale(skeleton[index].scale);
             target *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
             target *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
             target *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);
@@ -1195,6 +1198,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             node.type = "JOINT";
 
             RenderBase.OMatrix transform = new RenderBase.OMatrix();
+            transform *= RenderBase.OMatrix.scale(skeleton[index].scale);
             transform *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
             transform *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
             transform *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);

@@ -95,7 +95,8 @@ public static class BattleModelLoader
                 string name = Path.GetFileName(file);
                 if (name.Contains("Nor", StringComparison.OrdinalIgnoreCase) ||
                     name.Contains("Mask", StringComparison.OrdinalIgnoreCase) ||
-                    name.Contains("Dummy", StringComparison.OrdinalIgnoreCase))
+                    name.Contains("Dummy", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains("Inc", StringComparison.OrdinalIgnoreCase))
                     continue;
                 folderTextures.Add(file);
             }
@@ -150,9 +151,7 @@ public static class BattleModelLoader
                 // Try Assimp's standard diffuse texture path
                 if (material.HasTextureDiffuse && !string.IsNullOrEmpty(material.TextureDiffuse.FilePath))
                 {
-                    var candidate = Path.Combine(directory, material.TextureDiffuse.FilePath);
-                    if (File.Exists(candidate))
-                        texturePath = candidate;
+                    texturePath = ResolveDiffusePath(directory, material.TextureDiffuse.FilePath);
                 }
 
                 // Fallback: match material name to texture files on disk
@@ -198,6 +197,41 @@ public static class BattleModelLoader
     }
 
     /// <summary>
+    /// Resolve the Assimp diffuse texture path to an actual file on disk.
+    /// Ohana3DS DAE files use init_from values like "pm0001_00_BodyA1.tga_id" —
+    /// we strip the "_id" suffix and try common extensions (.png, .tga.png).
+    /// </summary>
+    internal static string? ResolveDiffusePath(string directory, string diffusePath)
+    {
+        // Try the path as-is first
+        var candidate = Path.Combine(directory, diffusePath);
+        if (File.Exists(candidate))
+            return candidate;
+
+        // Strip Ohana3DS "_id" suffix: "pm0001_00_BodyA1.tga_id" → "pm0001_00_BodyA1.tga"
+        string cleaned = diffusePath;
+        if (cleaned.EndsWith("_id", StringComparison.Ordinal))
+            cleaned = cleaned[..^3];
+
+        candidate = Path.Combine(directory, cleaned);
+        if (File.Exists(candidate))
+            return candidate;
+
+        // Try with .png appended: "pm0001_00_BodyA1.tga" → "pm0001_00_BodyA1.tga.png"
+        candidate = Path.Combine(directory, cleaned + ".png");
+        if (File.Exists(candidate))
+            return candidate;
+
+        // Try replacing extension with .png: "pm0001_00_BodyA1.tga" → "pm0001_00_BodyA1.png"
+        string noExt = Path.GetFileNameWithoutExtension(cleaned);
+        candidate = Path.Combine(directory, noExt + ".png");
+        if (File.Exists(candidate))
+            return candidate;
+
+        return null;
+    }
+
+    /// <summary>
     /// Match a material name to a texture file on disk.
     /// Ohana3DS exports textures as loose PNGs but doesn't reference them in the DAE.
     /// Naming conventions:
@@ -206,7 +240,7 @@ public static class BattleModelLoader
     ///   Material "Eye"    → texture "pm0004_00_Eye1.tga.png"
     ///   Material "LEye"   → texture "pm0025_00_Eye1.tga.png"  (L/R prefix stripped)
     /// </summary>
-    private static string? FindTextureForMaterial(string directory, string folderName, string matName)
+    internal static string? FindTextureForMaterial(string directory, string folderName, string matName)
     {
         // Split material name into base + trailing digits: Body00 → ("Body", "00"), Eye → ("Eye", "")
         string baseName = matName.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');

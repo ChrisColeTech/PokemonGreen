@@ -5,12 +5,14 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import type { LoadedTexture } from '../types/editor'
 import { DEFAULT_ADJUSTMENT } from '../types/editor'
+import { parseColladaAnimations } from './colladaAnimationParser'
 
 const API_BASE = 'http://localhost:3001'
 
 export interface LoadResult {
   scene: THREE.Group
   textures: LoadedTexture[]
+  animations: THREE.AnimationClip[]
 }
 
 export interface Manifest {
@@ -37,12 +39,34 @@ export async function loadScene(manifest: Manifest): Promise<LoadResult> {
 
   const fmt = manifest.modelFormat
   let scene: THREE.Group
+  let animations: THREE.AnimationClip[] = []
 
   if (fmt === 'fbx') {
     scene = await loadFbxWithManager(modelUrl)
+    animations = scene.animations || []
   } else if (fmt === 'dae') {
-    const result = await loadWithPromise(new ColladaLoader(), modelUrl)
-    scene = (result as { scene: THREE.Group }).scene
+    const collada = await loadDaeWithManager(modelUrl)
+    scene = collada.scene
+    // The ColladaLoader's built-in animation parser doesn't handle per-axis
+    // rotation/translation channels (rotation.X, rotation.Y, rotation.Z, etc.)
+    // which are used by these Pokemon DAE files. It only handles 'matrix' type
+    // animations. So we parse the raw XML ourselves.
+    animations = collada.animations
+    console.log(`[SceneService] DAE loaded: ${animations.length} clip(s) from ColladaLoader`)
+    if (animations.length === 0 || (animations.length === 1 && animations[0].tracks.length === 0)) {
+      console.log('[SceneService] ColladaLoader returned no/empty animations, trying custom parser...')
+      try {
+        const customAnims = await parseColladaAnimations(modelUrl, scene)
+        if (customAnims.length > 0) {
+          animations = customAnims
+          console.log(`[SceneService] Custom parser found ${animations.length} clip(s)`)
+        }
+      } catch (err) {
+        console.warn('[SceneService] Custom animation parser failed:', err)
+      }
+    }
+    // NOTE: UV Y-flip is already applied by the DAE exporter (1-v in the UV data).
+    // Do NOT flip again here — that would undo the exporter's correction.
   } else {
     const objLoader = new OBJLoader()
     if (manifest.mtlFile) {
@@ -63,7 +87,7 @@ export async function loadScene(manifest: Manifest): Promise<LoadResult> {
   const textures = extractTextures(scene)
   await loadExtraManifestTextures(textures, scene, manifest)
 
-  return { scene, textures }
+  return { scene, textures, animations }
 }
 
 /**
@@ -77,7 +101,6 @@ function loadFbxWithManager(modelUrl: string): Promise<THREE.Group> {
 
     let fbxScene: THREE.Group | null = null
     let managerDone = false
-    let loaderDone = false
 
     function tryResolve() {
       if (fbxScene && managerDone) {
@@ -104,7 +127,6 @@ function loadFbxWithManager(modelUrl: string): Promise<THREE.Group> {
       (group) => {
         console.log('[SceneService] FBXLoader: model parsed')
         fbxScene = group
-        loaderDone = true
         // If manager already finished (e.g., no sub-resources), resolve now
         tryResolve()
       },
@@ -117,6 +139,72 @@ function loadFbxWithManager(modelUrl: string): Promise<THREE.Group> {
     setTimeout(() => {
       if (!managerDone && fbxScene) {
         console.warn('[SceneService] LoadingManager timeout — resolving with partial textures')
+        managerDone = true
+        tryResolve()
+      }
+    }, 5000)
+  })
+}
+
+/**
+ * Load DAE (Collada) using a LoadingManager that waits for all sub-resources
+ * (textures) to finish loading before resolving.
+ */
+interface ColladaResult {
+  scene: THREE.Group
+  animations: THREE.AnimationClip[]
+}
+
+function loadDaeWithManager(modelUrl: string): Promise<ColladaResult> {
+  return new Promise((resolve, reject) => {
+    const manager = new THREE.LoadingManager()
+    const loader = new ColladaLoader(manager)
+    loader.setCrossOrigin('anonymous')
+
+    let colladaResult: ColladaResult | null = null
+    let managerDone = false
+
+    function tryResolve() {
+      if (colladaResult && managerDone) {
+        resolve(colladaResult)
+      }
+    }
+
+    manager.onStart = (url) => {
+      console.log(`[SceneService] DAE LoadingManager: started loading ${url}`)
+    }
+
+    manager.onLoad = () => {
+      console.log('[SceneService] DAE LoadingManager: all resources loaded')
+      managerDone = true
+      tryResolve()
+    }
+
+    manager.onError = (url) => {
+      console.warn(`[SceneService] DAE LoadingManager: failed to load ${url}`)
+    }
+
+    loader.load(
+      modelUrl,
+      (collada) => {
+        console.log('[SceneService] ColladaLoader: model parsed')
+        // Animations may be on the Collada result or on the scene
+        const anims = (collada as any).animations || collada.scene.animations || []
+        colladaResult = {
+          scene: collada.scene as unknown as THREE.Group,
+          animations: anims,
+        }
+        // If manager already finished (no sub-resources), resolve now
+        tryResolve()
+      },
+      undefined,
+      (err) => reject(err),
+    )
+
+    // Safety timeout
+    setTimeout(() => {
+      if (!managerDone && colladaResult) {
+        console.warn('[SceneService] DAE LoadingManager timeout — resolving with partial textures')
         managerDone = true
         tryResolve()
       }
@@ -207,21 +295,21 @@ function fixMaterials(scene: THREE.Group): void {
     const mats = Array.isArray(node.material) ? node.material : [node.material]
     console.log(`[SceneService] Mesh "${node.name}": ${mats.length} material(s), ${groups?.length ?? 0} geometry group(s)`)
     if (groups?.length) {
-      groups.forEach((g, i) => console.log(`[SceneService]   group[${i}]: materialIndex=${g.materialIndex}, start=${g.start}, count=${g.count}`))
+      groups.forEach((g: { materialIndex: number; start: number; count: number }, i: number) => console.log(`[SceneService]   group[${i}]: materialIndex=${g.materialIndex}, start=${g.start}, count=${g.count}`))
     }
 
     const newMats = mats.map((mat, i) => {
       const tex = (mat as THREE.MeshPhongMaterial).map
-      if (tex?.image) {
+      if (tex) {
         tex.colorSpace = THREE.SRGBColorSpace
         tex.needsUpdate = true
       }
       const basic = new THREE.MeshBasicMaterial({
-        map: tex?.image ? tex : null,
+        map: tex || null,
         side: THREE.DoubleSide,
       })
       basic.name = mat.name
-      console.log(`[SceneService]   mat[${i}] "${mat.name}" → texture: ${tex?.name || 'none'}, image: ${tex?.image ? 'OK' : 'NULL'}`)
+      console.log(`[SceneService]   mat[${i}] "${mat.name}" → texture: ${tex?.name || 'none'}, image: ${tex?.image ? 'OK' : 'pending'}`)
       return basic
     })
     node.material = newMats.length === 1 ? newMats[0] : newMats

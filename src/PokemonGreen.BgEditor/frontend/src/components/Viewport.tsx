@@ -11,8 +11,14 @@ export default function Viewport() {
   const controlsRef = useRef<OrbitControls | null>(null)
   const modelGroupRef = useRef<THREE.Group | null>(null)
   const animFrameRef = useRef<number>(0)
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null)
+  const clockRef = useRef<THREE.Clock>(new THREE.Clock())
+  const activeActionRef = useRef<THREE.AnimationAction | null>(null)
 
   const storeScene = useEditorStore(s => s.scene)
+  const storeAnimations = useEditorStore(s => s.animations)
+  const animationPlaying = useEditorStore(s => s.animationPlaying)
+  const activeClipIndex = useEditorStore(s => s.activeClipIndex)
 
   // Init renderer + camera once
   useEffect(() => {
@@ -53,6 +59,10 @@ export default function Viewport() {
     // Render loop
     function animate() {
       animFrameRef.current = requestAnimationFrame(animate)
+      const delta = clockRef.current.getDelta()
+      if (mixerRef.current) {
+        mixerRef.current.update(delta)
+      }
       controls.update()
       renderer.render(sceneRef.current, camera)
     }
@@ -78,16 +88,22 @@ export default function Viewport() {
     }
   }, [])
 
-  // Update scene when model changes — auto-fit camera to bounds
+  // Update scene when model changes -- auto-fit camera to bounds
   useEffect(() => {
     const threeScene = sceneRef.current
     const camera = cameraRef.current
     const controls = controlsRef.current
 
+    // Clean up previous model and animation mixer
     if (modelGroupRef.current) {
       threeScene.remove(modelGroupRef.current)
       modelGroupRef.current = null
     }
+    if (mixerRef.current) {
+      mixerRef.current.stopAllAction()
+      mixerRef.current = null
+    }
+    activeActionRef.current = null
 
     if (!storeScene) return
 
@@ -98,7 +114,9 @@ export default function Viewport() {
     console.log('[BgEditor] Scene loaded. Children:', storeScene.children.length)
     let meshCount = 0
     let texturedCount = 0
+    let boneCount = 0
     storeScene.traverse((node) => {
+      if (node instanceof THREE.Bone) boneCount++
       if (node instanceof THREE.Mesh) {
         meshCount++
         const mats = Array.isArray(node.material) ? node.material : [node.material]
@@ -118,7 +136,7 @@ export default function Viewport() {
         }
       }
     })
-    console.log(`[BgEditor] ${meshCount} meshes, ${texturedCount} textured materials`)
+    console.log(`[BgEditor] ${meshCount} meshes, ${texturedCount} textured materials, ${boneCount} bones`)
 
     // Compute bounding box and auto-fit camera
     const box = new THREE.Box3().setFromObject(storeScene)
@@ -141,7 +159,65 @@ export default function Viewport() {
       controls.target.copy(center)
       controls.update()
     }
-  }, [storeScene])
+
+    // Set up animation playback
+    if (storeAnimations && storeAnimations.length > 0) {
+      console.log(`[BgEditor] Setting up AnimationMixer with ${storeAnimations.length} clip(s)`)
+      const mixer = new THREE.AnimationMixer(storeScene)
+      mixerRef.current = mixer
+      clockRef.current.start()
+
+      // Debug: log track names for first clip
+      const firstClip = storeAnimations[0]
+      console.log(`[BgEditor]   First clip: "${firstClip.name}" (${firstClip.duration.toFixed(2)}s, ${firstClip.tracks.length} tracks)`)
+      for (const track of firstClip.tracks.slice(0, 10)) {
+        console.log(`[BgEditor]     Track: ${track.name} (${track.times.length} keyframes)`)
+      }
+      if (firstClip.tracks.length > 10) {
+        console.log(`[BgEditor]     ... and ${firstClip.tracks.length - 10} more tracks`)
+      }
+
+      // Play the active clip
+      const clipIdx = Math.min(activeClipIndex, storeAnimations.length - 1)
+      const clip = storeAnimations[clipIdx]
+      const action = mixer.clipAction(clip)
+      action.setLoop(THREE.LoopRepeat, Infinity)
+      if (!animationPlaying) {
+        action.paused = true
+      }
+      action.play()
+      activeActionRef.current = action
+    }
+  }, [storeScene, storeAnimations])
+
+  // Respond to play/pause changes
+  useEffect(() => {
+    const action = activeActionRef.current
+    if (!action) return
+    action.paused = !animationPlaying
+  }, [animationPlaying])
+
+  // Respond to active clip changes
+  useEffect(() => {
+    const mixer = mixerRef.current
+    if (!mixer || !storeAnimations || storeAnimations.length === 0) return
+
+    const clipIdx = Math.min(activeClipIndex, storeAnimations.length - 1)
+    const clip = storeAnimations[clipIdx]
+
+    // Stop current action
+    if (activeActionRef.current) {
+      activeActionRef.current.stop()
+    }
+
+    const action = mixer.clipAction(clip)
+    action.setLoop(THREE.LoopRepeat, Infinity)
+    if (!animationPlaying) {
+      action.paused = true
+    }
+    action.play()
+    activeActionRef.current = action
+  }, [activeClipIndex])
 
   return (
     <div

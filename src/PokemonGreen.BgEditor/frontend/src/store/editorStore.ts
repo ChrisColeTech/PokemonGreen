@@ -9,10 +9,15 @@ interface EditorState {
   // Scene
   sceneName: string | null
   scene: THREE.Group | null
+  animations: THREE.AnimationClip[]
   textures: LoadedTexture[]
   selectedTextureIndex: number
   loading: boolean
   error: string | null
+
+  // Animation playback state
+  animationPlaying: boolean
+  activeClipIndex: number
 
   // Actions
   loadManifest: (file: File) => Promise<void>
@@ -21,15 +26,20 @@ interface EditorState {
   resetTexture: (index: number) => void
   resetAll: () => void
   applyToAll: () => void
+  setAnimationPlaying: (playing: boolean) => void
+  setActiveClipIndex: (index: number) => void
 }
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
   sceneName: null,
   scene: null,
+  animations: [],
   textures: [],
   selectedTextureIndex: 0,
   loading: false,
   error: null,
+  animationPlaying: true,
+  activeClipIndex: 0,
 
   loadManifest: async (file: File) => {
     set({ loading: true, error: null })
@@ -39,10 +49,13 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const result = await loadScene(manifest)
       set({
         scene: result.scene,
+        animations: result.animations,
         textures: result.textures,
         sceneName: manifest.name,
         selectedTextureIndex: 0,
         loading: false,
+        animationPlaying: true,
+        activeClipIndex: 0,
       })
     } catch (err) {
       set({
@@ -96,5 +109,13 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       adjustment: { ...adj },
     }))
     set({ textures: updated })
+  },
+
+  setAnimationPlaying: (playing: boolean) => {
+    set({ animationPlaying: playing })
+  },
+
+  setActiveClipIndex: (index: number) => {
+    set({ activeClipIndex: index })
   },
 }))

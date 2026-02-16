@@ -4,6 +4,7 @@ import Viewport from './components/Viewport'
 import DropZone from './components/DropZone'
 import TexturePanel from './components/TexturePanel'
 import ColorControls from './components/ColorControls'
+import AnimationPanel from './components/AnimationPanel'
 
 export default function App() {
   const scene = useEditorStore(s => s.scene)
@@ -33,10 +34,13 @@ export default function App() {
               borderLeft: '1px solid #2a2a4a',
               overflow: 'hidden',
             }}>
-              <div style={{ flex: '0 0 40%', overflow: 'hidden', display: 'flex' }}>
+              <div style={{ flex: '0 0 auto', maxHeight: '30%', overflow: 'hidden', display: 'flex' }}>
                 <TexturePanel />
               </div>
-              <div style={{ flex: '1 1 60%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: '0 0 auto', overflow: 'hidden' }}>
+                <AnimationPanel />
+              </div>
+              <div style={{ flex: '1 1 auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <ColorControls />
               </div>
             </div>
