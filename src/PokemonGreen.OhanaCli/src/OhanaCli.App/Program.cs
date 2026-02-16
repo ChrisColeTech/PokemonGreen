@@ -437,13 +437,20 @@ namespace OhanaCli.App
             ExportTextures(models.texture, outDir);
 
             // Export each model
+            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (int m = 0; m < models.model.Count; m++)
             {
                 string modelName = models.model[m].name ?? baseName;
                 if (string.IsNullOrEmpty(modelName)) modelName = baseName;
 
+                // Deduplicate names: append _1, _2, etc. on collision
+                string uniqueName = modelName;
+                int suffix = 1;
+                while (!usedNames.Add(uniqueName))
+                    uniqueName = $"{modelName}_{suffix++}";
+
                 string ext = format.ToLowerInvariant() == "obj" ? ".obj" : ".dae";
-                string outPath = Path.Combine(outDir, modelName + ext);
+                string outPath = Path.Combine(outDir, uniqueName + ext);
 
                 try
                 {
