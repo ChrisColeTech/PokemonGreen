@@ -74,9 +74,8 @@ public class Game1 : Game
     private AlphaTestEffect? _battleEffect;
 
     // Pokemon 3D models on battle field
-    private BattleModelData? _allyModel;
-    private BattleModelData? _foeModel;
-    private double _battleIdleTimer;
+    private SkeletalModelData? _allyModel;
+    private SkeletalModelData? _foeModel;
 
     // Battle camera animation
     private static readonly Vector3 BattleCamFoe = new(6.9f, 7f, 4.6f);   // zoomed on foe
@@ -257,7 +256,6 @@ public class Game1 : Game
                 if (modelCache.TryGetValue(relativePath, out var cached))
                     return cached;
                 var model = BattleModelLoader.Load(Path.Combine(basePath, relativePath), GraphicsDevice);
-                LogModelBounds(relativePath, model);
                 modelCache[relativePath] = model;
                 return model;
             }
@@ -528,7 +526,9 @@ public class Game1 : Game
         {
             _allyPokemon?.UpdateDisplayHP(deltaTime);
             _foePokemon?.UpdateDisplayHP(deltaTime);
-            _battleIdleTimer += deltaTime;
+            double totalSec = gameTime.TotalGameTime.TotalSeconds;
+            _allyModel?.Update(totalSec);
+            _foeModel?.Update(totalSec);
         }
 
         _playtimeSeconds += deltaTime;
@@ -887,9 +887,8 @@ public class Game1 : Game
         if (_foeModel != null)
         {
             float scale = FitModelScale(_foeModel, 3.0f);
-            float bobFoe = MathF.Sin((float)_battleIdleTimer * 1.8f) * 0.15f;
             _battleEffect.World = Matrix.CreateScale(scale) *
-                Matrix.CreateTranslation(0f, -0.20f - _foeModel.BoundsMin.Y * scale + bobFoe, -15f);
+                Matrix.CreateTranslation(0f, -0.20f - _foeModel.BoundsMin.Y * scale, -15f);
             _foeModel.Draw(device, _battleEffect);
         }
 
@@ -897,10 +896,9 @@ public class Game1 : Game
         if (_allyModel != null)
         {
             float scale = FitModelScale(_allyModel, 3.5f);
-            float bobAlly = MathF.Sin((float)_battleIdleTimer * 2.0f + 1.0f) * 0.15f;
             _battleEffect.World = Matrix.CreateScale(scale) *
                 Matrix.CreateRotationY(MathF.PI) *
-                Matrix.CreateTranslation(0f, -0.20f - _allyModel.BoundsMin.Y * scale + bobAlly, 3f);
+                Matrix.CreateTranslation(0f, -0.20f - _allyModel.BoundsMin.Y * scale, 3f);
             _allyModel.Draw(device, _battleEffect);
         }
 
@@ -910,28 +908,23 @@ public class Game1 : Game
         device.BlendState = BlendState.AlphaBlend;
     }
 
-    private static void LogModelBounds(string name, BattleModelData model)
-    {
-        var min = model.BoundsMin;
-        var max = model.BoundsMax;
-        System.Diagnostics.Debug.WriteLine(
-            $"[Battle3D] {name}: {model.Meshes.Count} meshes, {model.TotalVertices} verts, " +
-            $"{model.TexturedMeshCount} textured, bounds: ({min.X:F1},{min.Y:F1},{min.Z:F1}) to ({max.X:F1},{max.Y:F1},{max.Z:F1})");
-    }
-
-    private BattleModelData? LoadPokemonModel(int speciesId)
+    private SkeletalModelData? LoadPokemonModel(int speciesId)
     {
         var species = SpeciesRegistry.GetSpecies(speciesId);
         if (species?.ModelFolder == null) return null;
         var model = PokemonModelLoader.Load(species.ModelFolder, GraphicsDevice);
         if (model != null)
-            LogModelBounds($"Pokemon #{speciesId} ({species.Name})", model);
-        else
-            Console.WriteLine($"[Battle3D] No model found for #{speciesId} ({species.Name}) at {species.ModelFolder}");
+        {
+            var min = model.BoundsMin;
+            var max = model.BoundsMax;
+            System.Diagnostics.Debug.WriteLine(
+                $"[Battle3D] Pokemon #{speciesId} ({species.Name}): {model.Meshes.Count} meshes, " +
+                $"bounds: ({min.X:F1},{min.Y:F1},{min.Z:F1}) to ({max.X:F1},{max.Y:F1},{max.Z:F1})");
+        }
         return model;
     }
 
-    private static float FitModelScale(BattleModelData model, float targetHeight)
+    private static float FitModelScale(SkeletalModelData model, float targetHeight)
     {
         float modelHeight = model.BoundsMax.Y - model.BoundsMin.Y;
         if (modelHeight <= 0.001f) return 1f;
@@ -1068,7 +1061,6 @@ public class Game1 : Game
         // Load 3D models for the battling Pokemon
         _allyModel = LoadPokemonModel(_allyPokemon.SpeciesId);
         _foeModel = LoadPokemonModel(_foePokemon.SpeciesId);
-        _battleIdleTimer = 0;
 
         _battleTurnManager = new BattleTurnManager(
             _allyPokemon, _foePokemon,

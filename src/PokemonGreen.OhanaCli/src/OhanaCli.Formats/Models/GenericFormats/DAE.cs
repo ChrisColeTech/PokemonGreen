@@ -1175,7 +1175,6 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
         /// <param name="target">Target matrix to save bone transformation</param>
         private static void transformSkeleton(List<RenderBase.OBone> skeleton, int index, ref RenderBase.OMatrix target)
         {
-            target *= RenderBase.OMatrix.scale(skeleton[index].scale);
             target *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
             target *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
             target *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);
@@ -1198,7 +1197,6 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             node.type = "JOINT";
 
             RenderBase.OMatrix transform = new RenderBase.OMatrix();
-            transform *= RenderBase.OMatrix.scale(skeleton[index].scale);
             transform *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
             transform *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
             transform *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);
