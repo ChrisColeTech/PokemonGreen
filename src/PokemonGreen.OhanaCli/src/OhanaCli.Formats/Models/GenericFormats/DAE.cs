@@ -502,6 +502,55 @@ namespace OhanaCli.Formats.Models.GenericFormats
             }
         }
 
+        public class daeTranslate
+        {
+            [XmlAttribute]
+            public string sid;
+
+            [XmlText]
+            public string data;
+
+            public void set(float x, float y, float z)
+            {
+                data = x.ToString(CultureInfo.InvariantCulture) + " " +
+                       y.ToString(CultureInfo.InvariantCulture) + " " +
+                       z.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        public class daeRotate
+        {
+            [XmlAttribute]
+            public string sid;
+
+            [XmlText]
+            public string data;
+
+            public void set(float axisX, float axisY, float axisZ, float angleDegrees)
+            {
+                data = axisX.ToString(CultureInfo.InvariantCulture) + " " +
+                       axisY.ToString(CultureInfo.InvariantCulture) + " " +
+                       axisZ.ToString(CultureInfo.InvariantCulture) + " " +
+                       angleDegrees.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        public class daeScale
+        {
+            [XmlAttribute]
+            public string sid;
+
+            [XmlText]
+            public string data;
+
+            public void set(float x, float y, float z)
+            {
+                data = x.ToString(CultureInfo.InvariantCulture) + " " +
+                       y.ToString(CultureInfo.InvariantCulture) + " " +
+                       z.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
         public class daeBindMaterialInstace
         {
             [XmlAttribute]
@@ -552,7 +601,19 @@ namespace OhanaCli.Formats.Models.GenericFormats
             [XmlAttribute]
             public string type = "NODE";
 
-            public daeMatrix matrix = new daeMatrix();
+            // Decomposed transforms for joint nodes (order matters for COLLADA)
+            [XmlElement("scale", IsNullable = false)]
+            public daeScale scale;
+
+            [XmlElement("rotate", IsNullable = false)]
+            public List<daeRotate> rotate;
+
+            [XmlElement("translate", IsNullable = false)]
+            public daeTranslate translate;
+
+            // Matrix transform for non-joint nodes
+            [XmlElement("matrix", IsNullable = false)]
+            public daeMatrix matrix;
 
             [XmlElement("node", IsNullable = false)]
             public List<daeNode> childs;
@@ -1012,6 +1073,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 daeNode node = new daeNode();
                 node.name = "vsn_" + meshName;
                 node.id = node.name + "_id";
+                node.matrix = new daeMatrix();
                 node.matrix.set(new RenderBase.OMatrix());
                 if (hasController)
                 {
@@ -1080,6 +1142,8 @@ namespace OhanaCli.Formats.Models.GenericFormats
         /// <param name="skeleton">The skeleton</param>
         /// <param name="index">Index of the current bone (root bone when it's not a recursive call)</param>
         /// <param name="nodes">List with the DAE nodes</param>
+        private static float toDeg(float radians) { return radians * (180.0f / (float)Math.PI); }
+
         private static void writeSkeleton(List<RenderBase.OBone> skeleton, int index, ref List<daeNode> nodes)
         {
             daeNode node = new daeNode();
@@ -1088,13 +1152,26 @@ namespace OhanaCli.Formats.Models.GenericFormats
             node.sid = node.name;
             node.type = "JOINT";
 
-            RenderBase.OMatrix transform = new RenderBase.OMatrix();
-            transform *= RenderBase.OMatrix.rotateX(skeleton[index].rotation.x);
-            transform *= RenderBase.OMatrix.rotateY(skeleton[index].rotation.y);
-            transform *= RenderBase.OMatrix.rotateZ(skeleton[index].rotation.z);
-            transform *= RenderBase.OMatrix.translate(skeleton[index].translation);
+            RenderBase.OBone bone = skeleton[index];
 
-            node.matrix.set(transform);
+            // Decomposed transforms with SIDs (order: S * Rx * Ry * Rz * T)
+            node.scale = new daeScale();
+            node.scale.sid = "scale";
+            node.scale.set(bone.scale.x == 0 ? 1 : bone.scale.x,
+                           bone.scale.y == 0 ? 1 : bone.scale.y,
+                           bone.scale.z == 0 ? 1 : bone.scale.z);
+
+            node.rotate = new List<daeRotate>();
+            daeRotate rx = new daeRotate(); rx.sid = "rotationX"; rx.set(1, 0, 0, toDeg(bone.rotation.x));
+            daeRotate ry = new daeRotate(); ry.sid = "rotationY"; ry.set(0, 1, 0, toDeg(bone.rotation.y));
+            daeRotate rz = new daeRotate(); rz.sid = "rotationZ"; rz.set(0, 0, 1, toDeg(bone.rotation.z));
+            node.rotate.Add(rx);
+            node.rotate.Add(ry);
+            node.rotate.Add(rz);
+
+            node.translate = new daeTranslate();
+            node.translate.sid = "translation";
+            node.translate.set(bone.translation.x, bone.translation.y, bone.translation.z);
 
             for (int i = 0; i < skeleton.Count; i++)
             {
@@ -1126,18 +1203,21 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 if (boneIndex == -1) continue;
 
                 string boneSid = bone.name;
+                string nodeId = boneSid + "_bone_id";
                 string[] axisNames = { "scaleX", "scaleY", "scaleZ", "rotationX", "rotationY", "rotationZ", "translationX", "translationY", "translationZ" };
                 string[] targetPaths = {
-                    boneSid + "_bone_id/scale.X",
-                    boneSid + "_bone_id/scale.Y",
-                    boneSid + "_bone_id/scale.Z",
-                    boneSid + "_bone_id/rotation.X",
-                    boneSid + "_bone_id/rotation.Y",
-                    boneSid + "_bone_id/rotation.Z",
-                    boneSid + "_bone_id/translation.X",
-                    boneSid + "_bone_id/translation.Y",
-                    boneSid + "_bone_id/translation.Z"
+                    nodeId + "/scale.X",
+                    nodeId + "/scale.Y",
+                    nodeId + "/scale.Z",
+                    nodeId + "/rotationX.ANGLE",
+                    nodeId + "/rotationY.ANGLE",
+                    nodeId + "/rotationZ.ANGLE",
+                    nodeId + "/translation.X",
+                    nodeId + "/translation.Y",
+                    nodeId + "/translation.Z"
                 };
+                // Rotation axes (indices 3-5) need radian-to-degree conversion
+                bool[] needsDegConversion = { false, false, false, true, true, true, false, false, false };
 
                 RenderBase.OAnimationKeyFrameGroup[] groups = {
                     bone.scaleX, bone.scaleY, bone.scaleZ,
@@ -1175,7 +1255,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     outputSrc.float_array.id = animId + "_output_array";
                     List<float> values = new List<float>();
                     foreach (RenderBase.OAnimationKeyFrame kf in groups[axis].keyFrames)
-                        values.Add(kf.value);
+                        values.Add(needsDegConversion[axis] ? toDeg(kf.value) : kf.value);
                     outputSrc.float_array.set(values);
                     outputSrc.technique_common.accessor.source = "#" + outputSrc.float_array.id;
                     outputSrc.technique_common.accessor.count = (uint)values.Count;
@@ -1207,7 +1287,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     foreach (RenderBase.OAnimationKeyFrame kf in groups[axis].keyFrames)
                     {
                         inTangents.Add(kf.frame / anim.frameSize);
-                        inTangents.Add(kf.inSlope);
+                        inTangents.Add(needsDegConversion[axis] ? toDeg(kf.inSlope) : kf.inSlope);
                     }
                     inTangentSrc.float_array.set(inTangents);
                     inTangentSrc.technique_common.accessor.source = "#" + inTangentSrc.float_array.id;
@@ -1226,7 +1306,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     foreach (RenderBase.OAnimationKeyFrame kf in groups[axis].keyFrames)
                     {
                         outTangents.Add(kf.frame / anim.frameSize);
-                        outTangents.Add(kf.outSlope);
+                        outTangents.Add(needsDegConversion[axis] ? toDeg(kf.outSlope) : kf.outSlope);
                     }
                     outTangentSrc.float_array.set(outTangents);
                     outTangentSrc.technique_common.accessor.source = "#" + outTangentSrc.float_array.id;
