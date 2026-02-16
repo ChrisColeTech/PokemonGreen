@@ -67,6 +67,12 @@ export async function loadScene(manifest: Manifest): Promise<LoadResult> {
     }
     // NOTE: UV Y-flip is already applied by the DAE exporter (1-v in the UV data).
     // Do NOT flip again here — that would undo the exporter's correction.
+
+    // Fix bone transforms: the DAE's XML rotation order doesn't match the inverse
+    // bind matrices (row-vector vs column-vector convention mismatch). Recompute
+    // each bone's correct world position from its inverse bind matrix, then derive
+    // the correct local transform. This is what Blender's importer does too.
+    fixSkeletonFromInverseBindMatrices(scene)
   } else {
     const objLoader = new OBJLoader()
     if (manifest.mtlFile) {
@@ -313,6 +319,80 @@ function fixMaterials(scene: THREE.Group): void {
       return basic
     })
     node.material = newMats.length === 1 ? newMats[0] : newMats
+  })
+}
+
+/**
+ * Fix bone transforms for COLLADA models where the XML decomposed transforms
+ * (translate, rotate, scale) produce a different matrix than what the inverse
+ * bind matrices expect. This happens because the DAE exporter uses row-vector
+ * convention (S * Rz * Ry * Rx * T) but the XML element order causes Three.js
+ * to compute a different column-vector matrix.
+ *
+ * The fix: for each bone in each skeleton, compute the correct world matrix
+ * from the inverse bind matrix, then derive the correct local transform.
+ * This matches what Blender's COLLADA importer does.
+ */
+function fixSkeletonFromInverseBindMatrices(scene: THREE.Group): void {
+  const tempMatrix = new THREE.Matrix4()
+
+  scene.traverse(node => {
+    if (!(node instanceof THREE.SkinnedMesh)) return
+    const skinnedMesh = node as THREE.SkinnedMesh
+    const skeleton = skinnedMesh.skeleton
+    if (!skeleton) return
+
+    console.log(`[SceneService] Fixing skeleton for SkinnedMesh "${skinnedMesh.name}" (${skeleton.bones.length} bones)`)
+
+    // Build a map of bone → correct world matrix (from inverse bind matrices)
+    const correctWorldMatrices = new Map<THREE.Bone, THREE.Matrix4>()
+
+    for (let i = 0; i < skeleton.bones.length; i++) {
+      const bone = skeleton.bones[i]
+      const boneInverse = skeleton.boneInverses[i]
+
+      if (!boneInverse) continue
+
+      // correctWorld = inverse(boneInverse)
+      const correctWorld = new THREE.Matrix4().copy(boneInverse).invert()
+      correctWorldMatrices.set(bone, correctWorld)
+    }
+
+    // Now derive correct local transforms by walking the bone hierarchy.
+    // localMatrix = inverse(parentWorld) * childWorld
+    for (let i = 0; i < skeleton.bones.length; i++) {
+      const bone = skeleton.bones[i]
+      const correctWorld = correctWorldMatrices.get(bone)
+      if (!correctWorld) continue
+
+      let localMatrix: THREE.Matrix4
+
+      const parent = bone.parent
+      if (parent instanceof THREE.Bone && correctWorldMatrices.has(parent)) {
+        // localMatrix = inverse(parentWorld) * thisWorld
+        const parentWorldInverse = tempMatrix.copy(correctWorldMatrices.get(parent)!).invert()
+        localMatrix = new THREE.Matrix4().multiplyMatrices(parentWorldInverse, correctWorld)
+      } else {
+        // Root bone or parent isn't a bone — local = world
+        localMatrix = correctWorld
+      }
+
+      // Decompose into position, quaternion, scale and apply to the bone
+      const pos = new THREE.Vector3()
+      const quat = new THREE.Quaternion()
+      const scl = new THREE.Vector3()
+      localMatrix.decompose(pos, quat, scl)
+
+      bone.position.copy(pos)
+      bone.quaternion.copy(quat)
+      bone.scale.copy(scl)
+      bone.updateMatrix()
+    }
+
+    // Force update the entire skeleton world matrices
+    skinnedMesh.updateMatrixWorld(true)
+
+    console.log(`[SceneService] Skeleton fixed for "${skinnedMesh.name}"`)
   })
 }
 
