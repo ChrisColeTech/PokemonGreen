@@ -179,14 +179,14 @@ public class MenuBox
             }
 
             var textSize = font.MeasureString(item.Label);
-            int textX = ix + 20;
+            int textX = ix + 30;
             int textY = iy + (int)((itemH - textSize.Y) / 2);
 
             // Draw arrow cursor for selected item
             if (selected)
             {
-                int arrowSize = 8;
-                int arrowX = ix + 6;
+                int arrowSize = 15;
+                int arrowX = ix + 10;
                 int arrowY = textY + (int)(textSize.Y / 2) - arrowSize / 2;
                 UIStyle.DrawArrowRight(spriteBatch, pixel, arrowX, arrowY, arrowSize, textColor);
             }
@@ -237,13 +237,13 @@ public class MenuBox
             else
                 tint = Color.White;
 
-            int textX = ix + 20;
+            int arrowSize = fontScale * 3;
+            int textX = ix + fontScale * 6;
             int textY = iy + (itemH - fontHeight) / 2;
 
             if (selected)
             {
-                int arrowSize = 8;
-                int arrowX = ix + 6;
+                int arrowX = ix + fontScale * 2;
                 int arrowY = textY + fontHeight / 2 - arrowSize / 2;
                 UIStyle.DrawArrowRight(spriteBatch, pixel, arrowX, arrowY, arrowSize, tint);
             }

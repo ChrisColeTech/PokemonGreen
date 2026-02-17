@@ -6,7 +6,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using PokemonGreen.Core.Battle;
+using PokemonGreen.Core.Items;
 using PokemonGreen.Core.Maps;
+using PokemonGreen.Core.Pokemon;
 using PokemonGreen.Core.Rendering;
 using PokemonGreen.Core.Save;
 using PokemonGreen.Core.Rendering.Skeletal;
@@ -50,11 +52,24 @@ public class Game1 : Game
     private CubeCollectibleSystem _cubeSystem = null!;
     private PersistenceManager3D _persistence = null!;
 
+    // Party and inventory for battle overlays
+    private Party _party = null!;
+    private PlayerInventory _inventory = null!;
+
     // Encounter system
     private readonly Random _encounterRng = new();
     private float _encounterStepTimer;
     private const float EncounterStepInterval = 0.4f; // check every 0.4s of walking
     private const float EncounterChance = 0.15f; // 15% per check
+
+    // Battle transition (white flash → fade to black → battle → fade from black)
+    private enum TransitionPhase { None, FlashWhite, FadeToBattle, FadeFromBattle, FadeOutBattle }
+    private TransitionPhase _transition;
+    private float _transitionTimer;
+    private float _transitionAlpha;
+    private BattleBackground _pendingBattleBG;
+    private const float FlashDuration = 0.15f;
+    private const float FadeDuration = 0.3f;
 
     // Character data
     private string _assetsRoot;
@@ -100,6 +115,9 @@ public class Game1 : Game
 
     protected override void Initialize()
     {
+        // Initialize registries (needed for Pokemon model loading in battles)
+        PokemonGreen.Core.Pokemon.SpeciesRegistry.Initialize();
+
         _effect = new BasicEffect(GraphicsDevice);
         _effect.LightingEnabled = true;
         _effect.DirectionalLight0.Direction = Vector3.Normalize(new Vector3(-1, -2, -1));
@@ -191,8 +209,13 @@ public class Game1 : Game
         }
 
         // Initialize subsystems that need GPU resources
-        _battleScreen = new BattleScreen3D(GraphicsDevice, _spriteBatch, _pixel,
-            _kermFontRenderer, _kermFont);
+        _battleScreen = new BattleScreen3D();
+        _battleScreen.Initialize(_spriteBatch, _pixel, _kermFontRenderer, _kermFont);
+
+        // Test party and inventory for battle overlays
+        _party = Party.CreateTestParty();
+        _inventory = PlayerInventory.CreateTestInventory();
+        _battleScreen.SetPartyAndInventory(_party, _inventory);
 
         // Load 3D battle scene models
         string battleBGPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BattleBG");
@@ -202,7 +225,7 @@ public class Game1 : Game
             battleBGPath = Path.GetFullPath(Path.Combine(_assetsRoot, "..", "BattleBG"));
         }
         if (Directory.Exists(battleBGPath))
-            _battleScreen.LoadBattleModels(battleBGPath);
+            _battleScreen.LoadBattleModels(GraphicsDevice, battleBGPath);
 
         _cubeSystem = new CubeCollectibleSystem(GraphicsDevice, _gridEffect, _spriteBatch,
             _pixel, _kermFontRenderer, _kermFont);
@@ -211,7 +234,15 @@ public class Game1 : Game
         Console.WriteLine($"[Save] Loaded {_cubeSystem.CubeCount} collected cubes");
 
         if (DebugStartInBattle)
+        {
             _battleScreen.EnterBattle();
+            _battleScreen.OnBattleExit = () =>
+            {
+                _transition = TransitionPhase.FadeOutBattle;
+                _transitionTimer = 0f;
+                _transitionAlpha = 1f;
+            };
+        }
 
         // Load default character
         LoadCharacterModel(_currentCharacterFolder);
@@ -244,20 +275,32 @@ public class Game1 : Game
         // Animate cubes regardless of state
         _cubeSystem.UpdateAnimation(dt);
 
-        // Handle battle state (blocks all overworld input)
-        if (_battleScreen.InBattle)
+        // Update battle transition (flash/fade)
+        UpdateTransition(dt);
+
+        // During transition, block all input
+        if (_transition != TransitionPhase.None && _transition != TransitionPhase.FadeFromBattle)
         {
-            var uiInput = BuildInputState(keyboard);
-            _battleScreen.Update(dt, uiInput);
             _prevKeyboard = keyboard;
             base.Update(gameTime);
             return;
         }
 
-        // Handle message box (blocks all other input)
+        // Handle battle state (blocks all overworld input)
+        if (_battleScreen.InBattle)
+        {
+            var uiInput = BuildInputState(keyboard);
+            _battleScreen.Update(dt, uiInput, gameTime.TotalGameTime.TotalSeconds);
+            _prevKeyboard = keyboard;
+            base.Update(gameTime);
+            return;
+        }
+
+        // Handle message box (blocks all other input) — any key dismisses
         if (_messageBox.IsActive)
         {
-            _messageBox.Update(dt, confirmPressed);
+            bool anyKey = keyboard.GetPressedKeyCount() > 0 && _prevKeyboard.GetPressedKeyCount() == 0;
+            _messageBox.Update(dt, anyKey);
             _prevKeyboard = keyboard;
             base.Update(gameTime);
             return;
@@ -455,11 +498,24 @@ public class Game1 : Game
             // 3D battle scene (backgrounds, platforms, Pokemon models)
             _battleScreen.Draw3DScene();
 
-            // 2D UI overlay
+            // 2D UI overlay — fills full window width
+            var battleTransform = GetBattleUITransform(out int battleW, out int battleH);
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied,
-                SamplerState.PointClamp, transformMatrix: GetUITransform());
-            _battleScreen.DrawUI(UIFontScale, VirtualWidth, VirtualHeight);
+                SamplerState.PointClamp, transformMatrix: battleTransform);
+            _battleScreen.DrawUI(UIFontScale, battleW, battleH);
             _spriteBatch.End();
+
+            // Draw transition overlay on top of battle
+            if (_transition != TransitionPhase.None)
+            {
+                int sw = GraphicsDevice.Viewport.Width;
+                int sh = GraphicsDevice.Viewport.Height;
+                _spriteBatch.Begin();
+                _spriteBatch.Draw(_pixel, new Rectangle(0, 0, sw, sh),
+                    Color.Black * _transitionAlpha);
+                _spriteBatch.End();
+            }
+
             base.Draw(gameTime);
             return;
         }
@@ -553,6 +609,29 @@ public class Game1 : Game
 
         _spriteBatch.End();
 
+        // ── Transition overlays ──
+        if (_transition != TransitionPhase.None)
+        {
+            int sw = GraphicsDevice.Viewport.Width;
+            int sh = GraphicsDevice.Viewport.Height;
+            _spriteBatch.Begin();
+
+            if (_transition == TransitionPhase.FlashWhite)
+            {
+                // White flash overlay
+                _spriteBatch.Draw(_pixel, new Rectangle(0, 0, sw, sh),
+                    Color.White * _transitionAlpha);
+            }
+            else
+            {
+                // Black fade overlay
+                _spriteBatch.Draw(_pixel, new Rectangle(0, 0, sw, sh),
+                    Color.Black * _transitionAlpha);
+            }
+
+            _spriteBatch.End();
+        }
+
         base.Draw(gameTime);
     }
 
@@ -561,6 +640,8 @@ public class Game1 : Game
     private InputState BuildInputState(KeyboardState keyboard)
     {
         var mouse = Mouse.GetState();
+        // Any key freshly pressed this frame (for message dismissal)
+        bool anyKey = keyboard.GetPressedKeyCount() > 0 && _prevKeyboard.GetPressedKeyCount() == 0;
         return new InputState
         {
             Left = keyboard.IsKeyDown(Keys.Left) && !_prevKeyboard.IsKeyDown(Keys.Left),
@@ -571,6 +652,7 @@ public class Game1 : Game
                    || (keyboard.IsKeyDown(Keys.Z) && !_prevKeyboard.IsKeyDown(Keys.Z)),
             Cancel = (keyboard.IsKeyDown(Keys.Escape) && !_prevKeyboard.IsKeyDown(Keys.Escape))
                   || (keyboard.IsKeyDown(Keys.X) && !_prevKeyboard.IsKeyDown(Keys.X)),
+            AnyKey = anyKey,
             PageLeft = (keyboard.IsKeyDown(Keys.Q) && !_prevKeyboard.IsKeyDown(Keys.Q))
                     || (keyboard.IsKeyDown(Keys.PageUp) && !_prevKeyboard.IsKeyDown(Keys.PageUp)),
             PageRight = (keyboard.IsKeyDown(Keys.E) && !_prevKeyboard.IsKeyDown(Keys.E))
@@ -635,7 +717,8 @@ public class Game1 : Game
 
     private void CheckEncounterTile()
     {
-        if (_tileMapMesh == null || _messageBox.IsActive) return;
+        if (_tileMapMesh == null || _messageBox.IsActive || _transition != TransitionPhase.None) return;
+        if (_battleScreen.InBattle) return;
 
         string? behavior = _tileMapMesh.GetOverlayBehavior(_playerPosition.X, _playerPosition.Z);
         if (behavior == null || !behavior.Contains("encounter")) return;
@@ -646,16 +729,85 @@ public class Game1 : Game
 
         if (_encounterRng.NextDouble() < EncounterChance)
         {
-            string encounterType = behavior switch
-            {
-                "wild_encounter" => "A wild Pokemon appeared!",
-                "rare_encounter" => "A rare Pokemon appeared!",
-                "double_encounter" => "Wild Pokemon appeared!",
-                "cave_encounter" => "A wild cave Pokemon appeared!",
-                "fire_encounter" => "A wild fire Pokemon appeared!",
-                _ => "A wild Pokemon appeared!"
-            };
-            _messageBox.Show(encounterType);
+            _pendingBattleBG = BattleBackgroundResolver.FromOverlayBehavior(behavior);
+            BeginBattleTransition();
+        }
+    }
+
+    private void BeginBattleTransition()
+    {
+        _transition = TransitionPhase.FlashWhite;
+        _transitionTimer = 0f;
+        _transitionAlpha = 0f;
+    }
+
+    private void UpdateTransition(float dt)
+    {
+        if (_transition == TransitionPhase.None) return;
+
+        _transitionTimer += dt;
+
+        switch (_transition)
+        {
+            case TransitionPhase.FlashWhite:
+                // Quick white flash
+                _transitionAlpha = 1f - (_transitionTimer / FlashDuration);
+                if (_transitionTimer >= FlashDuration)
+                {
+                    _transition = TransitionPhase.FadeToBattle;
+                    _transitionTimer = 0f;
+                    _transitionAlpha = 0f;
+                }
+                break;
+
+            case TransitionPhase.FadeToBattle:
+                // Fade to black
+                _transitionAlpha = _transitionTimer / FadeDuration;
+                if (_transitionTimer >= FadeDuration)
+                {
+                    _transitionAlpha = 1f;
+                    // Enter battle at peak black
+                    _battleScreen.EnterBattle(_pendingBattleBG);
+                    _battleScreen.OnBattleExit = () =>
+                    {
+                        // When battle ends, fade out
+                        _transition = TransitionPhase.FadeOutBattle;
+                        _transitionTimer = 0f;
+                        _transitionAlpha = 1f;
+                    };
+                    _transition = TransitionPhase.FadeFromBattle;
+                    _transitionTimer = 0f;
+                }
+                break;
+
+            case TransitionPhase.FadeFromBattle:
+                // Fade from black (revealing battle screen)
+                _transitionAlpha = 1f - (_transitionTimer / FadeDuration);
+                if (_transitionTimer >= FadeDuration)
+                {
+                    _transitionAlpha = 0f;
+                    _transition = TransitionPhase.None;
+                }
+                break;
+
+            case TransitionPhase.FadeOutBattle:
+                // Fade to black then back to overworld
+                if (_transitionTimer < FadeDuration)
+                {
+                    _transitionAlpha = _transitionTimer / FadeDuration;
+                }
+                else if (_transitionTimer < FadeDuration * 2f)
+                {
+                    _transitionAlpha = 1f - ((_transitionTimer - FadeDuration) / FadeDuration);
+                }
+                else
+                {
+                    _transitionAlpha = 0f;
+                    _transition = TransitionPhase.None;
+                    if (_battleScreen.InBattle)
+                        _battleScreen.CleanupBattle();
+                }
+                break;
         }
     }
 
@@ -675,6 +827,21 @@ public class Game1 : Game
         float ox = (w - VirtualWidth * scale) / 2f;
         float oy = (h - VirtualHeight * scale) / 2f;
         return Matrix.CreateScale(scale, scale, 1f) * Matrix.CreateTranslation(ox, oy, 0f);
+    }
+
+    /// <summary>
+    /// Maps battle UI coordinates to fill the full window width.
+    /// Scales uniformly by height so text stays the right size,
+    /// but the virtual width expands to fill the actual aspect ratio.
+    /// </summary>
+    private Matrix GetBattleUITransform(out int virtualW, out int virtualH)
+    {
+        int w = GraphicsDevice.Viewport.Width;
+        int h = GraphicsDevice.Viewport.Height;
+        float scale = (float)h / VirtualHeight;
+        virtualW = (int)(w / scale);
+        virtualH = VirtualHeight;
+        return Matrix.CreateScale(scale, scale, 1f);
     }
 
     // ── Utility ───────────────────────────────────────────────────────

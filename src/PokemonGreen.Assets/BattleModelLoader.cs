@@ -63,6 +63,9 @@ public class BattleModelData : IDisposable
             foreach (var pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
+                // pass.Apply() resets sampler to LinearClamp — force PointClamp
+                // back so battle textures stay sharp (pixel-art style)
+                device.SamplerStates[0] = SamplerState.PointClamp;
                 device.DrawIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType.TriangleList, 0, 0, mesh.PrimitiveCount);
             }
         }

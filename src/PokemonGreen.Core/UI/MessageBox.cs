@@ -126,7 +126,7 @@ public class MessageBox
 
         UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
 
-        int padding = 4 * fontScale;
+        int padding = 6 * fontScale;
         int maxChars = Math.Min((int)_visibleChars, _currentMessage.Length);
         fontRenderer.DrawString(spriteBatch, _currentMessage,
             new Vector2(bounds.X + padding, bounds.Y + padding),
@@ -142,7 +142,7 @@ public class MessageBox
             bool showPrompt = ((int)(_blinkTimer * PromptBlinkRate)) % 2 == 0;
             if (showPrompt)
             {
-                int arrowSize = 10;
+                int arrowSize = 15;
                 int ax = bounds.Right - arrowSize - padding;
                 int ay = bounds.Bottom - arrowSize - padding + 2;
                 UIStyle.DrawArrowDown(spriteBatch, pixel, ax, ay, arrowSize, UIStyle.TextPrompt);

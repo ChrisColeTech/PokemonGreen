@@ -35,7 +35,7 @@ public static class BattleInfoBar
     {
         DrawPanel(sb, pixel, bounds);
 
-        int pad = 12;
+        int pad = 16;
         int fontH = fontScale * 7;
         int charW = fontScale * 6; // approximate KermFont character width
 
@@ -55,18 +55,18 @@ public static class BattleInfoBar
             new Vector2(bounds.Right - pad - lvWidth, nameY), LevelColor, fontScale);
 
         // ── Separator line ──
-        int sepY = nameY + fontH + 5;
+        int sepY = nameY + fontH + 8;
         sb.Draw(pixel, new Rectangle(bounds.X + pad, sepY, bounds.Width - pad * 2, 1), SeparatorColor);
 
         // ── Row 2: "HP" label + HP bar ──
-        int hpRowY = sepY + 5;
+        int hpRowY = sepY + 8;
         int hpLabelW = 2 * charW + charW / 2; // "HP" + small gap
         DrawText(sb, fontRenderer, fallbackFont, "HP",
             new Vector2(bounds.X + pad, hpRowY), HPLabelColor, fontScale);
 
         int barX = bounds.X + pad + hpLabelW;
         int barW = bounds.Right - pad - barX;
-        int barH = 8;
+        int barH = 12;
         int barY = hpRowY + (fontH - barH) / 2; // vertically center bar with label
         UIStyle.DrawTripleLineHPBar(sb, pixel,
             new Rectangle(barX, barY, barW, barH),
@@ -141,7 +141,7 @@ public static class BattleInfoBar
         }
 
         // ── EXP bar at bottom ──
-        int expBarH = 4;
+        int expBarH = 6;
         int expY = bounds.Bottom - expBarH - pad / 2;
         UIStyle.DrawEXPBar(sb, pixel,
             new Rectangle(bounds.X + pad, expY, bounds.Width - pad * 2, expBarH),

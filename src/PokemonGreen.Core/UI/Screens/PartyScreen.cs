@@ -56,6 +56,9 @@ public class PartyScreen : IScreenOverlay
 
     public bool IsFinished { get; private set; }
 
+    /// <summary>Index of the Pokemon selected for switch-in, or -1 if cancelled.</summary>
+    public int SelectedSwitchIndex { get; private set; } = -1;
+
     public PartyScreen(Party party, PartyScreenMode mode)
     {
         _party = party;
@@ -83,7 +86,7 @@ public class PartyScreen : IScreenOverlay
                 _actionMenu.Update(
                     input.Left, input.Right, input.Up, input.Down,
                     input.Confirm, input.Cancel,
-                    input.MousePosition, input.MouseClicked);
+                    Point.Zero, false);
                 break;
 
             case Phase.FadeOut:
@@ -100,41 +103,6 @@ public class PartyScreen : IScreenOverlay
         {
             BeginExit();
             return;
-        }
-
-        // Mouse click — check cards and back button
-        if (input.MouseClicked)
-        {
-            for (int i = 0; i < _cardRects.Length && i < _party.Count; i++)
-            {
-                if (_cardRects[i].Contains(input.MousePosition))
-                {
-                    _selectedIndex = i;
-                    _onBackButton = false;
-                    OpenActionPopup(i);
-                    return;
-                }
-            }
-            if (_backRect.Contains(input.MousePosition))
-            {
-                BeginExit();
-                return;
-            }
-        }
-
-        // Mouse hover — update selection
-        if (!input.MouseClicked)
-        {
-            for (int i = 0; i < _cardRects.Length && i < _party.Count; i++)
-            {
-                if (_cardRects[i].Contains(input.MousePosition))
-                {
-                    _selectedIndex = i;
-                    _onBackButton = false;
-                }
-            }
-            if (_backRect.Contains(input.MousePosition))
-                _onBackButton = true;
         }
 
         if (_onBackButton)
@@ -178,7 +146,7 @@ public class PartyScreen : IScreenOverlay
         var items = _mode == PartyScreenMode.BattleSwitchIn
             ? new[]
             {
-                new MenuItem("Switch In"),
+                new MenuItem("Switch In", ConfirmSwitchIn),
                 new MenuItem("Summary"),
                 new MenuItem("Cancel", CloseActionPopup),
             }
@@ -191,6 +159,13 @@ public class PartyScreen : IScreenOverlay
         _actionMenu.IsActive = true;
         _actionMenu.OnCancel = CloseActionPopup;
         _phase = Phase.ActionPopup;
+    }
+
+    private void ConfirmSwitchIn()
+    {
+        SelectedSwitchIndex = _actionTarget;
+        _actionMenu.IsActive = false;
+        BeginExit();
     }
 
     private void CloseActionPopup()

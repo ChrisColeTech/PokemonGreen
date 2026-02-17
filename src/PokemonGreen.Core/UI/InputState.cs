@@ -13,6 +13,8 @@ public readonly struct InputState
     public bool Down { get; init; }
     public bool Confirm { get; init; }
     public bool Cancel { get; init; }
+    /// <summary>True when any key was freshly pressed this frame (for message dismissal).</summary>
+    public bool AnyKey { get; init; }
     public bool PageLeft { get; init; }
     public bool PageRight { get; init; }
     public Point MousePosition { get; init; }

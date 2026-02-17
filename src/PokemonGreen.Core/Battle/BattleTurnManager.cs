@@ -20,7 +20,7 @@ public class BattleTurnManager
         BattleOver      // Victory/defeat message shown
     }
 
-    private readonly BattlePokemon _ally;
+    private BattlePokemon _ally;
     private readonly BattlePokemon _foe;
     private readonly Action<string, Action?> _showMessage;
     private readonly Action _returnToMainMenu;
@@ -53,6 +53,13 @@ public class BattleTurnManager
         _hideMenu = hideMenu;
         _returnToMainMenu = returnToMainMenu;
         _exitBattle = exitBattle;
+    }
+
+    /// <summary>Replace the active ally (used for mid-battle switch-in).</summary>
+    public void SetAlly(BattlePokemon newAlly)
+    {
+        _ally = newAlly;
+        Phase = TurnPhase.Idle;
     }
 
     /// <summary>Start a turn after the player selects a move.</summary>
