@@ -63,7 +63,15 @@ public class Game1 : Game
     private const float EncounterChance = 0.15f; // 15% per check
 
     // Battle transition (white flash → fade to black → battle → fade from black)
-    private enum TransitionPhase { None, FlashWhite, FadeToBattle, FadeFromBattle, FadeOutBattle }
+    private enum TransitionPhase
+    {
+        None,
+        FlashWhite,
+        FadeToBattle,
+        FadeFromBattle,
+        FadeToBlackFromBattle,
+        FadeFromBlackToOverworld
+    }
     private TransitionPhase _transition;
     private float _transitionTimer;
     private float _transitionAlpha;
@@ -238,9 +246,9 @@ public class Game1 : Game
             _battleScreen.EnterBattle();
             _battleScreen.OnBattleExit = () =>
             {
-                _transition = TransitionPhase.FadeOutBattle;
+                _transition = TransitionPhase.FadeToBlackFromBattle;
                 _transitionTimer = 0f;
-                _transitionAlpha = 1f;
+                _transitionAlpha = 0f;
             };
         }
 
@@ -279,7 +287,9 @@ public class Game1 : Game
         UpdateTransition(dt);
 
         // During transition, block all input
-        if (_transition != TransitionPhase.None && _transition != TransitionPhase.FadeFromBattle)
+        if (_transition != TransitionPhase.None
+            && _transition != TransitionPhase.FadeFromBattle
+            && _transition != TransitionPhase.FadeFromBlackToOverworld)
         {
             _prevKeyboard = keyboard;
             base.Update(gameTime);
@@ -390,7 +400,7 @@ public class Game1 : Game
             // Collision check with wall sliding
             if (_tileMapMesh != null)
             {
-                bool fullOk = _tileMapMesh.IsWalkable(desiredPos.X, desiredPos.Z);
+                bool fullOk = _tileMapMesh.CanOccupy(desiredPos.X, desiredPos.Z, _playerPosition.Y);
                 if (fullOk)
                 {
                     _playerPosition = desiredPos;
@@ -399,12 +409,12 @@ public class Game1 : Game
                 {
                     // Try sliding along X axis only
                     var slideX = new Vector3(desiredPos.X, _playerPosition.Y, _playerPosition.Z);
-                    if (_tileMapMesh.IsWalkable(slideX.X, slideX.Z))
+                    if (_tileMapMesh.CanOccupy(slideX.X, slideX.Z, _playerPosition.Y))
                         _playerPosition = slideX;
 
                     // Try sliding along Z axis only
                     var slideZ = new Vector3(_playerPosition.X, _playerPosition.Y, desiredPos.Z);
-                    if (_tileMapMesh.IsWalkable(slideZ.X, slideZ.Z))
+                    if (_tileMapMesh.CanOccupy(slideZ.X, slideZ.Z, _playerPosition.Y))
                         _playerPosition = slideZ;
                 }
             }
@@ -416,7 +426,8 @@ public class Game1 : Game
             _playerTargetYaw = MathF.Atan2(moveDir.X, moveDir.Z);
         }
 
-        var isGrounded = _playerPosition.Y <= 0.001f;
+        float supportHeight = _tileMapMesh?.GetSupportHeight(_playerPosition.X, _playerPosition.Z) ?? 0f;
+        var isGrounded = _playerPosition.Y <= supportHeight + 0.001f;
         var jumpPressed = input.JumpPressed;
         if (jumpPressed && isGrounded)
         {
@@ -429,11 +440,13 @@ public class Game1 : Game
             _verticalVelocity += Gravity * dt;
 
         _playerPosition.Y += _verticalVelocity * dt;
-        if (_playerPosition.Y < 0f)
+        supportHeight = _tileMapMesh?.GetSupportHeight(_playerPosition.X, _playerPosition.Z) ?? 0f;
+        if (_playerPosition.Y < supportHeight)
         {
-            _playerPosition.Y = 0f;
+            _playerPosition.Y = supportHeight;
             _verticalVelocity = 0f;
             _isJumping = false;
+            isGrounded = true;
         }
 
         // Check cube collection
@@ -520,7 +533,9 @@ public class Game1 : Game
             return;
         }
 
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(_transition == TransitionPhase.FadeToBlackFromBattle
+            ? Color.Black
+            : Color.CornflowerBlue);
 
         if (_gridVertices != null && _gridVertices.Length > 0)
         {
@@ -771,9 +786,9 @@ public class Game1 : Game
                     _battleScreen.OnBattleExit = () =>
                     {
                         // When battle ends, fade out
-                        _transition = TransitionPhase.FadeOutBattle;
+                        _transition = TransitionPhase.FadeToBlackFromBattle;
                         _transitionTimer = 0f;
-                        _transitionAlpha = 1f;
+                        _transitionAlpha = 0f;
                     };
                     _transition = TransitionPhase.FadeFromBattle;
                     _transitionTimer = 0f;
@@ -790,22 +805,25 @@ public class Game1 : Game
                 }
                 break;
 
-            case TransitionPhase.FadeOutBattle:
-                // Fade to black then back to overworld
-                if (_transitionTimer < FadeDuration)
+            case TransitionPhase.FadeToBlackFromBattle:
+                _transitionAlpha = MathF.Min(1f, _transitionTimer / FadeDuration);
+                if (_transitionTimer >= FadeDuration)
                 {
-                    _transitionAlpha = _transitionTimer / FadeDuration;
+                    _transitionAlpha = 1f;
+                    if (_battleScreen.InBattle)
+                        _battleScreen.CleanupBattle();
+
+                    _transition = TransitionPhase.FadeFromBlackToOverworld;
+                    _transitionTimer = 0f;
                 }
-                else if (_transitionTimer < FadeDuration * 2f)
-                {
-                    _transitionAlpha = 1f - ((_transitionTimer - FadeDuration) / FadeDuration);
-                }
-                else
+                break;
+
+            case TransitionPhase.FadeFromBlackToOverworld:
+                _transitionAlpha = 1f - MathF.Min(1f, _transitionTimer / FadeDuration);
+                if (_transitionTimer >= FadeDuration)
                 {
                     _transitionAlpha = 0f;
                     _transition = TransitionPhase.None;
-                    if (_battleScreen.InBattle)
-                        _battleScreen.CleanupBattle();
                 }
                 break;
         }

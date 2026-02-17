@@ -16,6 +16,8 @@ namespace PokemonGreen._3D;
 /// </summary>
 public sealed class TileMapMesh3D
 {
+    private const float StandableHeightTolerance = 0.15f;
+
     private VertexBuffer? _vertexBuffer;
     private IndexBuffer? _indexBuffer;
     private int _triangleCount;
@@ -264,6 +266,55 @@ public sealed class TileMapMesh3D
     }
 
     /// <summary>
+    /// Check whether the player can occupy a world-space position at the given foot height.
+    /// Allows landing on top of jump-standable blocking overlays when high enough.
+    /// </summary>
+    public bool CanOccupy(float worldX, float worldZ, float playerFootY)
+    {
+        if (!TryGetTile(worldX, worldZ, out var map, out int tx, out int ty))
+            return false;
+
+        int baseTileId = map!.GetBaseTile(tx, ty);
+        var baseDef = TileRegistry.GetTile(baseTileId);
+        if (baseDef == null || !baseDef.Walkable)
+            return false;
+
+        int? overlayId = map.GetOverlayTile(tx, ty);
+        if (overlayId is not int oid)
+            return true;
+
+        var overlayDef = TileRegistry.GetTile(oid);
+        if (overlayDef == null || overlayDef.Walkable)
+            return true;
+
+        if (!IsJumpStandableOverlay(overlayDef))
+            return false;
+
+        float topY = GroundY + BlockHeight;
+        return playerFootY >= topY - StandableHeightTolerance;
+    }
+
+    /// <summary>
+    /// Returns the current support surface height at the given world position.
+    /// This is either the ground plane or the top of a jump-standable blocking overlay.
+    /// </summary>
+    public float GetSupportHeight(float worldX, float worldZ)
+    {
+        if (!TryGetTile(worldX, worldZ, out var map, out int tx, out int ty))
+            return GroundY;
+
+        int? overlayId = map!.GetOverlayTile(tx, ty);
+        if (overlayId is int oid)
+        {
+            var overlayDef = TileRegistry.GetTile(oid);
+            if (overlayDef != null && !overlayDef.Walkable && IsJumpStandableOverlay(overlayDef))
+                return GroundY + BlockHeight;
+        }
+
+        return GroundY;
+    }
+
+    /// <summary>
     /// Get the overlay behavior string at a world position (e.g. "wild_encounter").
     /// Returns null if no overlay or no behavior.
     /// </summary>
@@ -382,5 +433,22 @@ public sealed class TileMapMesh3D
         }
 
         return Color.Magenta;
+    }
+
+    private static bool IsJumpStandableOverlay(TileDefinition overlay)
+    {
+        if (overlay.Category == TileCategory.Structure)
+            return overlay.Id is 80 or 84;
+
+        if (overlay.Category == TileCategory.Decoration)
+        {
+            return overlay.Id is 17 or 19 or 20 or 21 or 22 or 24 or 27 or 28 or 29
+                or 123 or 124;
+        }
+
+        if (overlay.Category == TileCategory.Interactive)
+            return overlay.Id is 37 or 39;
+
+        return false;
     }
 }
