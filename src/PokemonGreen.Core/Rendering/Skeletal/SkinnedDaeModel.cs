@@ -82,6 +82,8 @@ public sealed class SkinnedDaeModel
             }
 
             mesh.Texture = texture;
+            mesh.IsFace = geometry.MaterialSymbol.Contains("Eye", StringComparison.OrdinalIgnoreCase)
+                       || geometry.MaterialSymbol.Contains("Mouth", StringComparison.OrdinalIgnoreCase);
             _meshes.Add(mesh);
         }
 
@@ -93,6 +95,13 @@ public sealed class SkinnedDaeModel
         RebuildBuffers(graphics, skinPose);
     }
 
+    private static readonly DepthStencilState FaceDepthState = new()
+    {
+        DepthBufferEnable = true,
+        DepthBufferWriteEnable = true,
+        DepthBufferFunction = CompareFunction.LessEqual
+    };
+
     public void Draw(GraphicsDevice graphics, BasicEffect effect)
     {
         if (VertexBuffer is null || IndexBuffer is null || _batches.Count == 0) return;
@@ -100,8 +109,22 @@ public sealed class SkinnedDaeModel
         graphics.SetVertexBuffer(VertexBuffer);
         graphics.Indices = IndexBuffer;
 
+        // Body meshes first (standard depth)
+        DrawBatches(graphics, effect, isFace: false);
+
+        // Face meshes last with LessEqual depth so they draw on top at same depth
+        var prevDepth = graphics.DepthStencilState;
+        graphics.DepthStencilState = FaceDepthState;
+        DrawBatches(graphics, effect, isFace: true);
+        graphics.DepthStencilState = prevDepth;
+    }
+
+    private void DrawBatches(GraphicsDevice graphics, BasicEffect effect, bool isFace)
+    {
         foreach (MeshDrawBatch batch in _batches)
         {
+            if (batch.IsFace != isFace) continue;
+
             effect.Texture = batch.Texture;
             effect.TextureEnabled = batch.Texture is not null;
 
@@ -153,7 +176,8 @@ public sealed class SkinnedDaeModel
                     BaseVertex = 0,
                     StartIndex = startIndex,
                     PrimitiveCount = primitiveCount,
-                    Texture = mesh.Texture
+                    Texture = mesh.Texture,
+                    IsFace = mesh.IsFace
                 });
             }
         }
@@ -564,6 +588,7 @@ public sealed class SkinnedDaeModel
         public required SkinnedVertex[] Vertices { get; init; }
         public required int[] Indices { get; init; }
         public Texture2D? Texture { get; set; }
+        public bool IsFace { get; set; }
     }
 
     private sealed class MeshDrawBatch
@@ -572,6 +597,7 @@ public sealed class SkinnedDaeModel
         public required int StartIndex { get; init; }
         public required int PrimitiveCount { get; init; }
         public Texture2D? Texture { get; init; }
+        public bool IsFace { get; init; }
     }
 
     private sealed class SkinnedVertex
