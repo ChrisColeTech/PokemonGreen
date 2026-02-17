@@ -1,0 +1,776 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+  <asset>
+    <created>2026-02-17T05:46:52.9296062-05:00</created>
+    <modified>2026-02-17T05:46:52.9296064-05:00</modified>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_animations>
+    <animation id="Motion_9_Waist_transform_id" name="Motion_9_Waist_transform">
+      <source id="Motion_9_Waist_transform_frame_id" name="Motion_9_Waist_transform_frame">
+        <float_array id="Motion_9_Waist_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Waist_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Waist_transform_interp_id" name="Motion_9_Waist_transform_interp">
+        <Name_array id="Motion_9_Waist_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_Waist_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Waist_transform_pose_id" name="Motion_9_Waist_transform_pose">
+        <float_array id="Motion_9_Waist_transform_pose_array_id" count="160">0 -0.99997574 -0.006971093 0.21480124 1 0 0 5.7766314 6.9849193E-10 -0.006971093 0.9999757 -0.07753817 0 0 0 1 0 -0.9999656 -0.008296292 0.22896104 1 0 0 5.7715287 4.656613E-10 -0.008296292 0.9999656 -0.075942665 0 0 0 1 3.5762787E-07 -0.99995244 -0.009758692 0.24226034 1 3.5762787E-07 1.3969839E-09 5.769222 1.8626451E-09 -0.009758692 0.9999524 -0.070987485 0 0 0 1 4.172325E-07 -0.9999354 -0.011370703 0.2545651 1 4.172325E-07 9.313226E-10 5.7692037 3.7252903E-09 -0.011370703 0.9999353 -0.06258893 0 0 0 1 2.9802322E-07 -0.9999137 -0.013144729 0.2657412 1.0000001 2.9802322E-07 2.7939677E-09 5.770967 2.7939677E-09 -0.013144729 0.99991363 -0.050663307 0 0 0 1 7.1525574E-07 -0.9998861 -0.015093169 0.2756546 1 7.1525574E-07 5.5879354E-09 5.7740045 5.5879354E-09 -0.015093169 0.9998861 -0.03512691 0 0 0 1 8.34465E-07 -0.9998516 -0.017228417 0.28417128 1 8.34465E-07 7.450581E-09 5.7778096 7.450581E-09 -0.017228417 0.9998516 -0.015896078 0 0 0 1 9.536743E-07 -0.9998087 -0.019562867 0.29115713 1.0000001 9.536743E-07 6.519258E-09 5.781875 1.3038516E-08 -0.019562867 0.9998086 0.0071128793 0 0 0 1 7.1525574E-07 -0.99975556 -0.022108886 0.29647806 0.99999994 7.1525574E-07 4.656613E-09 5.785693 1.0244548E-08 -0.022108886 0.99975556 0.033983685 0 0 0 1 7.1525574E-07 -0.99975556 -0.022108886 0.29647806 0.99999994 7.1525574E-07 4.656613E-09 5.785693 1.0244548E-08 -0.022108886 0.99975556 0.033983685 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Waist_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_Waist_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_Waist_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_Waist_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_Waist_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_Waist_transform_samp_id" target="Waist_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_Hips_transform_id" name="Motion_9_Hips_transform">
+      <source id="Motion_9_Hips_transform_frame_id" name="Motion_9_Hips_transform_frame">
+        <float_array id="Motion_9_Hips_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Hips_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Hips_transform_interp_id" name="Motion_9_Hips_transform_interp">
+        <Name_array id="Motion_9_Hips_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_Hips_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Hips_transform_pose_id" name="Motion_9_Hips_transform_pose">
+        <float_array id="Motion_9_Hips_transform_pose_array_id" count="160">-1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1 -1 8.7332914E-08 -4.576139E-09 -0.001 -8.7452726E-08 -0.99862957 0.05233596 0 7.8426154E-13 0.05233596 0.9986295 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Hips_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_Hips_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_Hips_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_Hips_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_Hips_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_Hips_transform_samp_id" target="Hips_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerH_transform_id" name="Motion_9_FeelerH_transform">
+      <source id="Motion_9_FeelerH_transform_frame_id" name="Motion_9_FeelerH_transform_frame">
+        <float_array id="Motion_9_FeelerH_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerH_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerH_transform_interp_id" name="Motion_9_FeelerH_transform_interp">
+        <Name_array id="Motion_9_FeelerH_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerH_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerH_transform_pose_id" name="Motion_9_FeelerH_transform_pose">
+        <float_array id="Motion_9_FeelerH_transform_pose_array_id" count="160">0.04424095 0.0021465272 -0.99901855 5.1797085 -0.34804928 0.9373805 -0.01339905 -2.9190073 0.93643177 0.34830052 0.042217672 8.983796 0 0 0 1 0.043625772 0.0022448152 -0.9990454 5.1797085 -0.34985995 0.9367094 -0.013172746 -2.9190073 0.93578565 0.35010067 0.041650057 8.983796 0 0 0 1 0.04375267 0.00233379 -0.99903965 5.1797085 -0.35152307 0.93608606 -0.013208121 -2.9190073 0.9351562 0.35176337 0.041776657 8.983796 0 0 0 1 0.04445535 0.002414465 -0.9990084 5.1797085 -0.3530262 0.9355168 -0.013448492 -2.9190073 0.9345567 0.35327405 0.04244113 8.983796 0 0 0 1 0.04556811 0.0024871826 -0.9989582 5.1797085 -0.35435635 0.9350081 -0.013836235 -2.9190073 0.9339996 0.35461766 0.043487906 8.983796 0 0 0 1 0.046925128 0.0025516152 -0.99889517 5.1797085 -0.3555004 0.9345665 -0.014313057 -2.9190073 0.9334974 0.3557793 0.044761777 8.983796 0 0 0 1 0.04835987 0.0026064217 -0.9988266 5.1797085 -0.3564453 0.9341986 -0.014820129 -2.9190073 0.93306386 0.35674375 0.046106756 8.983796 0 0 0 1 0.049707413 0.0026503205 -0.9987603 5.1797085 -0.35717815 0.93391097 -0.015298173 -2.9190073 0.9327126 0.35749578 0.047368944 8.983796 0 0 0 1 0.0508008 0.0026813298 -0.99870527 5.1797085 -0.35768622 0.9337101 -0.01568751 -2.9190073 0.9324591 0.35802 0.048392296 8.983796 0 0 0 1 0.0508008 0.0026813298 -0.99870527 5.1797085 -0.35768622 0.9337101 -0.01568751 -2.9190073 0.9324591 0.35802 0.048392296 8.983796 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerH_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerH_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerH_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerH_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerH_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerH_transform_samp_id" target="FeelerH_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerG_transform_id" name="Motion_9_FeelerG_transform">
+      <source id="Motion_9_FeelerG_transform_frame_id" name="Motion_9_FeelerG_transform_frame">
+        <float_array id="Motion_9_FeelerG_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerG_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerG_transform_interp_id" name="Motion_9_FeelerG_transform_interp">
+        <Name_array id="Motion_9_FeelerG_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerG_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerG_transform_pose_id" name="Motion_9_FeelerG_transform_pose">
+        <float_array id="Motion_9_FeelerG_transform_pose_array_id" count="160">0.044273198 0.0012515187 -0.99901867 5.179708 -0.8222567 0.56799424 -0.035728186 -7.642064 0.56739223 0.82303154 0.026175976 5.5522857 0 0 0 1 0.043658614 0.0014332235 -0.9990455 5.179708 -0.8233278 0.5664757 -0.03516701 -7.642064 0.5658846 0.82407725 0.02591151 5.5522857 0 0 0 1 0.043786407 0.001566261 -0.99903977 5.179708 -0.82430315 0.5650507 -0.03524214 -7.642064 0.564453 0.8250547 0.026032567 5.5522857 0 0 0 1 0.044491053 0.0016598403 -0.9990083 5.179708 -0.8251771 0.56373775 -0.035812736 -7.642064 0.5631193 0.8259521 0.026450992 5.5522857 0 0 0 1 0.04560542 0.0017216802 -0.998958 5.179708 -0.8259435 0.5625546 -0.036737174 -7.642064 0.56190515 0.8267584 0.027077556 5.5522857 0 0 0 1 0.04696369 0.0017593801 -0.9988951 5.179708 -0.8265964 0.5615194 -0.037874013 -7.642064 0.5608323 0.8274617 0.027825296 5.5522857 0 0 0 1 0.048400044 0.0017795861 -0.99882644 5.179708 -0.8271297 0.56065065 -0.039081275 -7.642064 0.5599231 0.82805055 0.028607428 5.5522857 0 0 0 1 0.04974842 0.0017888248 -0.9987602 5.179708 -0.8275384 0.5599669 -0.040216982 -7.642064 0.55920076 0.8285131 0.029337764 5.5522857 0 0 0 1 0.05084306 0.0017932653 -0.998705 5.179708 -0.8278176 0.55948687 -0.04113868 -7.642064 0.5586885 0.8288373 0.029930532 5.5522857 0 0 0 1 0.05084306 0.0017932653 -0.998705 5.179708 -0.8278176 0.55948687 -0.04113868 -7.642064 0.5586885 0.8288373 0.029930532 5.5522857 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerG_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerG_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerG_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerG_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerG_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerG_transform_samp_id" target="FeelerG_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerF_transform_id" name="Motion_9_FeelerF_transform">
+      <source id="Motion_9_FeelerF_transform_frame_id" name="Motion_9_FeelerF_transform_frame">
+        <float_array id="Motion_9_FeelerF_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerF_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerF_transform_interp_id" name="Motion_9_FeelerF_transform_interp">
+        <Name_array id="Motion_9_FeelerF_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerF_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerF_transform_pose_id" name="Motion_9_FeelerF_transform_pose">
+        <float_array id="Motion_9_FeelerF_transform_pose_array_id" count="160">0.04429376 -5.9604645E-08 -0.99901855 5.1797075 -0.99901855 0 -0.04429376 -9.446115 -5.9604645E-08 1 0 0 0 0 0 1 0.043806255 1.4901161E-07 -0.99904 5.1797075 -0.99904 1.7881393E-07 -0.043806285 -9.446115 2.0861626E-07 1 1.1920929E-07 0 0 0 0 1 0.04400277 5.066395E-07 -0.9990314 5.1797075 -0.9990314 7.1525574E-07 -0.04400277 -9.446115 6.854534E-07 1 5.9604645E-07 0 0 0 0 1 0.044728577 1.013279E-06 -0.99899924 5.1797075 -0.99899924 1.1920929E-06 -0.044728607 -9.446115 1.1920929E-06 1 1.013279E-06 0 0 0 0 1 0.045829475 1.5497208E-06 -0.9989493 5.1797075 -0.9989493 1.9073486E-06 -0.045829505 -9.446115 1.7881393E-06 1 1.66893E-06 0 0 0 0 1 0.04715103 1.5795231E-06 -0.9988878 5.1797075 -0.9988878 1.9073486E-06 -0.047151 -9.446115 1.8179417E-06 1 1.66893E-06 0 0 0 0 1 0.048538327 1.3411045E-06 -0.99882144 5.1797075 -0.9988215 1.4305115E-06 -0.048538446 -9.446115 1.5497208E-06 1.0000001 1.3113022E-06 0 0 0 0 1 0.04983771 8.6426735E-07 -0.99875736 5.1797075 -0.99875736 8.34465E-07 -0.049837768 -9.446115 8.6426735E-07 1 8.34465E-07 0 0 0 0 1 0.0508945 1.4901161E-07 -0.998704 5.1797075 -0.9987041 2.9802322E-07 -0.0508945 -9.446115 2.9802322E-07 1 1.7881393E-07 0 0 0 0 1 0.0508945 1.4901161E-07 -0.998704 5.1797075 -0.9987041 2.9802322E-07 -0.0508945 -9.446115 2.9802322E-07 1 1.7881393E-07 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerF_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerF_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerF_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerF_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerF_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerF_transform_samp_id" target="FeelerF_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerE_transform_id" name="Motion_9_FeelerE_transform">
+      <source id="Motion_9_FeelerE_transform_frame_id" name="Motion_9_FeelerE_transform_frame">
+        <float_array id="Motion_9_FeelerE_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerE_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerE_transform_interp_id" name="Motion_9_FeelerE_transform_interp">
+        <Name_array id="Motion_9_FeelerE_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerE_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerE_transform_pose_id" name="Motion_9_FeelerE_transform_pose">
+        <float_array id="Motion_9_FeelerE_transform_pose_array_id" count="160">0.04428643 -0.00047516823 -0.9990187 5.179708 -0.81360847 -0.58031034 -0.03579119 -7.642064 -0.579724 0.8143952 -0.02608645 -5.5522857 0 0 0 1 0.04367292 -0.00063720345 -0.9990456 5.179708 -0.81445944 -0.5791495 -0.035234332 -7.642064 -0.5785744 0.81522095 -0.02581191 -5.5522857 0 0 0 1 0.043801308 -0.0007508993 -0.9990401 5.179708 -0.815231 -0.57805896 -0.035308093 -7.642064 -0.57747734 0.815995 -0.025932074 -5.5522857 0 0 0 1 0.04450631 -0.00082555413 -0.9990088 5.179708 -0.81591904 -0.57705235 -0.035872728 -7.642064 -0.5764507 0.8167068 -0.026356101 -5.5522857 0 0 0 1 0.045621634 -0.0008698702 -0.99895847 5.179708 -0.81651944 -0.5761447 -0.036788136 -7.642064 -0.57551265 0.8173473 -0.026994944 -5.5522857 0 0 0 1 0.046981514 -0.0008921623 -0.9988954 5.179708 -0.81702775 -0.5753505 -0.03791383 -7.642064 -0.57468116 0.8179065 -0.02775979 -5.5522857 0 0 0 1 0.048419774 -0.0008996725 -0.99882656 5.179708 -0.81744015 -0.57468414 -0.03910902 -7.642064 -0.57397467 0.81837463 -0.028561354 -5.5522857 0 0 0 1 0.04976988 -0.00089916587 -0.9987603 5.179708 -0.8177539 -0.57415986 -0.040233076 -7.642064 -0.573412 0.8187426 -0.02931106 -5.5522857 0 0 0 1 0.05086571 -0.0008971393 -0.998705 5.179708 -0.8179668 -0.57379186 -0.041144937 -7.642064 -0.573012 0.8190005 -0.029920101 -5.5522857 0 0 0 1 0.05086571 -0.0008971393 -0.998705 5.179708 -0.8179668 -0.57379186 -0.041144937 -7.642064 -0.573012 0.8190005 -0.029920101 -5.5522857 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerE_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerE_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerE_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerE_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerE_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerE_transform_samp_id" target="FeelerE_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerD_transform_id" name="Motion_9_FeelerD_transform">
+      <source id="Motion_9_FeelerD_transform_frame_id" name="Motion_9_FeelerD_transform_frame">
+        <float_array id="Motion_9_FeelerD_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerD_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerD_transform_interp_id" name="Motion_9_FeelerD_transform_interp">
+        <Name_array id="Motion_9_FeelerD_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerD_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerD_transform_pose_id" name="Motion_9_FeelerD_transform_pose">
+        <float_array id="Motion_9_FeelerD_transform_pose_array_id" count="160">0.04428613 -0.00047534704 -0.9990189 5.179708 0.8027702 -0.5952089 0.035869777 7.6420693 -0.5946418 -0.80357105 -0.025978088 -5.5522885 0 0 0 1 0.043665648 -0.00044935942 -0.999046 5.179708 0.80195045 -0.5963454 0.03531927 7.6420693 -0.5957925 -0.8027277 -0.02567935 -5.5522885 0 0 0 1 0.04377961 -0.0004556179 -0.9990411 5.179708 0.8011465 -0.5974215 0.035379976 7.6420693 -0.5968648 -0.8019272 -0.025789857 -5.5522885 0 0 0 1 0.044478893 -0.00049701333 -0.9990101 5.179708 0.80038166 -0.5984125 0.035932958 7.6420693 -0.5978383 -0.8011877 -0.026218772 -5.5522885 0 0 0 1 0.045612335 -0.0005749762 -0.9989589 5.179708 0.7996789 -0.59929514 0.03685808 7.6420693 -0.5986926 -0.8005277 -0.026875257 -5.5522885 0 0 0 1 0.047029316 -0.000690639 -0.99889326 5.179708 0.7990608 -0.6000459 0.03803575 7.6420693 -0.59940803 -0.79996526 -0.02766788 -5.5522885 0 0 0 1 0.048578978 -0.00084486604 -0.9988191 5.179708 0.7985505 -0.6006408 0.039346784 7.6420693 -0.5999645 -0.7995188 -0.028504014 -5.5522885 0 0 0 1 0.04995185 -0.00093474984 -0.9987513 5.179708 0.79811585 -0.6011429 0.04047993 7.6420693 -0.6004299 -0.79914117 -0.029282331 -5.5522885 0 0 0 1 0.050939083 -0.0009210408 -0.9987013 5.179708 0.7977601 -0.6015626 0.041244715 7.6420693 -0.6008194 -0.798825 -0.02990818 -5.5522885 0 0 0 1 0.050939083 -0.0009210408 -0.9987013 5.179708 0.7977601 -0.6015626 0.041244715 7.6420693 -0.6008194 -0.798825 -0.02990818 -5.5522885 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerD_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerD_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerD_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerD_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerD_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerD_transform_samp_id" target="FeelerD_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerC_transform_id" name="Motion_9_FeelerC_transform">
+      <source id="Motion_9_FeelerC_transform_frame_id" name="Motion_9_FeelerC_transform_frame">
+        <float_array id="Motion_9_FeelerC_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerC_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerC_transform_interp_id" name="Motion_9_FeelerC_transform_interp">
+        <Name_array id="Motion_9_FeelerC_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerC_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerC_transform_pose_id" name="Motion_9_FeelerC_transform_pose">
+        <float_array id="Motion_9_FeelerC_transform_pose_array_id" count="160">0.044288635 0 -0.9990188 5.179708 0.9990188 1.1920929E-07 0.044288635 9.446117 1.1920929E-07 -1 0 0 0 0 0 1 0.04380095 -2.3841858E-07 -0.9990403 5.179708 0.9990403 1.7881393E-07 0.04380101 9.446117 2.3841858E-07 -1 1.7881393E-07 0 0 0 0 1 0.043997347 -5.9604645E-07 -0.9990316 5.179708 0.9990316 5.9604645E-07 0.043997318 9.446117 4.7683716E-07 -1 7.1525574E-07 0 0 0 0 1 0.044723153 -1.1026859E-06 -0.9989996 5.179708 0.9989996 8.940697E-07 0.044723272 9.446117 9.834766E-07 -1.0000001 1.013279E-06 0 0 0 0 1 0.04582423 -1.6093254E-06 -0.99894947 5.179708 0.99894947 1.66893E-06 0.0458242 9.446117 1.4901161E-06 -1 1.7881393E-06 0 0 0 0 1 0.047145486 -1.66893E-06 -0.99888813 5.179708 0.99888813 1.5497208E-06 0.047145605 9.446117 1.6093254E-06 -1.0000001 1.66893E-06 0 0 0 0 1 0.04853338 -1.4901161E-06 -0.99882144 5.179708 0.99882144 1.66893E-06 0.04853323 9.446117 1.4901161E-06 -0.9999999 1.66893E-06 0 0 0 0 1 0.0498327 -9.834766E-07 -0.99875736 5.179708 0.99875736 1.0728836E-06 0.049832523 9.446117 8.6426735E-07 -0.9999998 1.1920929E-06 0 0 0 0 1 0.050889134 -2.3841858E-07 -0.9987043 5.179708 0.9987043 2.3841858E-07 0.050889134 9.446117 2.3841858E-07 -1 2.3841858E-07 0 0 0 0 1 0.050889134 -2.3841858E-07 -0.9987043 5.179708 0.9987043 2.3841858E-07 0.050889134 9.446117 2.3841858E-07 -1 2.3841858E-07 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerC_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerC_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerC_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerC_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerC_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerC_transform_samp_id" target="FeelerC_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerB_transform_id" name="Motion_9_FeelerB_transform">
+      <source id="Motion_9_FeelerB_transform_frame_id" name="Motion_9_FeelerB_transform_frame">
+        <float_array id="Motion_9_FeelerB_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerB_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerB_transform_interp_id" name="Motion_9_FeelerB_transform_interp">
+        <Name_array id="Motion_9_FeelerB_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerB_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerB_transform_pose_id" name="Motion_9_FeelerB_transform_pose">
+        <float_array id="Motion_9_FeelerB_transform_pose_array_id" count="160">0.044273436 0.0012516081 -0.99901867 5.179708 0.7937143 0.6072284 0.03593573 7.6420693 0.60667753 -0.79452634 0.025890708 5.5522885 0 0 0 1 0.043660283 0.0012505949 -0.99904567 5.179708 0.79262555 0.6086801 0.035401285 7.6420693 0.6081435 -0.7934148 0.025583923 5.5522885 0 0 0 1 0.04378897 0.0012860894 -0.9990399 5.179708 0.7915727 0.61004406 0.035480708 7.6420693 0.609504 -0.7923664 0.025695205 5.5522885 0 0 0 1 0.04449302 0.0013502538 -0.9990088 5.179708 0.79057634 0.61130226 0.036036283 7.6420693 0.61074495 -0.79139614 0.026131153 5.5522885 0 0 0 1 0.04560685 0.0014342666 -0.99895847 5.179708 0.78965646 0.6124368 0.03693068 7.6420693 0.61185193 -0.7905183 0.026798725 5.5522885 0 0 0 1 0.046964824 0.0015287399 -0.9988954 5.179708 0.7888333 0.61342967 0.038027227 7.6420693 0.61281025 -0.7897479 0.027603686 5.5522885 0 0 0 1 0.0484007 0.0016234517 -0.9988265 5.179708 0.78812766 0.6142629 0.03918904 7.6420693 0.6136056 -0.7890997 0.028451324 5.5522885 0 0 0 1 0.04974866 0.0017075837 -0.9987603 5.179708 0.7875614 0.6149183 0.040280074 7.6420693 0.61422473 -0.788589 0.029246569 5.5522885 0 0 0 1 0.05084288 0.0017699301 -0.9987051 5.179708 0.7871566 0.6153779 0.041163743 7.6420693 0.6146539 -0.7882302 0.029894352 5.5522885 0 0 0 1 0.05084288 0.0017699301 -0.9987051 5.179708 0.7871566 0.6153779 0.041163743 7.6420693 0.6146539 -0.7882302 0.029894352 5.5522885 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerB_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerB_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerB_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerB_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerB_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerB_transform_samp_id" target="FeelerB_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_FeelerA_transform_id" name="Motion_9_FeelerA_transform">
+      <source id="Motion_9_FeelerA_transform_frame_id" name="Motion_9_FeelerA_transform_frame">
+        <float_array id="Motion_9_FeelerA_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerA_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerA_transform_interp_id" name="Motion_9_FeelerA_transform_interp">
+        <Name_array id="Motion_9_FeelerA_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerA_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_FeelerA_transform_pose_id" name="Motion_9_FeelerA_transform_pose">
+        <float_array id="Motion_9_FeelerA_transform_pose_array_id" count="160">0.044243872 0.002146706 -0.9990184 5.179708 0.26884192 0.9630829 0.013975769 2.9190106 0.96216756 -0.2691964 0.042033374 8.983791 0 0 0 1 0.043641925 0.0022405684 -0.99904466 5.179708 0.2670905 0.9635722 0.013828471 2.9190106 0.9626827 -0.26743883 0.04145372 8.983791 0 0 0 1 0.043776274 0.0023268014 -0.99903864 5.179708 0.26542825 0.96403074 0.013875902 2.9190106 0.96313626 -0.2657805 0.041584074 8.983791 0 0 0 1 0.04448235 0.0024062395 -0.9990072 5.179708 0.26388013 0.9644528 0.0140726715 2.9190106 0.9635292 -0.26424414 0.04226619 8.983791 0 0 0 1 0.04559475 0.002478972 -0.9989569 5.179708 0.2624712 0.9648328 0.0143741 2.9190106 0.96386194 -0.2628528 0.043340623 8.983791 0 0 0 1 0.046948433 0.0025443137 -0.99889416 5.179708 0.26122668 0.965165 0.014736168 2.9190106 0.9641351 -0.2616296 0.04464835 8.983791 0 0 0 1 0.048378706 0.0026008785 -0.9988257 5.179708 0.26017213 0.9654439 0.015115559 2.9190106 0.96434957 -0.26059788 0.046030223 8.983791 0 0 0 1 0.049720466 0.0026468188 -0.9987597 5.179708 0.2593335 0.9656639 0.01546932 2.9190106 0.96450716 -0.259781 0.047326863 8.983791 0 0 0 1 0.050808728 0.0026799142 -0.9987048 5.179708 0.25873694 0.96581936 0.015754797 2.9190106 0.9646106 -0.2592023 0.048378646 8.983791 0 0 0 1 0.050808728 0.0026799142 -0.9987048 5.179708 0.25873694 0.96581936 0.015754797 2.9190106 0.9646106 -0.2592023 0.048378646 8.983791 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_FeelerA_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_FeelerA_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_FeelerA_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_FeelerA_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_FeelerA_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_FeelerA_transform_samp_id" target="FeelerA_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_TailA1_transform_id" name="Motion_9_TailA1_transform">
+      <source id="Motion_9_TailA1_transform_frame_id" name="Motion_9_TailA1_transform_frame">
+        <float_array id="Motion_9_TailA1_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailA1_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_TailA1_transform_interp_id" name="Motion_9_TailA1_transform_interp">
+        <Name_array id="Motion_9_TailA1_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailA1_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_TailA1_transform_pose_id" name="Motion_9_TailA1_transform_pose">
+        <float_array id="Motion_9_TailA1_transform_pose_array_id" count="160">0.0006405711 -1.0244548E-08 -0.9999997 5.2914453 -0.020231787 -0.9997952 -1.2947246E-05 -1.01E-09 -0.999795 0.02023179 -0.0006402731 -9.920215 0 0 0 1 -0.0006327629 -2.5331974E-07 -0.9999997 5.2914453 -0.020174095 -0.9997964 1.301989E-05 -1.01E-09 -0.9997962 0.0201741 0.0006328225 -9.920215 0 0 0 1 -0.0013897419 -6.053597E-07 -0.99999905 5.2914453 -0.020029256 -0.9997995 2.8437935E-05 -1.01E-09 -0.9997984 0.020029277 0.0013893843 -9.920215 0 0 0 1 -0.0017222166 -1.1706725E-06 -0.9999985 5.2914453 -0.01979595 -0.999804 3.526453E-05 -1.01E-09 -0.99980253 0.019795984 0.0017219782 -9.920215 0 0 0 1 -0.0017236471 -1.4742836E-06 -0.99999857 5.2914453 -0.01947337 -0.99981046 3.503915E-05 -1.01E-09 -0.9998089 0.0194734 0.0017232299 -9.920215 0 0 0 1 -0.0014859438 -1.3532117E-06 -0.999999 5.2914453 -0.019060358 -0.99981844 2.9675663E-05 -1.01E-09 -0.9998173 0.01906038 0.0014855862 -9.920215 0 0 0 1 -0.0011023283 -1.1436641E-06 -0.99999934 5.2914453 -0.018555257 -0.99982774 2.1598302E-05 -1.01E-09 -0.9998272 0.018555269 0.0011022091 -9.920215 0 0 0 1 -0.0006649494 -7.431954E-07 -0.99999964 5.2914453 -0.017956927 -0.9998386 1.2683682E-05 -1.01E-09 -0.99983835 0.017956931 0.000665009 -9.920215 0 0 0 1 -0.0002667904 -3.008172E-07 -0.99999994 5.2914453 -0.017264068 -0.99985087 4.90807E-06 -1.01E-09 -0.9998509 0.017264068 0.00026685 -9.920215 0 0 0 1 -0.0002667904 -3.008172E-07 -0.99999994 5.2914453 -0.017264068 -0.99985087 4.90807E-06 -1.01E-09 -0.9998509 0.017264068 0.00026685 -9.920215 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailA1_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_TailA1_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_TailA1_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_TailA1_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_TailA1_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_TailA1_transform_samp_id" target="TailA1_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_TailA2_transform_id" name="Motion_9_TailA2_transform">
+      <source id="Motion_9_TailA2_transform_frame_id" name="Motion_9_TailA2_transform_frame">
+        <float_array id="Motion_9_TailA2_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailA2_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_TailA2_transform_interp_id" name="Motion_9_TailA2_transform_interp">
+        <Name_array id="Motion_9_TailA2_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailA2_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_TailA2_transform_pose_id" name="Motion_9_TailA2_transform_pose">
+        <float_array id="Motion_9_TailA2_transform_pose_array_id" count="160">0.9998136 -0.019303598 -0.00029309018 6.654662 0.019303598 0.9998137 -5.7290326E-06 0 0.00029314618 7.0269834E-08 0.99999994 0 0 0 0 1 0.9998146 -0.019247778 0.0005129497 6.654662 0.019247774 0.99981475 9.791796E-06 0 -0.0005130432 8.316056E-08 0.9999999 0 0 0 0 1 0.9998161 -0.019148601 0.0010054195 6.654662 0.01914859 0.99981666 1.9186387E-05 0 -0.0010056025 6.9505404E-08 0.9999995 0 0 0 0 1 0.9998186 -0.019005578 0.001235834 6.654662 0.019005563 0.9998194 2.3468681E-05 0 -0.0012360568 2.3296707E-08 0.9999992 0 0 0 0 1 0.99982214 -0.018818222 0.0012557092 6.654662 0.018818207 0.9998229 2.3674267E-05 0 -0.0012559323 -3.9860424E-08 0.9999992 0 0 0 0 1 0.99982667 -0.018586047 0.0011165584 6.654662 0.018586036 0.99982727 2.0849518E-05 0 -0.0011167531 -9.350879E-08 0.9999994 0 0 0 0 1 0.99983203 -0.018308558 0.0008698971 6.654662 0.01830855 0.9998324 1.6040653E-05 0 -0.0008700449 -1.11404916E-07 0.99999964 0 0 0 0 1 0.9998381 -0.017985279 0.00056724 6.654662 0.017985275 0.99983823 1.0282397E-05 0 -0.00056733313 -7.876497E-08 0.9999998 0 0 0 0 1 0.9998448 -0.017615713 0.00026010207 6.654662 0.017615713 0.99984485 4.586449E-06 0 -0.00026014252 -3.853529E-09 0.99999994 0 0 0 0 1 0.9998448 -0.017615713 0.00026010207 6.654662 0.017615713 0.99984485 4.586449E-06 0 -0.00026014252 -3.853529E-09 0.99999994 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailA2_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_TailA2_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_TailA2_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_TailA2_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_TailA2_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_TailA2_transform_samp_id" target="TailA2_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_TailB_transform_id" name="Motion_9_TailB_transform">
+      <source id="Motion_9_TailB_transform_frame_id" name="Motion_9_TailB_transform_frame">
+        <float_array id="Motion_9_TailB_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailB_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_TailB_transform_interp_id" name="Motion_9_TailB_transform_interp">
+        <Name_array id="Motion_9_TailB_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailB_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_TailB_transform_pose_id" name="Motion_9_TailB_transform_pose">
+        <float_array id="Motion_9_TailB_transform_pose_array_id" count="160">0.39933306 0.60798603 -0.68621135 1.3201653 -0.1535814 0.78226596 0.6037158 1.791E-08 0.90385056 -0.13569435 0.40576 0.3941086 0 0 0 1 0.39748144 0.641319 -0.6562915 1.3201653 -0.18003465 0.7558214 0.6295407 1.791E-08 0.8997755 -0.13207553 0.4158846 0.3941086 0 0 0 1 0.39641535 0.6712426 -0.6263292 1.3201653 -0.20735873 0.73005706 0.6511675 1.791E-08 0.8943473 -0.12825796 0.42859387 0.3941086 0 0 0 1 0.39670163 0.69692403 -0.5974318 1.3201653 -0.23610158 0.7064042 0.6672698 1.791E-08 0.8870647 -0.12365243 0.4447766 0.3941086 0 0 0 1 0.397686 0.7184854 -0.5706352 1.3201653 -0.26483238 0.68534744 0.67835295 1.791E-08 0.87847006 -0.1186488 0.46283132 0.3941086 0 0 0 1 0.39911252 0.73588604 -0.5469744 1.3201653 -0.2924208 0.66755205 0.6847367 1.791E-08 0.869022 -0.11334029 0.4816168 0.3941086 0 0 0 1 0.4008547 0.7490569 -0.5274744 1.3201653 -0.31773323 0.65368915 0.68683046 1.791E-08 0.8592794 -0.10772306 0.50003463 0.3941086 0 0 0 1 0.40267903 0.75807536 -0.51300216 1.3201653 -0.33986053 0.64421004 0.6851921 1.791E-08 0.8499085 -0.101563275 0.5170498 0.3941086 0 0 0 1 0.40441012 0.7628951 -0.504424 1.3201653 -0.35785618 0.6395583 0.68037057 1.791E-08 0.8416599 -0.09463745 0.53165054 0.3941086 0 0 0 1 0.40441012 0.7628951 -0.504424 1.3201653 -0.35785618 0.6395583 0.68037057 1.791E-08 0.8416599 -0.09463745 0.53165054 0.3941086 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_TailB_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_TailB_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_TailB_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_TailB_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_TailB_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_TailB_transform_samp_id" target="TailB_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_Spine1_transform_id" name="Motion_9_Spine1_transform">
+      <source id="Motion_9_Spine1_transform_frame_id" name="Motion_9_Spine1_transform_frame">
+        <float_array id="Motion_9_Spine1_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Spine1_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Spine1_transform_interp_id" name="Motion_9_Spine1_transform_interp">
+        <Name_array id="Motion_9_Spine1_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_Spine1_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Spine1_transform_pose_id" name="Motion_9_Spine1_transform_pose">
+        <float_array id="Motion_9_Spine1_transform_pose_array_id" count="160">0.99976146 -0.020392526 -0.007824241 0.001 0.020306196 0.99973375 -0.010958967 0 0.008045639 0.010797472 0.99990934 0 0 0 0 1 0.999793 -0.019507326 -0.0057829465 0.001 0.019442867 0.99975044 -0.011000664 0 0.0059960964 0.010885949 0.99992275 0 0 0 0 1 0.9998193 -0.018631814 -0.0037798206 0.001 0.018589249 0.9997667 -0.011000079 0 0.00398389 0.010927827 0.99993235 0 0 0 0 1 0.9998398 -0.017784815 -0.0020391438 0.001 0.01776142 0.9997821 -0.010968607 0 0.002233774 0.010930631 0.9999378 0 0 0 0 1 0.99985546 -0.016985118 -0.0007852196 0.001 0.01697554 0.99979633 -0.01091723 0 0.00097049004 0.010902321 0.9999401 0 0 0 0 1 0.9998679 -0.016251419 -0.00024237213 0.001 0.016247831 0.999809 -0.010856572 0 0.00041876055 0.0108512 0.99994105 0 0 0 0 1 0.99987805 -0.015602352 -0.000634941 0.001 0.01559459 0.9998201 -0.01079703 0 0.0008032858 0.010785812 0.9999415 0 0 0 0 1 0.99988425 -0.015056486 -0.0021872823 0.001 0.015032143 0.99982923 -0.0107489 0 0.0023487494 0.010714776 0.99993986 0 0 0 0 1 0.99987984 -0.014632372 -0.005123744 0.001 0.014576789 0.99983627 -0.010722561 0 0.005279801 0.0106465835 0.99992937 0 0 0 0 1 0.99987984 -0.014632372 -0.005123744 0.001 0.014576789 0.99983627 -0.010722561 0 0.005279801 0.0106465835 0.99992937 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Spine1_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_Spine1_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_Spine1_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_Spine1_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_Spine1_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_Spine1_transform_samp_id" target="Spine1_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_Spine2_transform_id" name="Motion_9_Spine2_transform">
+      <source id="Motion_9_Spine2_transform_frame_id" name="Motion_9_Spine2_transform_frame">
+        <float_array id="Motion_9_Spine2_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Spine2_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Spine2_transform_interp_id" name="Motion_9_Spine2_transform_interp">
+        <Name_array id="Motion_9_Spine2_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_Spine2_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Spine2_transform_pose_id" name="Motion_9_Spine2_transform_pose">
+        <float_array id="Motion_9_Spine2_transform_pose_array_id" count="160">0.9983109 0.049765103 0.029979272 1.9826299 -0.049792238 0.99875957 0.00015879265 0 -0.02993418 -0.0016512596 0.9995505 0 0 0 0 1 0.9983033 0.05096843 0.028154971 1.9826299 -0.050979286 0.99869967 -0.00033260492 0 -0.028135313 -0.0011032799 0.9996035 0 0 0 0 1 0.99828416 0.05222923 0.026472587 1.9826299 -0.052224625 0.998635 -0.00086565746 0 -0.026481666 -0.00051834877 0.99964917 0 0 0 0 1 0.9982528 0.05357528 0.02491919 1.9826299 -0.053556014 0.9985638 -0.001440516 0 -0.024960577 0.00010342669 0.99968845 0 0 0 0 1 0.9982083 0.055034406 0.023481809 1.9826299 -0.05500122 0.9984842 -0.0020572408 0 -0.023559432 0.0007620266 0.9997221 0 0 0 0 1 0.99814934 0.05663438 0.022147413 1.9826299 -0.056588 0.9983939 -0.002715811 0 -0.02226565 0.001457507 0.99975103 0 0 0 0 1 0.99807423 0.05840296 0.02090293 1.9826299 -0.058344077 0.9982907 -0.003416133 0 -0.021066712 0.0021899925 0.99977565 0 0 0 0 1 0.9979811 0.06036788 0.019735213 1.9826299 -0.060297187 0.9981718 -0.004158043 0 -0.019950144 0.0029596705 0.99979657 0 0 0 0 1 0.99786747 0.06255682 0.01863105 1.9826299 -0.062475014 0.9980343 -0.0049413056 0 -0.01890354 0.0037667933 0.9998142 0 0 0 0 1 0.99786747 0.06255682 0.01863105 1.9826299 -0.062475014 0.9980343 -0.0049413056 0 -0.01890354 0.0037667933 0.9998142 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Spine2_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_Spine2_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_Spine2_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_Spine2_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_Spine2_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_Spine2_transform_samp_id" target="Spine2_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_Neck_transform_id" name="Motion_9_Neck_transform">
+      <source id="Motion_9_Neck_transform_frame_id" name="Motion_9_Neck_transform_frame">
+        <float_array id="Motion_9_Neck_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Neck_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Neck_transform_interp_id" name="Motion_9_Neck_transform_interp">
+        <Name_array id="Motion_9_Neck_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_Neck_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Neck_transform_pose_id" name="Motion_9_Neck_transform_pose">
+        <float_array id="Motion_9_Neck_transform_pose_array_id" count="160">0.9956902 0.08838597 -0.02808701 5.41815 -0.08597791 0.9932609 0.077721156 0 0.034767188 -0.07497134 0.9965794 0 0 0 0 1 0.9957013 0.09196515 -0.011012984 5.41815 -0.09092312 0.9931721 0.073090136 0 0.017659534 -0.07177462 0.9972645 0 0 0 0 1 0.9954975 0.094551966 0.006680518 5.41815 -0.09478746 0.99316853 0.068056226 0 -0.00020002946 -0.06838304 0.99765915 0 0 0 0 1 0.9950468 0.096279524 0.024741393 5.41815 -0.09766363 0.99324346 0.06268342 0 -0.018539097 -0.064789265 0.99772674 0 0 0 0 1 0.99434286 0.09728761 0.04263031 5.41815 -0.09963992 0.99338675 0.057049222 0 -0.036798205 -0.060974173 0.9974608 0 0 0 0 1 0.99341786 0.09797106 0.059351698 5.41815 -0.10104685 0.99356097 0.051245738 0 -0.05394893 -0.056905735 0.9969209 0 0 0 0 1 0.9923362 0.09898078 0.07397076 5.41815 -0.10249663 0.99369943 0.04534185 0 -0.06901673 -0.05257611 0.9962291 0 0 0 0 1 0.9912174 0.10084426 0.08554828 5.41815 -0.10450139 0.99374413 0.039395414 0 -0.08104031 -0.04798934 0.99555486 0 0 0 0 1 0.9901981 0.10407728 0.09314344 5.41815 -0.10758568 0.9936326 0.03345982 0 -0.08906796 -0.04315275 0.9950903 0 0 0 0 1 0.9901981 0.10407728 0.09314344 5.41815 -0.10758568 0.9936326 0.03345982 0 -0.08906796 -0.04315275 0.9950903 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Neck_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_Neck_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_Neck_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_Neck_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_Neck_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_Neck_transform_samp_id" target="Neck_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_Head_transform_id" name="Motion_9_Head_transform">
+      <source id="Motion_9_Head_transform_frame_id" name="Motion_9_Head_transform_frame">
+        <float_array id="Motion_9_Head_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Head_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Head_transform_interp_id" name="Motion_9_Head_transform_interp">
+        <Name_array id="Motion_9_Head_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_Head_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_Head_transform_pose_id" name="Motion_9_Head_transform_pose">
+        <float_array id="Motion_9_Head_transform_pose_array_id" count="160">0.99121445 0.10062756 -0.08583703 4.8402977 -0.08682591 0.98461497 0.15163973 0 0.09977556 -0.1428546 0.9847017 0 0 0 0 1 0.99024427 0.12030705 -0.070302874 4.8402977 -0.10895953 0.98304087 0.14750738 0 0.08685678 -0.13840817 0.9865592 0 0 0 0 1 0.98968065 0.13454522 -0.049292717 4.8402977 -0.12642194 0.98181456 0.1416252 0 0.0674513 -0.13393202 0.98869234 0 0 0 0 1 0.9892598 0.14417423 -0.024058744 4.8402977 -0.139719 0.9810682 0.13410388 0 0.04293759 -0.12930213 0.9906752 0 0 0 0 1 0.9886257 0.15035345 0.0036215032 4.8402977 -0.14962019 0.9807895 0.12516287 0 0.015266735 -0.12428108 0.9921296 0 0 0 0 1 0.9875187 0.15422627 0.03195346 4.8402977 -0.1569134 0.98088884 0.11504478 0 -0.013599868 -0.1186228 0.99284625 0 0 0 0 1 0.9858402 0.15691186 0.059142075 4.8402977 -0.1624241 0.981206 0.10417859 0 -0.041683704 -0.112309545 0.99279857 0 0 0 0 1 0.983671 0.15949093 0.08339052 4.8402977 -0.16703565 0.9815498 0.093054436 0 -0.06701061 -0.10546414 0.9921627 0 0 0 0 1 0.9812453 0.16300881 0.10288748 4.8402977 -0.17168564 0.9817352 0.08197527 0 -0.087645575 -0.09810215 0.99130934 0 0 0 0 1 0.9812453 0.16300881 0.10288748 4.8402977 -0.17168564 0.9817352 0.08197527 0 -0.087645575 -0.09810215 0.99130934 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_Head_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_Head_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_Head_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_Head_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_Head_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_Head_transform_samp_id" target="Head_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_REar1_transform_id" name="Motion_9_REar1_transform">
+      <source id="Motion_9_REar1_transform_frame_id" name="Motion_9_REar1_transform_frame">
+        <float_array id="Motion_9_REar1_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_REar1_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_REar1_transform_interp_id" name="Motion_9_REar1_transform_interp">
+        <Name_array id="Motion_9_REar1_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_REar1_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_REar1_transform_pose_id" name="Motion_9_REar1_transform_pose">
+        <float_array id="Motion_9_REar1_transform_pose_array_id" count="160">0.82564515 -0.5310522 -0.19050904 18.047485 0.51942843 0.84730583 -0.110756144 8.049966 0.2202367 -0.007510539 0.97541755 0 0 0 0 1 0.8283223 -0.5300309 -0.18151988 18.047485 0.5198266 0.8479372 -0.10383993 8.049966 0.20895584 -0.008345939 0.9778895 0 0 0 0 1 0.8324316 -0.528669 -0.16603231 18.047485 0.5204036 0.84878486 -0.09351103 8.049966 0.1903621 -0.008562274 0.9816766 0 0 0 0 1 0.837566 -0.5267309 -0.14504433 18.047485 0.52068746 0.8499896 -0.08001435 8.049966 0.16543218 -0.00850546 0.9861845 0 0 0 0 1 0.84323144 -0.52398294 -0.12001087 18.047485 0.52016336 0.8516846 -0.06374536 8.049966 0.13561289 -0.008673161 0.99072397 0 0 0 0 1 0.8490274 -0.5202283 -0.09227612 18.047485 0.5183069 0.8539785 -0.045592085 8.049966 0.102520116 -0.009118417 0.99468917 0 0 0 0 1 0.8547031 -0.5152621 -0.06314681 18.047485 0.51466036 0.85697806 -0.026707891 8.049966 0.06787699 -0.009671842 0.9976468 0 0 0 0 1 0.86018896 -0.5088373 -0.034052253 18.047485 0.5088844 0.8607985 -0.007919833 8.049966 0.033342034 -0.010516105 0.9993887 0 0 0 0 1 0.86560374 -0.50068825 -0.0064358283 18.047485 0.50072926 0.8655468 0.00994335 8.049966 0.0005919917 -0.011829608 0.99992985 0 0 0 0 1 0.86560374 -0.50068825 -0.0064358283 18.047485 0.50072926 0.8655468 0.00994335 8.049966 0.0005919917 -0.011829608 0.99992985 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_REar1_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_REar1_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_REar1_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_REar1_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_REar1_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_REar1_transform_samp_id" target="REar1_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_REar2_transform_id" name="Motion_9_REar2_transform">
+      <source id="Motion_9_REar2_transform_frame_id" name="Motion_9_REar2_transform_frame">
+        <float_array id="Motion_9_REar2_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_REar2_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_REar2_transform_interp_id" name="Motion_9_REar2_transform_interp">
+        <Name_array id="Motion_9_REar2_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_REar2_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_REar2_transform_pose_id" name="Motion_9_REar2_transform_pose">
+        <float_array id="Motion_9_REar2_transform_pose_array_id" count="160">0.9987026 0.0076907673 -0.05033918 9.313862 -0.007765027 0.999969 -0.0012797962 2.458075E-05 0.05032778 0.0016690209 0.9987314 -4.79395E-06 0 0 0 1 0.99685955 0.011429514 -0.07836038 9.313862 -0.011585216 0.9999317 -0.0015326574 2.458075E-05 0.078337505 0.002435666 0.9969239 -4.79395E-06 0 0 0 1 0.9944478 0.016251193 -0.10396853 9.313862 -0.016490506 0.99986297 -0.0014425622 2.458075E-05 0.103930846 0.0031490466 0.99457955 -4.79395E-06 0 0 0 1 0.99176687 0.022139277 -0.12612824 9.313862 -0.022446617 0.9997475 -0.0010158123 2.458075E-05 0.12607391 0.003838601 0.99201345 -4.79395E-06 0 0 0 1 0.9891764 0.029077265 -0.14382124 9.313862 -0.029423714 0.999567 -0.0002820664 2.458075E-05 0.14375076 0.0045107678 0.98960364 -4.79395E-06 0 0 0 1 0.9869725 0.03704791 -0.15656526 9.313862 -0.037397888 0.9993002 0.0007108585 2.458075E-05 0.15648203 0.0051536122 0.9876674 -4.79395E-06 0 0 0 1 0.98534936 0.04603311 -0.16421829 9.313862 -0.04635061 0.9989234 0.0018999692 2.458075E-05 0.16412897 0.005739485 0.9864222 -4.79395E-06 0 0 0 1 0.98448646 0.056015804 -0.16627891 9.313862 -0.05626861 0.9984106 0.0031939454 2.458075E-05 0.16619353 0.006211887 0.9860736 -4.79395E-06 0 0 0 1 0.98447645 0.0669784 -0.16223434 9.313862 -0.06714287 0.99773335 0.004475056 2.458075E-05 0.16216633 0.0064872894 0.98674214 -4.79395E-06 0 0 0 1 0.98447645 0.0669784 -0.16223434 9.313862 -0.06714287 0.99773335 0.004475056 2.458075E-05 0.16216633 0.0064872894 0.98674214 -4.79395E-06 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_REar2_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_REar2_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_REar2_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_REar2_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_REar2_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_REar2_transform_samp_id" target="REar2_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_LEar1_transform_id" name="Motion_9_LEar1_transform">
+      <source id="Motion_9_LEar1_transform_frame_id" name="Motion_9_LEar1_transform_frame">
+        <float_array id="Motion_9_LEar1_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_LEar1_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_LEar1_transform_interp_id" name="Motion_9_LEar1_transform_interp">
+        <Name_array id="Motion_9_LEar1_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_LEar1_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_LEar1_transform_pose_id" name="Motion_9_LEar1_transform_pose">
+        <float_array id="Motion_9_LEar1_transform_pose_array_id" count="160">0.79736805 0.5761795 -0.17950326 18.0475 -0.56618357 0.8171756 0.10798222 -8.049967 0.20890284 0.015530229 0.97781307 0 0 0 0 1 0.7928796 0.5870789 -0.16334099 18.0475 -0.5787113 0.80938536 0.09994276 -8.049967 0.19088009 0.01528471 0.98149437 0 0 0 0 1 0.7886553 0.5984314 -0.14107664 18.0475 -0.592094 0.8010495 0.088002264 -8.049967 0.16567267 0.014127184 0.98607963 0 0 0 0 1 0.784124 0.6099998 -0.11423548 18.0475 -0.60587573 0.7922983 0.07195762 -8.049967 0.13440272 0.012788814 0.99084425 0 0 0 0 1 0.778738 0.62160754 -0.084683575 18.0475 -0.6195115 0.7832414 0.05233089 -8.049967 0.09885695 0.011710396 0.9950327 0 0 0 0 1 0.77216226 0.63312393 -0.05403266 18.0475 -0.63247854 0.77397746 0.03049247 -8.049967 0.061125576 0.010629366 0.99807346 0 0 0 0 1 0.7645453 0.644126 -0.023919715 18.0475 -0.64414865 0.76486087 0.007771033 -8.049967 0.023300776 0.009466547 0.9996837 0 0 0 0 1 0.7562252 0.65429866 0.00407505 18.0475 -0.6541916 0.7561914 -0.014423215 -8.049967 -0.012518607 0.008241336 0.9998877 0 0 0 0 1 0.7475165 0.6636344 0.0284332 18.0475 -0.6627674 0.74802387 -0.03463497 -8.049967 -0.044253673 0.007045611 0.9989955 0 0 0 0 1 0.7475165 0.6636344 0.0284332 18.0475 -0.6627674 0.74802387 -0.03463497 -8.049967 -0.044253673 0.007045611 0.9989955 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_LEar1_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_LEar1_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_LEar1_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_LEar1_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_LEar1_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_LEar1_transform_samp_id" target="LEar1_bone_id/transform" />
+    </animation>
+    <animation id="Motion_9_LEar2_transform_id" name="Motion_9_LEar2_transform">
+      <source id="Motion_9_LEar2_transform_frame_id" name="Motion_9_LEar2_transform_frame">
+        <float_array id="Motion_9_LEar2_transform_frame_array_id" count="10">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_LEar2_transform_frame_array_id" count="10" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_LEar2_transform_interp_id" name="Motion_9_LEar2_transform_interp">
+        <Name_array id="Motion_9_LEar2_transform_interp_array_id" count="10">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_9_LEar2_transform_interp_array_id" count="10" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_9_LEar2_transform_pose_id" name="Motion_9_LEar2_transform_pose">
+        <float_array id="Motion_9_LEar2_transform_pose_array_id" count="160">0.89339066 0.43968806 -0.09234487 9.564364 -0.4470912 0.8497875 -0.27923244 -3.530385E-05 -0.04430165 0.2907502 0.9557728 -5.66549E-06 0 0 0 1 0.8782096 0.4650462 -0.11171368 9.564364 -0.47708496 0.8353168 -0.2731956 -3.530385E-05 -0.03373227 0.2932199 0.95544976 -5.66549E-06 0 0 0 1 0.86168575 0.4908854 -0.12856576 9.564364 -0.506797 0.81973785 -0.26680833 -3.530385E-05 -0.025582101 0.2950617 0.9551357 -5.66549E-06 0 0 0 1 0.8443387 0.5167187 -0.14175324 9.564364 -0.53540653 0.8033787 -0.26061946 -3.530385E-05 -0.020785406 0.29594672 0.9549783 -5.66549E-06 0 0 0 1 0.82672495 0.5419765 -0.15095457 9.564364 -0.5622694 0.7866495 -0.2550208 -3.530385E-05 -0.019466951 0.2957092 0.9550796 -5.66549E-06 0 0 0 1 0.8094845 0.56585234 -0.15667167 9.564364 -0.5867693 0.7701421 -0.25016594 -3.530385E-05 -0.020897545 0.29443556 0.95544285 -5.66549E-06 0 0 0 1 0.7935353 0.58738273 -0.15900706 9.564364 -0.6080236 0.75473917 -0.24632508 -3.530385E-05 -0.024678245 0.2921477 0.95605475 -5.66549E-06 0 0 0 1 0.7798525 0.60567707 -0.15806757 9.564364 -0.6252231 0.7414099 -0.24373636 -3.530385E-05 -0.030432671 0.2889059 0.95687366 -5.66549E-06 0 0 0 1 0.7694371 0.61989146 -0.15395167 9.564364 -0.63760227 0.7311727 -0.24258971 -3.530385E-05 -0.037814055 0.28481746 0.9578356 -5.66549E-06 0 0 0 1 0.7694371 0.61989146 -0.15395167 9.564364 -0.63760227 0.7311727 -0.24258971 -3.530385E-05 -0.037814055 0.28481746 0.9578356 -5.66549E-06 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_9_LEar2_transform_pose_array_id" count="10" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_9_LEar2_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_9_LEar2_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_9_LEar2_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_9_LEar2_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_9_LEar2_transform_samp_id" target="LEar2_bone_id/transform" />
+    </animation>
+  </library_animations>
+  <library_visual_scenes>
+    <visual_scene id="pm0819_11_fi_00_clip_id" name="pm0819_11_fi_00_clip">
+      <node id="pm0819_11_fi_bone_id" name="pm0819_11_fi" sid="pm0819_11_fi" type="JOINT">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="Origin_bone_id" name="Origin" sid="Origin" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          <node id="Waist_bone_id" name="Waist" sid="Waist" type="JOINT">
+            <matrix sid="transform">3.1391647E-07 -1 0 0 1 3.1391647E-07 0 5.788757 0 0 1 0 0 0 0 1</matrix>
+            <node id="Spine1_bone_id" name="Spine1" sid="Spine1" type="JOINT">
+              <matrix sid="transform">1 0 0 0.001 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+              <node id="Spine2_bone_id" name="Spine2" sid="Spine2" type="JOINT">
+                <matrix sid="transform">1 0 0 1.98263 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                <node id="Neck_bone_id" name="Neck" sid="Neck" type="JOINT">
+                  <matrix sid="transform">1 0 0 5.41815 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                  <node id="Head_bone_id" name="Head" sid="Head" type="JOINT">
+                    <matrix sid="transform">1 0 0 4.840298 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                    <node id="LEar1_bone_id" name="LEar1" sid="LEar1" type="JOINT">
+                      <matrix sid="transform">0.70537543 0.7071024 0.049513794 18.0475 -0.7053668 0.7071111 -0.049513184 -8.049967 -0.07002265 0 0.9975454 0 0 0 0 1</matrix>
+                      <node id="LEar2_bone_id" name="LEar2" sid="LEar2" type="JOINT">
+                        <matrix sid="transform">1 0 0 9.564364 0 1 0 -3.5E-05 0 0 1 -6E-06 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                    <node id="REar1_bone_id" name="REar1" sid="REar1" type="JOINT">
+                      <matrix sid="transform">0.70537543 -0.7071024 0.049513794 18.047485 0.7053668 0.7071111 0.049513184 8.049966 -0.07002265 0 0.9975454 0 0 0 0 1</matrix>
+                      <node id="REar2_bone_id" name="REar2" sid="REar2" type="JOINT">
+                        <matrix sid="transform">1 0 0 9.313862 0 1 0 2.5E-05 0 0 1 -5E-06 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                    <node id="Loc_Head_bone_id" name="Loc_Head" sid="Loc_Head" type="JOINT">
+                      <matrix sid="transform">3.1391647E-07 1 0 21.83159 -1 3.1391647E-07 0 0 0 0 1 0 0 0 0 1</matrix>
+                    </node>
+                    <node id="Loc_Mouth_bone_id" name="Loc_Mouth" sid="Loc_Mouth" type="JOINT">
+                      <matrix sid="transform">3.1391647E-07 1 0 5.987138 -1 3.1391647E-07 0 0 0 0 1 12.229816 0 0 0 1</matrix>
+                    </node>
+                    <node id="Loc_Eye_bone_id" name="Loc_Eye" sid="Loc_Eye" type="JOINT">
+                      <matrix sid="transform">3.1391647E-07 1 0 13.835901 -1 3.1391647E-07 0 0 0 0 1 11.213694 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                </node>
+              </node>
+            </node>
+            <node id="Hips_bone_id" name="Hips" sid="Hips" type="JOINT">
+              <matrix sid="transform">-1 3.2584137E-07 0 -0.001 -3.2584137E-07 -1 0 0 0 0 1 0 0 0 0 1</matrix>
+              <node id="TailA1_bone_id" name="TailA1" sid="TailA1" type="JOINT">
+                <matrix sid="transform">3.1391647E-07 -6.2783295E-07 -1 5.291445 0 -1 6.2783295E-07 0 -1 -1.970871E-13 -3.1391647E-07 -9.920215 0 0 0 1</matrix>
+                <node id="TailA2_bone_id" name="TailA2" sid="TailA2" type="JOINT">
+                  <matrix sid="transform">1 0 0 6.654662 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                  <node id="TailB_bone_id" name="TailB" sid="TailB" type="JOINT">
+                    <matrix sid="transform">0.3361503 0 -0.94180834 1.320165 0 1 0 0 0.94180834 0 0.3361503 0.394109 0 0 0 1</matrix>
+                  </node>
+                </node>
+              </node>
+              <node id="FeelerA_bone_id" name="FeelerA" sid="FeelerA" type="JOINT">
+                <matrix sid="transform">0.051549025 7.019715E-08 -0.99867046 5.179708 0.3086058 0.9510566 0.015929582 2.919011 0.94979215 -0.30901664 0.049026024 8.983791 0 0 0 1</matrix>
+              </node>
+              <node id="FeelerB_bone_id" name="FeelerB" sid="FeelerB" type="JOINT">
+                <matrix sid="transform">0.051548865 -4.1189773E-07 -0.9986705 5.179708 0.8079414 0.58778536 0.041703664 7.642069 0.5870039 -0.80901694 0.0303 5.552289 0 0 0 1</matrix>
+              </node>
+              <node id="FeelerC_bone_id" name="FeelerC" sid="FeelerC" type="JOINT">
+                <matrix sid="transform">0.05154847 -3.1349913E-07 -0.9986705 5.179708 0.9986705 1.6181914E-08 0.05154847 9.446117 0 -1 3.1391647E-07 0 0 0 0 1</matrix>
+              </node>
+              <node id="FeelerD_bone_id" name="FeelerD" sid="FeelerD" type="JOINT">
+                <matrix sid="transform">0.051548865 -3.3164847E-07 -0.9986705 5.179708 0.8079414 -0.58778536 0.0417041 7.642069 -0.5870039 -0.80901694 -0.030299399 -5.552289 0 0 0 1</matrix>
+              </node>
+              <node id="FeelerE_bone_id" name="FeelerE" sid="FeelerE" type="JOINT">
+                <matrix sid="transform">0.051548943 2.2361505E-07 -0.9986705 5.179708 -0.8079425 -0.5877837 -0.04170416 -7.642064 -0.5870022 0.80901814 -0.030299444 -5.552286 0 0 0 1</matrix>
+              </node>
+              <node id="FeelerF_bone_id" name="FeelerF" sid="FeelerF" type="JOINT">
+                <matrix sid="transform">0.051554423 3.1349902E-07 -0.99867016 5.179708 -0.99867016 1.6183783E-08 -0.051554423 -9.446115 0 1 3.1391647E-07 0 0 0 0 1</matrix>
+              </node>
+              <node id="FeelerG_bone_id" name="FeelerG" sid="FeelerG" type="JOINT">
+                <matrix sid="transform">0.051548943 5.199312E-07 -0.9986705 5.179708 -0.8079425 0.5877837 -0.041703723 -7.642064 0.5870022 0.80901814 0.030300045 5.552286 0 0 0 1</matrix>
+              </node>
+              <node id="FeelerH_bone_id" name="FeelerH" sid="FeelerH" type="JOINT">
+                <matrix sid="transform">0.051546082 5.0962467E-07 -0.99867064 5.179708 -0.30860534 0.9510568 -0.015928095 -2.919007 0.94979244 0.3090161 0.04902341 8.983796 0 0 0 1</matrix>
+              </node>
+            </node>
+          </node>
+          <node id="CamTgtHead_bone_id" name="CamTgtHead" sid="CamTgtHead" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 31.866737 0 0 1 11.213694 0 0 0 1</matrix>
+          </node>
+        </node>
+        <node id="pm0819_11_fi_BodySkin_bone_id" name="pm0819_11_fi_BodySkin" sid="pm0819_11_fi_BodySkin" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+        <node id="pm0819_11_fi_TailSkin_bone_id" name="pm0819_11_fi_TailSkin" sid="pm0819_11_fi_TailSkin" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#pm0819_11_fi_00_clip_id" />
+  </scene>
+</COLLADA>

@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+  <asset>
+    <created>2026-02-17T05:46:42.4741901-05:00</created>
+    <modified>2026-02-17T05:46:42.4741921-05:00</modified>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_materials>
+    <material id="Comb1_mat_id" name="Comb1_mat">
+      <instance_effect url="#Comb1_eff_id" />
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="Comb1_eff_id" name="Comb1_eff">
+      <profile_COMMON>
+        <newparam sid="Comb1_surf">
+          <surface type="2D">
+            <format>PNG</format>
+          </surface>
+        </newparam>
+        <newparam sid="Comb1_samp">
+          <sampler2D>
+            <source>Comb1_surf</source>
+            <wrap_s>CLAMP</wrap_s>
+            <wrap_t>CLAMP</wrap_t>
+            <minfilter>NEAREST</minfilter>
+            <magfilter>NEAREST</magfilter>
+            <mipfilter>LINEAR</mipfilter>
+          </sampler2D>
+        </newparam>
+        <technique sid="Comb1_tech">
+          <phong>
+            <diffuse>
+              <texture texture="Comb1_samp" texcoord="uv" />
+            </diffuse>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="Comb1_OptMesh_0_0_geo_id" name="Comb1_OptMesh_0_0">
+      <mesh>
+        <source id="Comb1_OptMesh_0_0_Position_id" name="Comb1_OptMesh_0_0_Position">
+          <float_array id="Comb1_OptMesh_0_0_Position_array_id" count="72">-9.193818 -9.193818 9.193818 9.193818 -9.193818 9.193818 -9.193818 9.193818 9.193818 9.193818 9.193818 9.193818 -9.193818 9.193818 9.193818 9.193818 9.193818 9.193818 -9.193818 9.193818 -9.193818 9.193818 9.193818 -9.193818 -9.193818 9.193818 -9.193818 9.193818 9.193818 -9.193818 -9.193818 -9.193818 -9.193818 9.193818 -9.193818 -9.193818 -9.193818 -9.193818 -9.193818 9.193818 -9.193818 -9.193818 -9.193818 -9.193818 9.193818 9.193818 -9.193818 9.193818 9.193818 -9.193818 9.193818 9.193818 -9.193818 -9.193818 9.193818 9.193818 9.193818 9.193818 9.193818 -9.193818 -9.193818 -9.193818 -9.193818 -9.193818 -9.193818 9.193818 -9.193818 9.193818 -9.193818 -9.193818 9.193818 9.193818</float_array>
+          <technique_common>
+            <accessor source="#Comb1_OptMesh_0_0_Position_array_id" count="24" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Comb1_OptMesh_0_0_Normal_id" name="Comb1_OptMesh_0_0_Normal">
+          <float_array id="Comb1_OptMesh_0_0_Normal_array_id" count="72">0 0 1 0 0 1 0 0 1 0 0 1 0 1 0 0 1 0 0 1 0 0 1 0 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 -1 0 0 -1 0 0 -1 0 0 -1 0 1 0 0 1 0 0 1 0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0</float_array>
+          <technique_common>
+            <accessor source="#Comb1_OptMesh_0_0_Normal_array_id" count="24" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Comb1_OptMesh_0_0_vtx_id">
+          <input semantic="POSITION" source="#Comb1_OptMesh_0_0_Position_id" />
+          <input semantic="NORMAL" source="#Comb1_OptMesh_0_0_Normal_id" />
+        </vertices>
+        <triangles material="Mdl_0_Mtl_Comb1" count="12">
+          <input semantic="VERTEX" source="#Comb1_OptMesh_0_0_vtx_id" offset="0" />
+          <p>0 1 2 2 1 3 4 5 6 6 5 7 8 9 10 10 9 11 12 13 14 14 13 15 16 17 18 18 17 19 20 21 22 22 21 23</p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_controllers>
+    <controller id="Comb1_OptMesh_0_0_ctrl_id" name="Comb1_OptMesh_0_0_ctrl">
+      <skin source="#Comb1_OptMesh_0_0_geo_id">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="Comb1_OptMesh_0_0_ctrl_names_id" name="Comb1_OptMesh_0_0_ctrl_names">
+          <Name_array id="Comb1_OptMesh_0_0_ctrl_names_array_id" count="61">pc0002_00_fi Origin Waist Spine2 Spine3 Neck Head Loc_Head Loc_Eye Loc_Mouth AccEye LShoulder LArm LForeArm LHand LFingerA1 LFingerA2 LFingerA3 LFingerB1 LFingerB2 LFingerB3 LFingerC1 LFingerC2 LFingerC3 LForeArmEX Bngl LArmEX Bag BagA BagB1 BagB2 RShoulder RArm RForeArm RHand RFingerA1 RFingerA2 RFingerA3 RFingerB1 RFingerB2 RFingerB3 RFingerC1 RFingerC2 RFingerC3 RForeArmEX RArmEX Hips LThigh LLeg LFoot LToe RThigh RLeg RFoot RToe CamTgtHead CamTgtBust CamTgtBody CamTgtFoot pCube1 Tops</Name_array>
+          <technique_common>
+            <accessor source="#Comb1_OptMesh_0_0_ctrl_names_array_id" count="61" stride="1">
+              <param name="JOINT" type="Name" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Comb1_OptMesh_0_0_ctrl_poses_id" name="Comb1_OptMesh_0_0_ctrl_poses">
+          <float_array id="Comb1_OptMesh_0_0_ctrl_poses_array_id" count="976">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 3.1391647E-07 1 0 -76 -1 3.1391647E-07 0 -2.3857652E-05 0 -0 1 0 0 0 0 1 3.1391647E-07 1 0 -87.725 -1 3.1391647E-07 0 -2.3857652E-05 0 -0 1 0 0 0 0 1 3.1350874E-07 0.99870116 -0.050950926 -99.32082 -1 3.1391647E-07 3.3449437E-16 -2.385765E-05 1.5994335E-08 0.050950926 0.99870116 -5.0670695 0 0 0 1 3.113016E-07 0.9916701 0.12880313 -112.63995 -1 3.1391647E-07 -4.751359E-16 -2.3857649E-05 -4.043343E-08 -0.12880315 0.99167013 15.362345 0 0 0 1 3.1391647E-07 1 9.847655E-07 -118.07664 -1 3.1391647E-07 0 -2.3857652E-05 -3.0909184E-13 -9.846308E-07 1 0.15510947 0 0 0 1 1 -3.0438297E-19 3.0913412E-13 -2.1925496E-05 -3.0605838E-19 1 9.847655E-07 -145.845 -3.1079317E-13 -9.846308E-07 1 0.000109259956 0 0 0 1 1 -3.0438297E-19 3.0913412E-13 -1.574993E-05 -3.0605838E-19 1 9.847655E-07 -126.172356 -3.1079317E-13 -9.846308E-07 1 -10.700464 0 0 0 1 1 -3.0438297E-19 3.0913412E-13 -1.3278654E-05 -3.0605838E-19 1 9.847655E-07 -118.29995 -3.1079317E-13 -9.846308E-07 1 -10.673381 0 0 0 1 1 -3.0438297E-19 3.0913412E-13 -1.5749818E-05 -3.0605838E-19 1 9.847655E-07 -126.172005 -3.1079317E-13 -9.846308E-07 1 -12.4038515 0 0 0 1 0.814813 -0.57972383 -2.4862737E-07 62.052956 0.57972383 0.8148131 4.3733047E-07 -92.95559 -5.345425E-08 -5.024774E-07 1 0.6290533 0 0 0 1 1 3.2595617E-07 5.0946234E-08 -9.694045 -3.309506E-07 1 5.0047777E-07 -107.185 -5.1917592E-08 -5.009721E-07 1 0.6290531 0 0 0 1 0.9953314 2.7608283E-07 0.09651556 -28.500502 -2.9398078E-07 1 5.020721E-07 -107.18498 -0.09651556 -5.3009313E-07 0.9953314 5.2643704 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -48.057045 -3.309506E-07 1 5.0047777E-07 -107.185 -4.912894E-08 -5.009721E-07 1 0.62905717 0 0 0 1 0.5940067 -0.7494498 0.29237142 48.90703 0.78369343 0.62114793 3.5168492E-07 -104.7827 -0.18160614 0.2291293 0.956305 -17.49126 0 0 0 1 0.5940067 -0.7494498 0.29237142 45.907017 0.78369343 0.62114793 3.5168492E-07 -104.7827 -0.18160614 0.2291293 0.956305 -17.491259 0 0 0 1 0.5940067 -0.7494498 0.29237142 42.90702 0.78369343 0.62114793 3.5168492E-07 -104.7827 -0.18160614 0.2291293 0.956305 -17.49126 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -55.59687 -3.309506E-07 1 5.0047777E-07 -107.16483 -4.912894E-08 -5.009721E-07 1 -1.5760819 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -59.006878 -3.309506E-07 1 5.0047777E-07 -107.16482 -4.912894E-08 -5.009721E-07 1 -1.5760815 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -61.56688 -3.309506E-07 1 5.0047777E-07 -107.164825 -4.912894E-08 -5.009721E-07 1 -1.576082 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -55.348137 -3.309506E-07 1 5.0047777E-07 -107.16483 -4.912894E-08 -5.009721E-07 1 2.643918 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -58.768135 -3.309506E-07 1 5.0047777E-07 -107.164825 -4.912894E-08 -5.009721E-07 1 2.6439183 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -61.338142 -3.309506E-07 1 5.0047777E-07 -107.164825 -4.912894E-08 -5.009721E-07 1 2.643918 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -48.047043 -3.309506E-07 1 5.0047777E-07 -107.18499 -4.912894E-08 -5.009721E-07 1 0.6290567 0 0 0 1 1 3.2595617E-07 5.3734883E-08 -45.523525 -3.309506E-07 1 5.0047777E-07 -107.185 -4.912894E-08 -5.009721E-07 1 0.62905616 0 0 0 1 1 3.2595617E-07 5.0946234E-08 -9.704045 -3.309506E-07 1 5.0047777E-07 -107.185 -5.1917592E-08 -5.009721E-07 1 0.62905306 0 0 0 1 -0.5717579 -0.8204093 0.004608543 97.79274 -0.8203914 0.57177615 0.005466772 -57.61669 -0.0071200454 -0.0006551393 -0.99997437 -0.49330375 0 0 0 1 -0.57454354 -0.8159905 0.063710555 77.07012 -0.81260914 0.5779977 0.07473279 -59.00627 -0.097805806 -0.00883454 -0.99516624 12.360226 0 0 0 1 -0.57526714 -0.81159997 -0.10184775 76.23139 -0.8030665 0.5840504 -0.11819183 -59.972267 0.15540871 0.013798621 -0.98775387 -11.891391 0 0 0 1 -0.5717576 -0.8204096 0.0046083867 52.192757 -0.8203917 0.57177585 0.0054670344 -57.61668 -0.0071201706 -0.0006548545 -0.9999744 -0.49334484 0 0 0 1 -0.8148134 -0.57972336 -2.4862737E-07 62.05292 0.57972336 -0.81481344 -4.3733047E-07 92.95561 5.3453963E-08 -5.0247746E-07 1 0.6290533 0 0 0 1 -1 9.537891E-07 5.0946234E-08 -9.694093 -9.587835E-07 -1 -5.004777E-07 107.185 5.191728E-08 -5.0097213E-07 1 0.6290531 0 0 0 1 -0.9953314 9.009847E-07 0.09651556 -28.500551 -9.218137E-07 -1 -5.0207206E-07 107.18499 0.09651556 -5.906888E-07 0.9953314 5.264375 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -48.05709 -9.587835E-07 -1 -5.004777E-07 107.185 4.9128627E-08 -5.0097213E-07 1 0.62905717 0 0 0 1 -0.5939069 -0.7495475 0.29232356 48.92271 0.78378344 -0.62103397 -3.5166386E-07 104.77537 0.18154316 0.22911818 0.95631945 -17.493343 0 0 0 1 -0.5940545 -0.7494007 0.2924001 45.899155 0.7836492 -0.62120366 -7.322425E-08 104.785995 0.18164004 0.22913903 0.9562962 -17.490416 0 0 0 1 -0.59399456 -0.74946016 0.29236948 42.90879 0.783704 -0.62113476 1.9450266E-07 104.78195 0.18160065 0.22913119 0.95630544 -17.491766 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -55.59689 -9.587835E-07 -1 -5.004777E-07 107.16499 4.9128627E-08 -5.0097213E-07 1 -1.576083 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -59.006893 -9.587835E-07 -1 -5.004777E-07 107.165 4.9128627E-08 -5.0097213E-07 1 -1.5760831 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -61.566895 -9.587835E-07 -1 -5.004777E-07 107.16499 4.9128627E-08 -5.0097213E-07 1 -1.576083 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -55.34819 -9.587835E-07 -1 -5.004777E-07 107.16499 4.9128627E-08 -5.0097213E-07 1 2.6439168 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -58.76819 -9.587835E-07 -1 -5.004777E-07 107.165 4.9128627E-08 -5.0097213E-07 1 2.6439168 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -61.338192 -9.587835E-07 -1 -5.004777E-07 107.16499 4.9128627E-08 -5.0097213E-07 1 2.6439173 0 0 0 1 -1 9.537891E-07 5.3734883E-08 -48.04709 -9.587835E-07 -1 -5.004777E-07 107.18499 4.9128627E-08 -5.0097213E-07 1 0.6290567 0 0 0 1 -1 9.537891E-07 5.0946234E-08 -9.704093 -9.587835E-07 -1 -5.004777E-07 107.18499 5.191728E-08 -5.0097213E-07 1 0.62905306 0 0 0 1 -6.3975784E-07 -1 0 75.99 1 -6.3975784E-07 -0 4.8618338E-05 0 0 1 -0 0 0 0 1 -6.3975784E-07 -1 0 68.99 1 -6.3975784E-07 0 -6.849951 0 0 1 0 0 0 0 1 -6.3837547E-07 -0.9978393 -0.065703645 39.604233 1 -6.397579E-07 -1.2773057E-15 -6.8499517 -4.2034422E-08 -0.065703645 0.9978393 2.6077774 0 0 0 1 -2.375603E-11 -3.7132846E-05 1 1.9255053 1 -6.397578E-07 -5.381745E-19 -6.8499513 6.3975784E-07 1 3.7133093E-05 -10.453234 0 0 0 1 -8.3858146E-14 -1.3107795E-07 1 -8.064014 1 -6.397578E-07 -7.6099657E-22 -6.8499513 6.3975784E-07 1 1.3685319E-07 -4.601003 0 0 0 1 -6.3975784E-07 -1 0 68.99 1 -6.3975784E-07 -0 6.850049 0 0 1 -0 0 0 0 1 -6.3837547E-07 -0.9978393 -0.065703645 39.60424 1 -6.397579E-07 -1.2773057E-15 6.850049 -4.2034422E-08 -0.065703645 0.9978393 2.6077778 0 0 0 1 -2.3142464E-11 -3.6173784E-05 1 1.9254957 1 -6.397578E-07 3.9919866E-19 6.8500485 6.3975784E-07 1 3.61755E-05 -10.453226 0 0 0 1 -1.12395756E-13 -1.7568483E-07 1 -8.064012 1 -6.397578E-07 9.330695E-22 6.8500485 6.3975784E-07 1 1.8155669E-07 -4.6009874 0 0 0 1 1 0 0 0 0 1 0 -126.172 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 -99.45 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 -76 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -6.277412E-07 -0.98121685 0.19290803 73.632484 1 -6.3975784E-07 8.84681E-15 4.861834E-05 1.2341442E-07 0.19290803 0.98121685 -27.168646 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#Comb1_OptMesh_0_0_ctrl_poses_array_id" count="61" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Comb1_OptMesh_0_0_ctrl_weights_id" name="Comb1_OptMesh_0_0_ctrl_weights">
+          <float_array id="Comb1_OptMesh_0_0_ctrl_weights_array_id" count="1">1</float_array>
+          <technique_common>
+            <accessor source="#Comb1_OptMesh_0_0_ctrl_weights_array_id" count="1" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#Comb1_OptMesh_0_0_ctrl_names_id" />
+          <input semantic="INV_BIND_MATRIX" source="#Comb1_OptMesh_0_0_ctrl_poses_id" />
+        </joints>
+        <vertex_weights count="24">
+          <input semantic="JOINT" source="#Comb1_OptMesh_0_0_ctrl_names_id" offset="0" />
+          <input semantic="WEIGHT" source="#Comb1_OptMesh_0_0_ctrl_weights_id" offset="1" />
+          <vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+          <v>2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0 2 0</v>
+        </vertex_weights>
+      </skin>
+    </controller>
+  </library_controllers>
+  <library_visual_scenes>
+    <visual_scene id="p2_base_00_id" name="p2_base_00">
+      <node id="pc0002_00_fi_bone_id" name="pc0002_00_fi" sid="pc0002_00_fi" type="JOINT">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="Origin_bone_id" name="Origin" sid="Origin" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          <node id="Waist_bone_id" name="Waist" sid="Waist" type="JOINT">
+            <matrix sid="transform">3.1391647E-07 -1 0 0 1 3.1391647E-07 0 76 0 0 1 0 0 0 0 1</matrix>
+            <node id="Spine2_bone_id" name="Spine2" sid="Spine2" type="JOINT">
+              <matrix sid="transform">1 0 0 11.724998 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+              <node id="Spine3_bone_id" name="Spine3" sid="Spine3" type="JOINT">
+                <matrix sid="transform">0.99870116 0 0.050950926 11.724998 0 1 0 0 -0.050950926 0 0.99870116 0 0 0 0 1</matrix>
+                <node id="Neck_bone_id" name="Neck" sid="Neck" type="JOINT">
+                  <matrix sid="transform">0.98381954 0 -0.17916238 14.24893 0 1 0 0 0.17916238 0 0.98381954 0 0 0 0 1</matrix>
+                  <node id="Head_bone_id" name="Head" sid="Head" type="JOINT">
+                    <matrix sid="transform">0.9916703 0 0.12880218 4.433144 0 1 0 0 -0.12880218 0 0.9916703 0 0 0 0 1</matrix>
+                    <node id="Loc_Head_bone_id" name="Loc_Head" sid="Loc_Head" type="JOINT">
+                      <matrix sid="transform">3.1391647E-07 1 0 27.768373 -1 3.1391647E-07 0 0 0 0 1 0.155 0 0 0 1</matrix>
+                    </node>
+                    <node id="Loc_Eye_bone_id" name="Loc_Eye" sid="Loc_Eye" type="JOINT">
+                      <matrix sid="transform">3.1391647E-07 1 0 8.095722 -1 3.1391647E-07 0 0 0 0 1 10.855574 0 0 0 1</matrix>
+                    </node>
+                    <node id="Loc_Mouth_bone_id" name="Loc_Mouth" sid="Loc_Mouth" type="JOINT">
+                      <matrix sid="transform">3.1391647E-07 1 0 0.223319 -1 3.1391647E-07 0 0 0 0 1 10.82849 0 0 0 1</matrix>
+                    </node>
+                    <node id="AccEye_bone_id" name="AccEye" sid="AccEye" type="JOINT">
+                      <matrix sid="transform">3.1391647E-07 1 0 8.095364 -1 3.1391647E-07 0 0 0 0 1 12.558961 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                </node>
+                <node id="LShoulder_bone_id" name="LShoulder" sid="LShoulder" type="JOINT">
+                  <matrix sid="transform">-0.5789706 0.8137549 -0.05095143 12.281116 -0.81481326 -0.5797236 5.0945914E-08 -3.326999 -0.029537702 0.041515928 0.99870116 -0.003267 0 0 0 1</matrix>
+                  <node id="LArm_bone_id" name="LArm" sid="LArm" type="JOINT">
+                    <matrix sid="transform">0.81481284 -0.5797241 0 7.814062 0.5797241 0.81481284 0 0 0 0 1 0 0 0 0 1</matrix>
+                    <node id="LForeArm_bone_id" name="LForeArm" sid="LForeArm" type="JOINT">
+                      <matrix sid="transform">0.99533147 0 -0.09651552 19.1815 0 1 0 0 0.09651552 0 0.99533147 -1.86 0 0 0 1</matrix>
+                      <node id="LHand_bone_id" name="LHand" sid="LHand" type="JOINT">
+                        <matrix sid="transform">0.99533147 0 0.09651552 19.27147 0 1 0 0 -0.09651552 0 0.99533147 0 0 0 0 1</matrix>
+                        <node id="LFingerA1_bone_id" name="LFingerA1" sid="LFingerA1" type="JOINT">
+                          <matrix sid="transform">0.5940065 0.78369355 -0.18160602 1.832867 -0.74944985 0.6211477 0.22912984 -1.438339 0.29237172 0 0.9563047 3.057 0 0 0 1</matrix>
+                          <node id="LFingerA2_bone_id" name="LFingerA2" sid="LFingerA2" type="JOINT">
+                            <matrix sid="transform">1 0 0 3.000003 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            <node id="LFingerA3_bone_id" name="LFingerA3" sid="LFingerA3" type="JOINT">
+                              <matrix sid="transform">1 0 0 3.000003 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            </node>
+                          </node>
+                        </node>
+                        <node id="LFingerB1_bone_id" name="LFingerB1" sid="LFingerB1" type="JOINT">
+                          <matrix sid="transform">1 0 0 7.539829 0 1 0 -0.020164 0 0 1 2.205139 0 0 0 1</matrix>
+                          <node id="LFingerB2_bone_id" name="LFingerB2" sid="LFingerB2" type="JOINT">
+                            <matrix sid="transform">1 0 0 3.41 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            <node id="LFingerB3_bone_id" name="LFingerB3" sid="LFingerB3" type="JOINT">
+                              <matrix sid="transform">1 0 0 2.560001 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            </node>
+                          </node>
+                        </node>
+                        <node id="LFingerC1_bone_id" name="LFingerC1" sid="LFingerC1" type="JOINT">
+                          <matrix sid="transform">1 0 0 7.291092 0 1 0 -0.020164 0 0 1 -2.014861 0 0 0 1</matrix>
+                          <node id="LFingerC2_bone_id" name="LFingerC2" sid="LFingerC2" type="JOINT">
+                            <matrix sid="transform">1 0 0 3.420002 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            <node id="LFingerC3_bone_id" name="LFingerC3" sid="LFingerC3" type="JOINT">
+                              <matrix sid="transform">1 0 0 2.57 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            </node>
+                          </node>
+                        </node>
+                      </node>
+                      <node id="LForeArmEX_bone_id" name="LForeArmEX" sid="LForeArmEX" type="JOINT">
+                        <matrix sid="transform">0.99533147 0 0.09651552 19.26151 0 1 0 0 -0.09651552 0 0.99533147 0.000966 0 0 0 1</matrix>
+                      </node>
+                      <node id="Bngl_bone_id" name="Bngl" sid="Bngl" type="JOINT">
+                        <matrix sid="transform">0.99533147 0 0.09651552 16.749777 0 1 0 2E-06 -0.09651552 0 0.99533147 0.244525 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                    <node id="LArmEX_bone_id" name="LArmEX" sid="LArmEX" type="JOINT">
+                      <matrix sid="transform">1 0 0 0.01 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                  <node id="Bag_bone_id" name="Bag" sid="Bag" type="JOINT">
+                    <matrix sid="transform">0.009735045 -0.9999379 -0.0054214573 3.485138 -0.999942 -0.009709809 -0.0046619144 4.269757 0.0046089836 0.005466527 -0.9999744 0 0 0 0 1</matrix>
+                    <node id="BagA_bone_id" name="BagA" sid="BagA" type="JOINT">
+                      <matrix sid="transform">0.9982398 -0.009234565 0.058582924 19.589293 0.005134991 0.99755144 0.06974733 -0.012758 -0.05908357 -0.06932374 0.99584305 -12.339106 0 0 0 1</matrix>
+                    </node>
+                    <node id="BagB1_bone_id" name="BagB1" sid="BagB1" type="JOINT">
+                      <matrix sid="transform">0.9942886 -0.020545574 -0.10472881 19.519201 0.007334005 0.9921289 -0.1250061 -0.162054 0.1064728 0.12352404 0.9866131 10.530345 0 0 0 1</matrix>
+                      <node id="BagB2_bone_id" name="BagB2" sid="BagB2" type="JOINT">
+                        <matrix sid="transform">0.99428856 0.0073343455 0.10647264 24.811848 -0.02054592 0.9921288 0.1235243 -1.675811 -0.1047286 -0.12500638 0.98661304 -13.141029 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                  </node>
+                </node>
+                <node id="RShoulder_bone_id" name="RShoulder" sid="RShoulder" type="JOINT">
+                  <matrix sid="transform">-0.5789706 -0.8137549 -0.05095143 12.281116 0.81481326 -0.5797236 -5.0945914E-08 3.326999 -0.029537702 -0.041515928 0.99870116 -0.003267 0 0 0 1</matrix>
+                  <node id="RArm_bone_id" name="RArm" sid="RArm" type="JOINT">
+                    <matrix sid="transform">0.81481284 0.5797241 0 7.814062 -0.5797241 0.81481284 0 0 0 0 1 0 0 0 0 1</matrix>
+                    <node id="RForeArm_bone_id" name="RForeArm" sid="RForeArm" type="JOINT">
+                      <matrix sid="transform">0.99533147 0 -0.09651552 19.1815 0 1 0 0 0.09651552 0 0.99533147 -1.86 0 0 0 1</matrix>
+                      <node id="RHand_bone_id" name="RHand" sid="RHand" type="JOINT">
+                        <matrix sid="transform">0.99533147 0 0.09651552 19.27147 0 1 0 0 -0.09651552 0 0.99533147 0 0 0 0 1</matrix>
+                        <node id="RFingerA1_bone_id" name="RFingerA1" sid="RFingerA1" type="JOINT">
+                          <matrix sid="transform">0.59390616 -0.7837842 -0.18154289 1.832901 0.749548 0.6210333 -0.22911887 1.438004 0.29232392 0 0.95631933 3.057 0 0 0 1</matrix>
+                          <node id="RFingerA2_bone_id" name="RFingerA2" sid="RFingerA2" type="JOINT">
+                            <matrix sid="transform">1 0.00020700504 -7.998696E-05 3.000476 -0.000207 1 6.301656E-05 0 8E-05 -6.3E-05 1 0 0 0 0 1</matrix>
+                            <node id="RFingerA3_bone_id" name="RFingerA3" sid="RFingerA3" type="JOINT">
+                              <matrix sid="transform">1 -8.399917E-05 3.2002183E-05 2.999729 8.4E-05 1 -2.5997311E-05 0 -3.2E-05 2.6E-05 1 0 0 0 0 1</matrix>
+                            </node>
+                          </node>
+                        </node>
+                        <node id="RFingerB1_bone_id" name="RFingerB1" sid="RFingerB1" type="JOINT">
+                          <matrix sid="transform">1 0 0 7.539799 0 1 0 0.019997 0 0 1 2.20514 0 0 0 1</matrix>
+                          <node id="RFingerB2_bone_id" name="RFingerB2" sid="RFingerB2" type="JOINT">
+                            <matrix sid="transform">1 0 0 3.41 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            <node id="RFingerB3_bone_id" name="RFingerB3" sid="RFingerB3" type="JOINT">
+                              <matrix sid="transform">1 0 0 2.560001 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            </node>
+                          </node>
+                        </node>
+                        <node id="RFingerC1_bone_id" name="RFingerC1" sid="RFingerC1" type="JOINT">
+                          <matrix sid="transform">1 0 0 7.2911 0 1 0 0.019997 0 0 1 -2.01486 0 0 0 1</matrix>
+                          <node id="RFingerC2_bone_id" name="RFingerC2" sid="RFingerC2" type="JOINT">
+                            <matrix sid="transform">1 0 0 3.420002 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            <node id="RFingerC3_bone_id" name="RFingerC3" sid="RFingerC3" type="JOINT">
+                              <matrix sid="transform">1 0 0 2.57 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                            </node>
+                          </node>
+                        </node>
+                      </node>
+                      <node id="RForeArmEX_bone_id" name="RForeArmEX" sid="RForeArmEX" type="JOINT">
+                        <matrix sid="transform">0.99533147 0 0.09651552 19.26151 0 1 0 0 -0.09651552 0 0.99533147 0.000966 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                    <node id="RArmEX_bone_id" name="RArmEX" sid="RArmEX" type="JOINT">
+                      <matrix sid="transform">1 0 0 0.01 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                </node>
+              </node>
+            </node>
+            <node id="Hips_bone_id" name="Hips" sid="Hips" type="JOINT">
+              <matrix sid="transform">-1 -3.2584137E-07 0 -0.010002 3.2584137E-07 -1 0 0 0 0 1 0 0 0 0 1</matrix>
+              <node id="LThigh_bone_id" name="LThigh" sid="LThigh" type="JOINT">
+                <matrix sid="transform">1 0 0 7 0 1 0 6.85 0 0 1 0 0 0 0 1</matrix>
+                <node id="LLeg_bone_id" name="LLeg" sid="LLeg" type="JOINT">
+                  <matrix sid="transform">0.99783915 0 0.06570364 29.3 0 1 0 0 -0.06570364 0 0.99783915 0 0 0 0 1</matrix>
+                  <node id="LFoot_bone_id" name="LFoot" sid="LFoot" type="JOINT">
+                    <matrix sid="transform">-0.065666586 0 -0.9978416 29.300007 0 1 0 0 0.9978416 0 -0.065666586 0 0 0 0 1</matrix>
+                    <node id="LToe_bone_id" name="LToe" sid="LToe" type="JOINT">
+                      <matrix sid="transform">1 0 -3.7E-05 9.989349 0 1 0 0 3.7E-05 0 1 -5.851937 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                </node>
+              </node>
+              <node id="RThigh_bone_id" name="RThigh" sid="RThigh" type="JOINT">
+                <matrix sid="transform">1 0 0 7 0 1 0 -6.85 0 0 1 0 0 0 0 1</matrix>
+                <node id="RLeg_bone_id" name="RLeg" sid="RLeg" type="JOINT">
+                  <matrix sid="transform">0.99783915 0 0.06570364 29.3 0 1 0 0 -0.06570364 0 0.99783915 0 0 0 0 1</matrix>
+                  <node id="RFoot_bone_id" name="RFoot" sid="RFoot" type="JOINT">
+                    <matrix sid="transform">-0.06566754 0 -0.99784154 29.300014 0 1 0 0 0.99784154 0 -0.06566754 0 0 0 0 1</matrix>
+                    <node id="RToe_bone_id" name="RToe" sid="RToe" type="JOINT">
+                      <matrix sid="transform">1 0 -3.6E-05 9.989342 0 1 0 0 3.6E-05 0 1 -5.85194 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                </node>
+              </node>
+              <node id="Tops_bone_id" name="Tops" sid="Tops" type="JOINT">
+                <matrix sid="transform">0.98121685 0 -0.19290803 -1.500481 0 1 0 0 0.19290803 0 0.98121685 12.454036 0 0 0 1</matrix>
+              </node>
+            </node>
+          </node>
+          <node id="CamTgtHead_bone_id" name="CamTgtHead" sid="CamTgtHead" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 126.172 0 0 1 0 0 0 0 1</matrix>
+          </node>
+          <node id="CamTgtBust_bone_id" name="CamTgtBust" sid="CamTgtBust" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 99.45 0 0 1 0 0 0 0 1</matrix>
+          </node>
+          <node id="CamTgtBody_bone_id" name="CamTgtBody" sid="CamTgtBody" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 76 0 0 1 0 0 0 0 1</matrix>
+          </node>
+          <node id="CamTgtFoot_bone_id" name="CamTgtFoot" sid="CamTgtFoot" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          </node>
+        </node>
+        <node id="pCube1_bone_id" name="pCube1" sid="pCube1" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+      </node>
+      <node id="Comb1_OptMesh_0_0_node_id" name="Comb1_OptMesh_0_0_node" type="NODE">
+        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#Comb1_OptMesh_0_0_ctrl_id">
+          <skeleton>#pc0002_00_fi_bone_id</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Mdl_0_Mtl_Comb1" target="#Comb1_mat_id">
+                <bind_vertex_input semantic="uv" input_semantic="TEXCOORD" input_set="0" />
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_controller>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#p2_base_00_id" />
+  </scene>
+</COLLADA>

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+  <asset>
+    <created>2026-02-17T05:46:53.7945133-05:00</created>
+    <modified>2026-02-17T05:46:53.7945136-05:00</modified>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_images>
+    <image id="bm_pokeride_rock21.tga">
+      <init_from>./bm_pokeride_rock21.tga.png</init_from>
+    </image>
+    <image id="bm_pokeride_rocksha.tga">
+      <init_from>./bm_pokeride_rocksha.tga.png</init_from>
+    </image>
+  </library_images>
+  <library_materials>
+    <material id="bm_pokeride_rock21_mat_id" name="bm_pokeride_rock21_mat">
+      <instance_effect url="#bm_pokeride_rock21_eff_id" />
+    </material>
+    <material id="bm_pokeride_rocksha_mat_id" name="bm_pokeride_rocksha_mat">
+      <instance_effect url="#bm_pokeride_rocksha_eff_id" />
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="bm_pokeride_rock21_eff_id" name="bm_pokeride_rock21_eff">
+      <profile_COMMON>
+        <newparam sid="bm_pokeride_rock21_surf">
+          <surface type="2D">
+            <init_from>bm_pokeride_rock21.tga</init_from>
+            <format>PNG</format>
+          </surface>
+        </newparam>
+        <newparam sid="bm_pokeride_rock21_samp">
+          <sampler2D>
+            <source>bm_pokeride_rock21_surf</source>
+            <wrap_s>WRAP</wrap_s>
+            <wrap_t>WRAP</wrap_t>
+            <minfilter>NEAREST_MIPMAP_LINEAR</minfilter>
+            <magfilter>NEAREST</magfilter>
+            <mipfilter>LINEAR</mipfilter>
+          </sampler2D>
+        </newparam>
+        <technique sid="bm_pokeride_rock21_tech">
+          <phong>
+            <diffuse>
+              <texture texture="bm_pokeride_rock21_samp" texcoord="uv" />
+            </diffuse>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="bm_pokeride_rocksha_eff_id" name="bm_pokeride_rocksha_eff">
+      <profile_COMMON>
+        <newparam sid="bm_pokeride_rocksha_surf">
+          <surface type="2D">
+            <init_from>bm_pokeride_rocksha.tga</init_from>
+            <format>PNG</format>
+          </surface>
+        </newparam>
+        <newparam sid="bm_pokeride_rocksha_samp">
+          <sampler2D>
+            <source>bm_pokeride_rocksha_surf</source>
+            <wrap_s>WRAP</wrap_s>
+            <wrap_t>WRAP</wrap_t>
+            <minfilter>NEAREST_MIPMAP_LINEAR</minfilter>
+            <magfilter>NEAREST</magfilter>
+            <mipfilter>LINEAR</mipfilter>
+          </sampler2D>
+        </newparam>
+        <technique sid="bm_pokeride_rocksha_tech">
+          <phong>
+            <diffuse>
+              <texture texture="bm_pokeride_rocksha_samp" texcoord="uv" />
+            </diffuse>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="bm_pokeride_rock21_OptMesh_0_0_geo_id" name="bm_pokeride_rock21_OptMesh_0_0">
+      <mesh>
+        <source id="bm_pokeride_rock21_OptMesh_0_0_Position_id" name="bm_pokeride_rock21_OptMesh_0_0_Position">
+          <float_array id="bm_pokeride_rock21_OptMesh_0_0_Position_array_id" count="516">148.41756 27.236794 -112.737274 131.98671 27.67965 -128.4319 150.6003 107.90687 -113.254585 128.35393 110.538445 -134.19255 43.49472 28.206059 -140.39912 46.58972 110.53844 -152.9526 -101.89411 28.45755 -144.36183 -133.1725 26.03538 -120.95634 -116.30464 110.53844 -153.02457 -141.07076 110.53844 -129.31339 -127.5585 7.387497 1.410984 -134.02434 7.387497 96.66162 -140.13667 27.347908 5.372736 -145.49635 29.854414 108.20209 140.67445 120.32743 -113.254585 118.78763 123.741684 -133.28578 -149.06367 184.35928 16.42081 -126.86803 209.99959 118.75723 -135.79036 198.49835 16.705208 -127.23371 161.74448 -109.46691 -126.15383 192.31386 -108.460625 -102.54546 167.2755 -130.93152 -101.465576 192.31386 -129.9252 46.628242 162.7635 -154.06477 137.33005 207.83723 -111.02622 114.71035 210.46153 -141.07701 -134.32663 267.5775 16.705389 -123.32413 260.9111 118.49098 -105.39275 223.71259 -139.1064 -130.12949 242.53642 -116.112495 -98.360886 263.53885 -121.1056 -123.12699 263.53885 -97.3944 45.94342 170.2942 -134.29617 -17.177275 29.840553 -142.91765 -20.403328 110.53844 -155.27336 -39.5152 173.62222 -143.20572 -2.955593 259.19525 -144.94084 -37.63709 249.23875 -146.08983 -38.442352 267.5775 -134.69174 -45.89164 155.85251 -139.65456 -138.22836 246.33926 -52.75619 -128.59395 263.14816 -41.235542 -132.91331 167.11566 -52.572063 -131.55399 192.31387 -52.524975 -138.22833 25.553947 -52.75619 -138.22833 110.53844 -52.75619 -137.23763 224.81534 -8.952209 -140.13667 27.347908 5.372736 -139.71123 102.22476 4.17561 -110.89158 153.0712 -148.6275 -83.57586 151.40044 -147.68123 -135.65767 151.79367 -124.9163 -138.22833 156.56226 -52.75619 47.642193 260.42798 -149.12733 111.17286 253.76155 -140.93477 138.8732 259.6484 -113.79287 -152.43771 98.75093 30.127113 -141.35942 113.38373 27.48196 -145.49635 110.53842 118.49098 -135.96718 122.66457 119.06221 -101.66718 260.9111 143.04538 -101.66719 275.38882 118.49098 -123.32413 260.9111 118.49098 -134.02434 7.387497 96.66162 -114.042435 7.387497 119.31688 -145.49635 29.854414 108.20209 -123.8394 29.854418 132.75647 -77.24507 7.387497 116.24081 -83.9574 29.854418 129.91808 -36.70669 256.5673 133.60036 -36.706696 271.045 109.04595 129.4221 7.387497 103.58116 142.20982 29.854418 114.98453 107.34265 7.387497 126.23642 118.279495 29.854418 139.53893 107.05444 267.93494 91.4194 107.05444 253.4572 115.973816 130.98479 253.4572 91.4194 144.24715 28.382215 -20.327953 148.41756 27.236794 -112.737274 155.57816 98.75093 -45.26273 150.6003 107.90687 -113.254585 120.530464 287.79202 -31.44783 144.4608 267.5775 -31.44783 114.94287 279.8629 -113.79287 138.8732 259.6484 -113.79287 -104.31783 287.03827 -31.44783 -21.376186 292.6646 -31.44783 -99.693 282.493 -106.73479 -25.586632 287.07224 -119.22918 -128.59395 263.14816 -41.235542 -123.12699 263.53885 -97.3944 111.17286 253.76155 -140.93477 -98.360886 263.53885 -121.1056 -38.442352 267.5775 -134.69174 -145.49635 110.53842 118.49098 -123.83941 110.53844 143.04538 -135.96718 122.66457 119.06221 -114.31023 123.74168 141.80797 152.68068 184.35928 -31.44783 137.33005 207.83723 -111.02622 139.70525 198.49835 -31.44783 135.50702 161.74448 103.342514 134.39297 192.31386 102.37419 111.57669 167.2755 125.64897 110.462616 192.31386 124.68065 -83.957405 110.53844 141.98654 -36.706688 162.7635 153.9329 -126.86803 209.99959 118.75723 -105.197624 210.46153 143.31001 144.4608 267.5775 -31.44783 138.8732 259.6484 -113.79287 107.63639 222.84474 133.72037 138.63115 231.39864 109.88385 107.05444 253.4572 115.973816 130.98479 253.4572 91.4194 -36.706688 170.2942 134.15245 25.378237 7.387497 126.23642 27.934643 29.854418 140.7516 49.009163 173.62222 140.09799 30.326542 110.53844 152.82007 10.164194 256.5673 133.60036 47.232025 251.27513 143.04538 47.642193 267.5775 131.62627 10.164194 256.5673 133.60036 47.64219 277.1586 107.07187 47.642193 267.5775 131.62627 -7.253261 278.5749 -31.44783 -0.667071 273.67297 -119.22918 55.25883 155.85251 136.3282 47.642193 289.4256 -128.26509 47.642193 289.4256 -31.44783 47.642193 260.42798 -149.12733 -109.435104 282.05524 38.97218 -134.32663 267.5775 16.705389 -21.37619 289.36682 -3.368912 -33.973083 283.05313 39.374065 -8.900061 278.95068 16.23949 101.7246 271.13187 16.588856 47.642193 277.1586 22.686253 125.65495 256.65414 17.876148 144.46082 244.43843 44.239124 125.65495 256.65414 17.876148 139.14258 167.11566 44.239124 137.78244 192.31387 44.239124 133.50627 7.387497 40.28924 144.46078 29.85442 44.239124 141.74016 224.81534 -5.68059 131.7964 7.387497 -16.002344 144.24715 28.382215 -20.327953 120.530464 153.0712 143.04538 93.19836 151.40044 143.04538 126.092514 110.53844 147.25241 150.02286 110.53844 122.69801 144.4608 151.79367 118.49098 144.46078 110.53844 44.239124 144.46078 156.56226 44.239124 143.75778 102.22476 -18.886179 144.5981 113.38373 -42.23562 -36.70669 256.5673 133.60036 -101.66718 260.9111 143.04538 -123.32413 260.9111 118.49098 -2.955593 259.19525 -144.94084 140.67445 120.32743 -113.254585 137.05443 7.387497 -104.58728 122.81785 7.387497 -117.08867 137.05443 7.387497 -104.58728 -127.31847 7.387497 -48.726055 -121.0455 7.387497 -109.79139 42.71212 7.387497 -126.78738 -16.27967 7.387497 -128.83096 -98.19495 7.387497 -131.66867</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rock21_OptMesh_0_0_Position_array_id" count="172" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rock21_OptMesh_0_0_TexCoord0_id" name="bm_pokeride_rock21_OptMesh_0_0_TexCoord0">
+          <float_array id="bm_pokeride_rock21_OptMesh_0_0_TexCoord0_array_id" count="344">0.006965 0.075609 0.031037 0.077399 0.003535 0.349855 0.034303 0.359725 0.132463 0.079714 0.132463 0.36231 0.328719 0.080578 0.356795 0.072264 0.328719 0.36231 0.356795 0.36231 0.515303 0.008259 0.652875 0.008261 0.524093 0.076562 0.652875 0.08368 0.010659 0.394836 0.044796 0.406684 0.531704 0.604558 0.652875 0.6994 0.54006 0.671968 0.356795 0.576776 0.356795 0.642994 0.328719 0.59576 0.328719 0.642994 0.127832 0.510023 0.003463 0.703325 0.04393 0.705181 0.543735 0.992338 0.652875 0.992338 0.328719 0.788499 0.356795 0.936539 0.330086 0.992338 0.356336 0.992338 0.132463 0.578513 0.215658 0.083846 0.217896 0.355515 0.241139 0.632009 0.203788 0.992338 0.242724 0.905304 0.245578 0.992338 0.262646 0.556553 0.443909 0.911171 0.470359 0.992338 0.440047 0.577053 0.438566 0.653937 0.443909 0.070612 0.443909 0.362311 0.507654 0.818888 0.517978 0.07698 0.527974 0.333776 0.328719 0.508298 0.296653 0.502563 0.356795 0.503913 0.443909 0.520282 0.132196 0.992338 0.046433 0.992338 0.002166 0.992338 0.555661 0.321853 0.547087 0.371326 0.652875 0.354529 0.652875 0.396195 0.701783 0.004872 0.701782 0.085763 0.678268 0.085428 0.00151 0.008257 0.030237 0.008257 0.001169 0.085372 0.030237 0.085372 0.072593 0.01104 0.072943 0.083165 0.780771 0.004872 0.780771 0.085763 0.356795 0.008257 0.356795 0.085372 0.328719 0.008257 0.328719 0.085372 0.96824 0.085763 0.96824 0.004872 0.994189 0.085763 0.524727 0.081483 0.651409 0.07642 0.555661 0.321853 0.645451 0.353429 0.980758 0.608164 0.990433 0.608164 0.96824 0.92445 0.994189 0.92445 0.701929 0.661957 0.788369 0.600266 0.705059 0.92445 0.780771 0.92445 0.666672 0.673896 0.668798 0.923861 0.963789 0.98845 0.681109 0.98845 0.786465 0.98845 0.999945 0.362309 0.030237 0.36231 0.002771 0.40387 0.040683 0.407639 0.531704 0.604558 0.652875 0.699126 0.54006 0.671968 0.356795 0.576776 0.356795 0.642994 0.328719 0.59576 0.328719 0.642994 0.074203 0.342183 0.127832 0.510023 0.001182 0.703089 0.04393 0.705181 0.542839 0.992338 0.652875 0.992338 0.320248 0.793407 0.352046 0.891147 0.328719 0.992338 0.356795 0.992338 0.132463 0.578513 0.215035 0.008257 0.215659 0.083892 0.241139 0.632009 0.217896 0.355515 0.196208 0.983784 0.242724 0.905304 0.243205 0.992338 0.84105 0.004872 0.883126 0.085763 0.883126 0.004872 0.821464 0.594119 0.822667 0.92445 0.262646 0.556553 0.883126 0.92445 0.886882 0.608164 0.882943 0.98845 0.686471 0.35171 0.665167 0.428595 0.788644 0.501132 0.785883 0.355439 0.819447 0.449065 0.968645 0.407191 0.885299 0.396607 0.994283 0.404261 0.443909 0.911171 0.470359 0.992338 0.440047 0.577053 0.438566 0.653937 0.443909 0.008258 0.443909 0.085373 0.507654 0.818888 0.515303 0.008259 0.518063 0.079159 0.328719 0.508298 0.296653 0.502563 0.328719 0.36231 0.356795 0.36231 0.356795 0.503913 0.443909 0.362311 0.443909 0.520282 0.527974 0.333776 0.547087 0.371326 0.132463 0.992338 0.046234 0.992338 0.001962 0.992338 0.819852 0.98845 0.648295 0.400068 0.652875 0.008261 0.030237 0.008257 0.007809 0.008129 0.443909 0.008258 0.356795 0.008257 0.132463 0.008257 0.215035 0.008257 0.328719 0.008257</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rock21_OptMesh_0_0_TexCoord0_array_id" count="172" stride="2">
+              <param name="S" type="float" />
+              <param name="T" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rock21_OptMesh_0_0_Color_id" name="bm_pokeride_rock21_OptMesh_0_0_Color">
+          <float_array id="bm_pokeride_rock21_OptMesh_0_0_Color_array_id" count="688">0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 0.38823533 0.5529412 0.5529412 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 0.68235296 0.80392164 0.80392164 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0.68235296 0.80392164 0.80392164 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1 0.38823533 0.5529412 0.5529412 1</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rock21_OptMesh_0_0_Color_array_id" count="172" stride="4">
+              <param name="R" type="float" />
+              <param name="G" type="float" />
+              <param name="B" type="float" />
+              <param name="A" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="bm_pokeride_rock21_OptMesh_0_0_vtx_id">
+          <input semantic="POSITION" source="#bm_pokeride_rock21_OptMesh_0_0_Position_id" />
+        </vertices>
+        <triangles material="Mdl_0_Mtl_bm_pokeride_rock21" count="266">
+          <input semantic="VERTEX" source="#bm_pokeride_rock21_OptMesh_0_0_vtx_id" offset="0" />
+          <input semantic="TEXCOORD" source="#bm_pokeride_rock21_OptMesh_0_0_TexCoord0_id" offset="0" set="0" />
+          <input semantic="COLOR" source="#bm_pokeride_rock21_OptMesh_0_0_Color_id" offset="0" />
+          <p>119 107 120 119 120 129 129 104 119 119 104 105 104 103 105 102 103 104 102 143 103 103 143 144 143 99 144 144 99 101 99 100 101 101 100 110 110 100 111 151 104 129 151 129 120 150 104 151 150 151 152 152 151 120 152 154 150 150 154 104 104 154 102 153 154 152 153 155 154 154 155 156 154 156 102 102 156 143 156 99 143 156 157 99 155 157 156 99 157 158 112 119 105 122 119 112 114 122 112 112 113 114 103 113 105 105 113 112 103 144 113 114 113 115 123 122 114 121 122 123 119 122 121 113 141 115 113 144 141 115 141 142 142 147 110 141 147 142 144 101 147 110 147 101 144 147 141 158 157 80 157 149 80 78 80 149 78 79 80 80 79 81 80 81 158 158 81 163 158 163 99 99 163 100 149 157 146 146 157 155 145 149 146 145 146 71 71 146 72 146 155 72 72 155 153 71 72 73 73 72 74 72 153 74 74 153 152 118 73 74 117 73 118 117 118 67 67 118 68 67 68 64 64 68 66 65 64 66 63 64 65 148 149 145 78 149 148 118 74 120 120 74 152 68 118 106 106 118 120 68 106 66 66 106 96 65 66 95 95 66 96 95 96 97 97 96 98 96 106 98 98 106 107 120 107 106 97 98 108 108 98 109 98 116 109 98 107 116 116 159 109 116 119 159 116 107 119 159 119 121 109 159 160 108 109 161 161 109 160 148 164 78 78 164 79 35 23 34 35 34 39 39 21 35 35 21 22 21 20 22 19 20 21 19 42 20 20 42 43 42 16 43 43 16 18 16 17 18 18 17 26 26 17 27 50 21 39 50 39 34 49 21 50 49 50 8 8 50 34 34 6 8 6 7 8 8 7 9 33 6 34 5 33 34 34 23 5 15 5 23 4 33 5 3 4 5 3 5 15 1 4 3 2 1 3 0 1 2 2 3 14 14 3 15 14 15 24 24 15 25 15 32 25 15 23 32 7 45 9 44 45 7 44 48 45 47 48 44 9 51 8 8 51 49 9 45 51 51 45 52 45 48 52 51 52 19 19 52 42 52 16 42 52 48 16 49 51 21 21 51 19 32 53 25 53 32 36 32 35 36 35 37 36 36 37 38 38 37 30 30 37 28 37 35 28 28 29 30 30 29 31 29 40 31 31 40 41 28 35 22 22 20 28 28 20 29 20 40 29 43 40 20 25 53 54 25 54 24 24 54 55 32 23 35 48 47 56 12 56 47 57 48 56 56 58 57 57 58 59 57 59 16 16 48 57 16 59 17 40 46 41 43 46 40 41 46 26 43 18 46 26 46 18 12 13 56 56 13 58 12 11 13 10 11 12 12 47 10 44 10 47 167 10 44 167 44 168 168 44 7 168 7 171 171 7 6 33 171 6 170 171 33 4 170 33 169 170 4 169 4 165 165 4 1 165 1 166 166 1 0 127 131 128 89 127 128 87 127 89 88 87 89 86 87 88 91 86 88 90 86 91 94 88 89 94 89 128 93 88 94 91 88 93 134 86 90 133 86 134 62 133 134 61 133 62 60 61 62 60 69 61 61 69 70 70 133 61 87 86 135 135 86 133 135 127 87 135 133 136 136 133 70 136 137 135 137 127 135 127 137 131 70 69 124 70 124 125 70 125 136 136 125 137 125 124 126 126 76 125 125 76 75 75 76 77 75 139 125 139 137 125 131 137 139 138 139 75 138 131 139 138 75 140 140 75 77 82 131 138 140 82 138 84 131 82 82 83 84 83 82 140 84 83 85 92 84 85 92 130 84 130 131 84 132 130 92 128 131 130 132 128 130 94 128 162 162 128 132</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="bm_pokeride_rocksha_OptMesh_1_0_geo_id" name="bm_pokeride_rocksha_OptMesh_1_0">
+      <mesh>
+        <source id="bm_pokeride_rocksha_OptMesh_1_0_Position_id" name="bm_pokeride_rocksha_OptMesh_1_0_Position">
+          <float_array id="bm_pokeride_rocksha_OptMesh_1_0_Position_array_id" count="36">-175.25677 7.530487 131.15881 -138.34499 7.530487 163.34386 -138.34499 7.530487 131.15881 144.60576 7.530487 163.34386 144.60576 7.530487 131.15881 178.3503 7.530487 131.15881 144.60576 7.530487 -140.05672 178.3503 7.530487 -140.05672 144.60576 7.530487 -172.24521 -138.34499 7.530487 -140.05672 -138.34499 7.530487 -172.2452 -175.25677 7.530487 -140.05672</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rocksha_OptMesh_1_0_Position_array_id" count="12" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rocksha_OptMesh_1_0_TexCoord0_id" name="bm_pokeride_rocksha_OptMesh_1_0_TexCoord0">
+          <float_array id="bm_pokeride_rocksha_OptMesh_1_0_TexCoord0_array_id" count="24">0.140003 0.800777 0.131991 0.809204 0.206155 0.73119 0.131992 0.809204 0.206155 0.73119 0.139613 0.801188 0.206155 0.73119 0.140132 0.800642 0.131992 0.809204 0.206155 0.73119 0.131991 0.809204 0.137717 0.803181</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rocksha_OptMesh_1_0_TexCoord0_array_id" count="12" stride="2">
+              <param name="S" type="float" />
+              <param name="T" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rocksha_OptMesh_1_0_Color_id" name="bm_pokeride_rocksha_OptMesh_1_0_Color">
+          <float_array id="bm_pokeride_rocksha_OptMesh_1_0_Color_array_id" count="48">1 1 1 0 1 1 1 0 1 1 1 0.50980395 1 1 1 0 1 1 1 0.50980395 1 1 1 0 1 1 1 0.50980395 1 1 1 0 1 1 1 0 1 1 1 0.50980395 1 1 1 0 1 1 1 0</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rocksha_OptMesh_1_0_Color_array_id" count="12" stride="4">
+              <param name="R" type="float" />
+              <param name="G" type="float" />
+              <param name="B" type="float" />
+              <param name="A" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="bm_pokeride_rocksha_OptMesh_1_0_vtx_id">
+          <input semantic="POSITION" source="#bm_pokeride_rocksha_OptMesh_1_0_Position_id" />
+        </vertices>
+        <triangles material="Mdl_0_Mtl_bm_pokeride_rocksha" count="14">
+          <input semantic="VERTEX" source="#bm_pokeride_rocksha_OptMesh_1_0_vtx_id" offset="0" />
+          <input semantic="TEXCOORD" source="#bm_pokeride_rocksha_OptMesh_1_0_TexCoord0_id" offset="0" set="0" />
+          <input semantic="COLOR" source="#bm_pokeride_rocksha_OptMesh_1_0_Color_id" offset="0" />
+          <p>2 4 9 2 3 4 1 3 2 0 1 2 3 5 4 4 5 6 9 4 6 9 6 10 10 6 8 6 7 8 6 5 7 11 9 10 0 2 11 11 2 9</p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_controllers>
+    <controller id="bm_pokeride_rock21_OptMesh_0_0_ctrl_id" name="bm_pokeride_rock21_OptMesh_0_0_ctrl">
+      <skin source="#bm_pokeride_rock21_OptMesh_0_0_geo_id">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="bm_pokeride_rock21_OptMesh_0_0_ctrl_names_id" name="bm_pokeride_rock21_OptMesh_0_0_ctrl_names">
+          <Name_array id="bm_pokeride_rock21_OptMesh_0_0_ctrl_names_array_id" count="5">rock Origin model pCube2_DUP1 pPlane1</Name_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rock21_OptMesh_0_0_ctrl_names_array_id" count="5" stride="1">
+              <param name="JOINT" type="Name" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rock21_OptMesh_0_0_ctrl_poses_id" name="bm_pokeride_rock21_OptMesh_0_0_ctrl_poses">
+          <float_array id="bm_pokeride_rock21_OptMesh_0_0_ctrl_poses_array_id" count="80">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -1 0 3.2584137E-07 0 0 1 0 0 -3.2584137E-07 0 -1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rock21_OptMesh_0_0_ctrl_poses_array_id" count="5" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rock21_OptMesh_0_0_ctrl_weights_id" name="bm_pokeride_rock21_OptMesh_0_0_ctrl_weights">
+          <float_array id="bm_pokeride_rock21_OptMesh_0_0_ctrl_weights_array_id" count="1">1</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rock21_OptMesh_0_0_ctrl_weights_array_id" count="1" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#bm_pokeride_rock21_OptMesh_0_0_ctrl_names_id" />
+          <input semantic="INV_BIND_MATRIX" source="#bm_pokeride_rock21_OptMesh_0_0_ctrl_poses_id" />
+        </joints>
+        <vertex_weights count="172">
+          <input semantic="JOINT" source="#bm_pokeride_rock21_OptMesh_0_0_ctrl_names_id" offset="0" />
+          <input semantic="WEIGHT" source="#bm_pokeride_rock21_OptMesh_0_0_ctrl_weights_id" offset="1" />
+          <vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+          <v>1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0</v>
+        </vertex_weights>
+      </skin>
+    </controller>
+    <controller id="bm_pokeride_rocksha_OptMesh_1_0_ctrl_id" name="bm_pokeride_rocksha_OptMesh_1_0_ctrl">
+      <skin source="#bm_pokeride_rocksha_OptMesh_1_0_geo_id">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="bm_pokeride_rocksha_OptMesh_1_0_ctrl_names_id" name="bm_pokeride_rocksha_OptMesh_1_0_ctrl_names">
+          <Name_array id="bm_pokeride_rocksha_OptMesh_1_0_ctrl_names_array_id" count="5">rock Origin model pCube2_DUP1 pPlane1</Name_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_names_array_id" count="5" stride="1">
+              <param name="JOINT" type="Name" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rocksha_OptMesh_1_0_ctrl_poses_id" name="bm_pokeride_rocksha_OptMesh_1_0_ctrl_poses">
+          <float_array id="bm_pokeride_rocksha_OptMesh_1_0_ctrl_poses_array_id" count="80">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -1 0 3.2584137E-07 0 0 1 0 0 -3.2584137E-07 0 -1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_poses_array_id" count="5" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="bm_pokeride_rocksha_OptMesh_1_0_ctrl_weights_id" name="bm_pokeride_rocksha_OptMesh_1_0_ctrl_weights">
+          <float_array id="bm_pokeride_rocksha_OptMesh_1_0_ctrl_weights_array_id" count="1">1</float_array>
+          <technique_common>
+            <accessor source="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_weights_array_id" count="1" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_names_id" />
+          <input semantic="INV_BIND_MATRIX" source="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_poses_id" />
+        </joints>
+        <vertex_weights count="12">
+          <input semantic="JOINT" source="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_names_id" offset="0" />
+          <input semantic="WEIGHT" source="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_weights_id" offset="1" />
+          <vcount>1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+          <v>1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0</v>
+        </vertex_weights>
+      </skin>
+    </controller>
+  </library_controllers>
+  <library_visual_scenes>
+    <visual_scene id="it0006_00_riderock21_00_id" name="it0006_00_riderock21_00">
+      <node id="rock_bone_id" name="rock" sid="rock" type="JOINT">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="Origin_bone_id" name="Origin" sid="Origin" type="JOINT">
+          <matrix sid="transform">-1 0 -3.2584137E-07 0 0 1 0 0 3.2584137E-07 0 -1 0 0 0 0 1</matrix>
+        </node>
+        <node id="model_bone_id" name="model" sid="model" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          <node id="pCube2_DUP1_bone_id" name="pCube2_DUP1" sid="pCube2_DUP1" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          </node>
+          <node id="pPlane1_bone_id" name="pPlane1" sid="pPlane1" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          </node>
+        </node>
+      </node>
+      <node id="bm_pokeride_rock21_OptMesh_0_0_node_id" name="bm_pokeride_rock21_OptMesh_0_0_node" type="NODE">
+        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#bm_pokeride_rock21_OptMesh_0_0_ctrl_id">
+          <skeleton>#rock_bone_id</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Mdl_0_Mtl_bm_pokeride_rock21" target="#bm_pokeride_rock21_mat_id">
+                <bind_vertex_input semantic="uv" input_semantic="TEXCOORD" input_set="0" />
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_controller>
+      </node>
+      <node id="bm_pokeride_rocksha_OptMesh_1_0_node_id" name="bm_pokeride_rocksha_OptMesh_1_0_node" type="NODE">
+        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#bm_pokeride_rocksha_OptMesh_1_0_ctrl_id">
+          <skeleton>#rock_bone_id</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Mdl_0_Mtl_bm_pokeride_rocksha" target="#bm_pokeride_rocksha_mat_id">
+                <bind_vertex_input semantic="uv" input_semantic="TEXCOORD" input_set="0" />
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_controller>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#it0006_00_riderock21_00_id" />
+  </scene>
+</COLLADA>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+  <asset>
+    <created>2026-02-17T05:46:53.7753412-05:00</created>
+    <modified>2026-02-17T05:46:53.7753414-05:00</modified>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_animations>
+    <animation id="Motion_56_Loc_Attach_transform_id" name="Motion_56_Loc_Attach_transform">
+      <source id="Motion_56_Loc_Attach_transform_frame_id" name="Motion_56_Loc_Attach_transform_frame">
+        <float_array id="Motion_56_Loc_Attach_transform_frame_array_id" count="2">0 0.033333335</float_array>
+        <technique_common>
+          <accessor source="#Motion_56_Loc_Attach_transform_frame_array_id" count="2" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_56_Loc_Attach_transform_interp_id" name="Motion_56_Loc_Attach_transform_interp">
+        <Name_array id="Motion_56_Loc_Attach_transform_interp_array_id" count="2">LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_56_Loc_Attach_transform_interp_array_id" count="2" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_56_Loc_Attach_transform_pose_id" name="Motion_56_Loc_Attach_transform_pose">
+        <float_array id="Motion_56_Loc_Attach_transform_pose_array_id" count="32">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_56_Loc_Attach_transform_pose_array_id" count="2" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_56_Loc_Attach_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_56_Loc_Attach_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_56_Loc_Attach_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_56_Loc_Attach_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_56_Loc_Attach_transform_samp_id" target="Loc_Attach_bone_id/transform" />
+    </animation>
+    <animation id="Motion_56_Offset_Node_transform_id" name="Motion_56_Offset_Node_transform">
+      <source id="Motion_56_Offset_Node_transform_frame_id" name="Motion_56_Offset_Node_transform_frame">
+        <float_array id="Motion_56_Offset_Node_transform_frame_array_id" count="2">0 0.033333335</float_array>
+        <technique_common>
+          <accessor source="#Motion_56_Offset_Node_transform_frame_array_id" count="2" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_56_Offset_Node_transform_interp_id" name="Motion_56_Offset_Node_transform_interp">
+        <Name_array id="Motion_56_Offset_Node_transform_interp_array_id" count="2">LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_56_Offset_Node_transform_interp_array_id" count="2" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_56_Offset_Node_transform_pose_id" name="Motion_56_Offset_Node_transform_pose">
+        <float_array id="Motion_56_Offset_Node_transform_pose_array_id" count="32">5.9604645E-08 0 -0.99999994 0 0 1 0 0 0.99999994 0 5.9604645E-08 0 0 0 0 1 5.9604645E-08 0 -0.99999994 0 0 1 0 0 0.99999994 0 5.9604645E-08 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_56_Offset_Node_transform_pose_array_id" count="2" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_56_Offset_Node_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_56_Offset_Node_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_56_Offset_Node_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_56_Offset_Node_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_56_Offset_Node_transform_samp_id" target="Offset_Node_bone_id/transform" />
+    </animation>
+  </library_animations>
+  <library_visual_scenes>
+    <visual_scene id="tr1000_00_fi_00_clip_id" name="tr1000_00_fi_00_clip">
+      <node id="tr1000_00_fi_bone_id" name="tr1000_00_fi" sid="tr1000_00_fi" type="JOINT">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="Origin_bone_id" name="Origin" sid="Origin" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          <node id="Loc_Attach_bone_id" name="Loc_Attach" sid="Loc_Attach" type="JOINT">
+            <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+            <node id="Offset_Node_bone_id" name="Offset_Node" sid="Offset_Node" type="JOINT">
+              <matrix sid="transform">3.1391647E-07 0 -1 0 0 1 0 0 1 0 3.1391647E-07 0 0 0 0 1</matrix>
+            </node>
+          </node>
+        </node>
+        <node id="tr1000_00_fi_BallSkin_bone_id" name="tr1000_00_fi_BallSkin" sid="tr1000_00_fi_BallSkin" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#tr1000_00_fi_00_clip_id" />
+  </scene>
+</COLLADA>

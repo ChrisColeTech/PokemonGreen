@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+  <asset>
+    <created>2026-02-17T05:46:52.0151725-05:00</created>
+    <modified>2026-02-17T05:46:52.0151727-05:00</modified>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_animations>
+    <animation id="Motion_1_joint2_transform_id" name="Motion_1_joint2_transform">
+      <source id="Motion_1_joint2_transform_frame_id" name="Motion_1_joint2_transform_frame">
+        <float_array id="Motion_1_joint2_transform_frame_array_id" count="21">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3 0.33333334 0.36666667 0.4 0.43333334 0.46666667 0.5 0.53333336 0.56666666 0.6 0.6333333 0.6666667</float_array>
+        <technique_common>
+          <accessor source="#Motion_1_joint2_transform_frame_array_id" count="21" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_1_joint2_transform_interp_id" name="Motion_1_joint2_transform_interp">
+        <Name_array id="Motion_1_joint2_transform_interp_array_id" count="21">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_1_joint2_transform_interp_array_id" count="21" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_1_joint2_transform_pose_id" name="Motion_1_joint2_transform_pose">
+        <float_array id="Motion_1_joint2_transform_pose_array_id" count="336">0.01 0 0 0 0 0.01 0 10 0 0 0.01 0 0 0 0 1 0.028454378 0 0 0 0 0.028454378 0 9.938019 0 0 0.028454378 0 0 0 0 1 0.057281952 0 0 0 0 0.057281952 0 9.837147 0 0 0.057281952 0 0 0 0 1 0.095298514 0 0 0 0 0.095298514 0 9.688115 0 0 0.095298514 0 0 0 0 1 0.14131983 0 0 0 0 0.14131983 0 9.481651 0 0 0.14131983 0 0 0 0 1 0.19416168 0 0 0 0 0.19416168 0 9.221777 0 0 0.19416168 0 0 0 0 1 0.25263986 0 0 0 0 0.25263986 0 8.923761 0 0 0.25263986 0 0 0 0 1 0.31557012 0 0 0 0 0.31557012 0 8.5952015 0 0 0.31557012 0 0 0 0 1 0.3817683 0 0 0 0 0.3817683 0 8.243699 0 0 0.3817683 0 0 0 0 1 0.4500501 0 0 0 0 0.4500501 0 7.876853 0 0 0.4500501 0 0 0 0 1 0.5192314 0 0 0 0 0.5192314 0 7.5022593 0 0 0.5192314 0 0 0 0 1 0.5881278 0 0 0 0 0.5881278 0 7.1275215 0 0 0.5881278 0 0 0 0 1 0.6555554 0 0 0 0 0.6555554 0 6.760235 0 0 0.6555554 0 0 0 0 1 0.7203296 0 0 0 0 0.7203296 0 6.408001 0 0 0.7203296 0 0 0 0 1 0.78126645 0 0 0 0 0.78126645 0 6.0784183 0 0 0.78126645 0 0 0 0 1 0.8371816 0 0 0 0 0.8371816 0 5.7790856 0 0 0.8371816 0 0 0 0 1 0.8868909 0 0 0 0 0.8868909 0 5.5176024 0 0 0.8868909 0 0 0 0 1 0.9292101 0 0 0 0 0.9292101 0 5.3015676 0 0 0.9292101 0 0 0 0 1 0.96295494 0 0 0 0 0.96295494 0 5.1385803 0 0 0.96295494 0 0 0 0 1 0.9869413 0 0 0 0 0.9869413 0 5.03624 0 0 0.9869413 0 0 0 0 1 0.9869413 0 0 0 0 0.9869413 0 5.03624 0 0 0.9869413 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_1_joint2_transform_pose_array_id" count="21" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_1_joint2_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_1_joint2_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_1_joint2_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_1_joint2_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_1_joint2_transform_samp_id" target="joint2_bone_id/transform" />
+    </animation>
+    <animation id="Motion_1_joint3_transform_id" name="Motion_1_joint3_transform">
+      <source id="Motion_1_joint3_transform_frame_id" name="Motion_1_joint3_transform_frame">
+        <float_array id="Motion_1_joint3_transform_frame_array_id" count="21">0 0.033333335 0.06666667 0.1 0.13333334 0.16666667 0.2 0.23333333 0.26666668 0.3 0.33333334 0.36666667 0.4 0.43333334 0.46666667 0.5 0.53333336 0.56666666 0.6 0.6333333 0.6666667</float_array>
+        <technique_common>
+          <accessor source="#Motion_1_joint3_transform_frame_array_id" count="21" stride="1">
+            <param name="TIME" type="float" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_1_joint3_transform_interp_id" name="Motion_1_joint3_transform_interp">
+        <Name_array id="Motion_1_joint3_transform_interp_array_id" count="21">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+        <technique_common>
+          <accessor source="#Motion_1_joint3_transform_interp_array_id" count="21" stride="1">
+            <param name="INTERPOLATION" type="Name" />
+          </accessor>
+        </technique_common>
+      </source>
+      <source id="Motion_1_joint3_transform_pose_id" name="Motion_1_joint3_transform_pose">
+        <float_array id="Motion_1_joint3_transform_pose_array_id" count="336">0.01 0 0 0 0 0.01 0 10 0 0 0.01 0 0 0 0 1 0.022961922 0 0 0 0 0.022961922 0 10 0 0 0.022961922 0 0 0 0 1 0.042783007 0 0 0 0 0.042783007 0 10 0 0 0.042783007 0 0 0 0 1 0.06869791 0 0 0 0 0.06869791 0 10 0 0 0.06869791 0 0 0 0 1 0.09994128 0 0 0 0 0.09994128 0 10 0 0 0.09994128 0 0 0 0 1 0.1357478 0 0 0 0 0.1357478 0 10 0 0 0.1357478 0 0 0 0 1 0.17535213 0 0 0 0 0.17535213 0 10 0 0 0.17535213 0 0 0 0 1 0.21798888 0 0 0 0 0.21798888 0 10 0 0 0.21798888 0 0 0 0 1 0.26289272 0 0 0 0 0.26289272 0 10 0 0 0.26289272 0 0 0 0 1 0.30929834 0 0 0 0 0.30929834 0 10 0 0 0.30929834 0 0 0 0 1 0.35644042 0 0 0 0 0.35644042 0 10 0 0 0.35644042 0 0 0 0 1 0.4035536 0 0 0 0 0.4035536 0 10 0 0 0.4035536 0 0 0 0 1 0.44987252 0 0 0 0 0.44987252 0 10 0 0 0.44987252 0 0 0 0 1 0.49463177 0 0 0 0 0.49463177 0 10 0 0 0.49463177 0 0 0 0 1 0.53706616 0 0 0 0 0.53706616 0 10 0 0 0.53706616 0 0 0 0 1 0.57641023 0 0 0 0 0.57641023 0 10 0 0 0.57641023 0 0 0 0 1 0.6118987 0 0 0 0 0.6118987 0 10 0 0 0.6118987 0 0 0 0 1 0.6427662 0 0 0 0 0.6427662 0 10 0 0 0.6427662 0 0 0 0 1 0.66824734 0 0 0 0 0.66824734 0 10 0 0 0.66824734 0 0 0 0 1 0.6875769 0 0 0 0 0.6875769 0 10 0 0 0.6875769 0 0 0 0 1 0.6875769 0 0 0 0 0.6875769 0 10 0 0 0.6875769 0 0 0 0 1</float_array>
+        <technique_common>
+          <accessor source="#Motion_1_joint3_transform_pose_array_id" count="21" stride="16">
+            <param name="TRANSFORM" type="float4x4" />
+          </accessor>
+        </technique_common>
+      </source>
+      <sampler id="Motion_1_joint3_transform_samp_id">
+        <input semantic="INPUT" source="#Motion_1_joint3_transform_frame_id" />
+        <input semantic="INTERPOLATION" source="#Motion_1_joint3_transform_interp_id" />
+        <input semantic="OUTPUT" source="#Motion_1_joint3_transform_pose_id" />
+      </sampler>
+      <channel source="#Motion_1_joint3_transform_samp_id" target="joint3_bone_id/transform" />
+    </animation>
+  </library_animations>
+  <library_visual_scenes>
+    <visual_scene id="it0002_00_sand_00_clip_id" name="it0002_00_sand_00_clip">
+      <node id="it0002_00_sand_bone_id" name="it0002_00_sand" sid="it0002_00_sand" type="JOINT">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="GfAnimationRangeNode_bone_id" name="GfAnimationRangeNode" sid="GfAnimationRangeNode" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+        <node id="pCube13_bone_id" name="pCube13" sid="pCube13" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+        <node id="joint1_bone_id" name="joint1" sid="joint1" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          <node id="joint2_bone_id" name="joint2" sid="joint2" type="JOINT">
+            <matrix sid="transform">0.01 0 0 0 0 0.01 0 10 0 0 0.01 0 0 0 0 1</matrix>
+          </node>
+          <node id="joint3_bone_id" name="joint3" sid="joint3" type="JOINT">
+            <matrix sid="transform">0.01 0 0 0 0 0.01 0 10 0 0 0.01 0 0 0 0 1</matrix>
+          </node>
+        </node>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#it0002_00_sand_00_clip_id" />
+  </scene>
+</COLLADA>

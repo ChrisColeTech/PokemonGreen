@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+  <asset>
+    <created>2026-02-17T05:46:52.0143739-05:00</created>
+    <modified>2026-02-17T05:46:52.0143742-05:00</modified>
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_images>
+    <image id="it0002_00_sand2.tga">
+      <init_from>./it0002_00_sand2.tga.png</init_from>
+    </image>
+    <image id="Chara_Rim_Black_fi.tga">
+      <init_from>./Chara_Rim_Black_fi.tga.png</init_from>
+    </image>
+    <image id="it0002_00_sand3.tga">
+      <init_from>./it0002_00_sand3.tga.png</init_from>
+    </image>
+    <image id="it0002_00_sand4.tga">
+      <init_from>./it0002_00_sand4.tga.png</init_from>
+    </image>
+  </library_images>
+  <library_materials>
+    <material id="Chara_Rim_Black_fi6_mat_id" name="Chara_Rim_Black_fi6_mat">
+      <instance_effect url="#Chara_Rim_Black_fi6_eff_id" />
+    </material>
+    <material id="Chara_Rim_Black_fi7_mat_id" name="Chara_Rim_Black_fi7_mat">
+      <instance_effect url="#Chara_Rim_Black_fi7_eff_id" />
+    </material>
+    <material id="Chara_Rim_Black_fi8_mat_id" name="Chara_Rim_Black_fi8_mat">
+      <instance_effect url="#Chara_Rim_Black_fi8_eff_id" />
+    </material>
+  </library_materials>
+  <library_effects>
+    <effect id="Chara_Rim_Black_fi6_eff_id" name="Chara_Rim_Black_fi6_eff">
+      <profile_COMMON>
+        <newparam sid="Chara_Rim_Black_fi6_surf">
+          <surface type="2D">
+            <init_from>it0002_00_sand2.tga</init_from>
+            <format>PNG</format>
+          </surface>
+        </newparam>
+        <newparam sid="Chara_Rim_Black_fi6_samp">
+          <sampler2D>
+            <source>Chara_Rim_Black_fi6_surf</source>
+            <wrap_s>CLAMP</wrap_s>
+            <wrap_t>WRAP</wrap_t>
+            <minfilter>LINEAR_MIPMAP_LINEAR</minfilter>
+            <magfilter>LINEAR</magfilter>
+            <mipfilter>LINEAR</mipfilter>
+          </sampler2D>
+        </newparam>
+        <technique sid="Chara_Rim_Black_fi6_tech">
+          <phong>
+            <diffuse>
+              <texture texture="Chara_Rim_Black_fi6_samp" texcoord="uv" />
+            </diffuse>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="Chara_Rim_Black_fi7_eff_id" name="Chara_Rim_Black_fi7_eff">
+      <profile_COMMON>
+        <newparam sid="Chara_Rim_Black_fi7_surf">
+          <surface type="2D">
+            <init_from>it0002_00_sand3.tga</init_from>
+            <format>PNG</format>
+          </surface>
+        </newparam>
+        <newparam sid="Chara_Rim_Black_fi7_samp">
+          <sampler2D>
+            <source>Chara_Rim_Black_fi7_surf</source>
+            <wrap_s>WRAP</wrap_s>
+            <wrap_t>WRAP</wrap_t>
+            <minfilter>LINEAR_MIPMAP_LINEAR</minfilter>
+            <magfilter>LINEAR</magfilter>
+            <mipfilter>LINEAR</mipfilter>
+          </sampler2D>
+        </newparam>
+        <technique sid="Chara_Rim_Black_fi7_tech">
+          <phong>
+            <diffuse>
+              <texture texture="Chara_Rim_Black_fi7_samp" texcoord="uv" />
+            </diffuse>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="Chara_Rim_Black_fi8_eff_id" name="Chara_Rim_Black_fi8_eff">
+      <profile_COMMON>
+        <newparam sid="Chara_Rim_Black_fi8_surf">
+          <surface type="2D">
+            <init_from>it0002_00_sand4.tga</init_from>
+            <format>PNG</format>
+          </surface>
+        </newparam>
+        <newparam sid="Chara_Rim_Black_fi8_samp">
+          <sampler2D>
+            <source>Chara_Rim_Black_fi8_surf</source>
+            <wrap_s>WRAP</wrap_s>
+            <wrap_t>WRAP</wrap_t>
+            <minfilter>LINEAR_MIPMAP_LINEAR</minfilter>
+            <magfilter>LINEAR</magfilter>
+            <mipfilter>LINEAR</mipfilter>
+          </sampler2D>
+        </newparam>
+        <technique sid="Chara_Rim_Black_fi8_tech">
+          <phong>
+            <diffuse>
+              <texture texture="Chara_Rim_Black_fi8_samp" texcoord="uv" />
+            </diffuse>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_geometries>
+    <geometry id="Chara_Rim_Black_fi6_OptMesh_0_0_geo_id" name="Chara_Rim_Black_fi6_OptMesh_0_0">
+      <mesh>
+        <source id="Chara_Rim_Black_fi6_OptMesh_0_0_Position_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_Position">
+          <float_array id="Chara_Rim_Black_fi6_OptMesh_0_0_Position_array_id" count="150">2.77634 0 -2.77634 0.982628 73.89635 -0.982628 0 0 0 0 73.89635 0 2.77634 0 2.77634 0.982628 73.89635 0.982628 20.768154 0 20.768154 7.350452 73.89635 7.350452 20.768154 0 -20.768154 7.350452 73.89635 -7.350452 -2.77634 0 -2.77634 -0.982628 73.89635 -0.982628 -2.77634 0 2.77634 -0.982628 73.89635 0.982628 -20.768154 0 -20.768154 -7.350452 73.89635 -7.350452 -20.768154 0 20.768154 -7.350452 73.89635 7.350452 0 0 27.259125 20.768154 0 20.768154 0 26.6848 27.259125 20.768152 26.6848 20.768152 20.768154 0 20.768154 27.259125 0 0 20.768152 26.6848 20.768152 27.259125 26.6848 0 27.259125 0 0 20.768154 0 -20.768154 27.259125 26.6848 0 20.768152 26.6848 -20.768152 20.768154 0 -20.768154 0 0 -27.259125 20.768152 26.6848 -20.768152 0 26.6848 -27.259125 0 0 -27.259125 -20.768154 0 -20.768154 0 26.6848 -27.259125 -20.768152 26.6848 -20.768152 -20.768154 0 -20.768154 -27.259125 0 0 -20.768152 26.6848 -20.768152 -27.259125 26.6848 0 -27.259125 0 0 -20.768154 0 20.768154 -27.259125 26.6848 0 -20.768152 26.6848 20.768152 -20.768154 0 20.768154 0 0 27.259125 -20.768152 26.6848 20.768152 0 26.6848 27.259125</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi6_OptMesh_0_0_Position_array_id" count="50" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi6_OptMesh_0_0_TexCoord0_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_TexCoord0">
+          <float_array id="Chara_Rim_Black_fi6_OptMesh_0_0_TexCoord0_array_id" count="100">0.4375 0.5 0.4375 0.96875 0.5 0.5 0.5 0.96875 0.4375 0.5 0.4375 0.96875 0 0.5 0 0.96875 0 0.5 0 0.96875 0.5625 0.5 0.5625 0.96875 0.5625 0.5 0.5625 0.96875 1 0.5 1 0.96875 1 0.5 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875 0 0.5 1 0.5 0 0.96875 1 0.96875</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi6_OptMesh_0_0_TexCoord0_array_id" count="50" stride="2">
+              <param name="S" type="float" />
+              <param name="T" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi6_OptMesh_0_0_Color_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_Color">
+          <float_array id="Chara_Rim_Black_fi6_OptMesh_0_0_Color_array_id" count="200">0.7019608 0.5372549 0.34509805 1 1 0.80392164 0.3254902 1 0.7019608 0.5372549 0.34509805 1 1 0.80392164 0.3254902 1 0.7019608 0.5372549 0.34509805 1 1 0.80392164 0.3254902 1 0.9215687 0.7058824 0.454902 1 1 0.80392164 0.3254902 1 0.9215687 0.7058824 0.454902 1 1 0.80392164 0.3254902 1 0.7019608 0.5372549 0.34509805 1 1 0.80392164 0.3254902 1 0.7019608 0.5372549 0.34509805 1 1 0.80392164 0.3254902 1 0.9215687 0.7058824 0.454902 1 1 0.80392164 0.3254902 1 0.9215687 0.7058824 0.454902 1 1 0.80392164 0.3254902 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.7843138 0.49411768 1 1 0.7843138 0.49411768 1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi6_OptMesh_0_0_Color_array_id" count="50" stride="4">
+              <param name="R" type="float" />
+              <param name="G" type="float" />
+              <param name="B" type="float" />
+              <param name="A" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Chara_Rim_Black_fi6_OptMesh_0_0_vtx_id">
+          <input semantic="POSITION" source="#Chara_Rim_Black_fi6_OptMesh_0_0_Position_id" />
+        </vertices>
+        <triangles material="Mdl_0_Mtl_Chara_Rim_Black_fi6" count="32">
+          <input semantic="VERTEX" source="#Chara_Rim_Black_fi6_OptMesh_0_0_vtx_id" offset="0" />
+          <input semantic="TEXCOORD" source="#Chara_Rim_Black_fi6_OptMesh_0_0_TexCoord0_id" offset="0" set="0" />
+          <input semantic="COLOR" source="#Chara_Rim_Black_fi6_OptMesh_0_0_Color_id" offset="0" />
+          <p>2 1 3 0 1 2 2 5 3 4 5 2 4 7 5 6 7 4 0 9 1 8 9 0 11 2 3 10 2 11 13 2 3 12 2 13 15 10 11 14 10 15 17 12 13 16 12 17 18 19 20 20 19 21 22 23 24 24 23 25 26 27 28 28 27 29 30 31 32 32 31 33 34 35 36 36 35 37 38 39 40 40 39 41 42 43 44 44 43 45 46 47 48 48 47 49</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="Chara_Rim_Black_fi7_OptMesh_1_0_geo_id" name="Chara_Rim_Black_fi7_OptMesh_1_0">
+      <mesh>
+        <source id="Chara_Rim_Black_fi7_OptMesh_1_0_Position_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_Position">
+          <float_array id="Chara_Rim_Black_fi7_OptMesh_1_0_Position_array_id" count="75">0 0 -3.644073 -2.77634 0 -2.77634 0 0 0 2.77634 0 2.77634 3.644073 0 0 -3.644073 0 0 -2.77634 0 2.77634 0 0 3.644073 2.77634 0 -2.77634 27.259125 0 0 20.768154 0 20.768154 20.768154 0 -20.768154 0 0 -27.259125 -20.768154 0 -20.768154 -27.259125 0 0 -20.768154 0 20.768154 0 0 27.259125 36.57019 0 36.57019 0 0 48 48 0 0 36.57019 0 -36.57019 0 0 -48 -36.57019 0 -36.57019 -48 0 0 -36.57019 0 36.57019</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi7_OptMesh_1_0_Position_array_id" count="25" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi7_OptMesh_1_0_TexCoord0_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_TexCoord0">
+          <float_array id="Chara_Rim_Black_fi7_OptMesh_1_0_TexCoord0_array_id" count="50">0 0.875 -0 0.91042995 0 0.625 -0 0.91042995 0 0.875 0 0.875 0 0.91042995 0 0.875 0 0.91042995 0 0.009850979 -0 0.89331913 0 0.89331913 0 0.009850979 -0 0.89331913 0 0.009850979 0 0.89331913 0 0.009850979 -0 -0 0 0.25 0 0.25 0 -0 0 0.25 -0 -0 0 0.25 0 -0</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi7_OptMesh_1_0_TexCoord0_array_id" count="25" stride="2">
+              <param name="S" type="float" />
+              <param name="T" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi7_OptMesh_1_0_Color_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_Color">
+          <float_array id="Chara_Rim_Black_fi7_OptMesh_1_0_Color_array_id" count="100">0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.7019608 0.5372549 0.34509805 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 0.9215687 0.7058824 0.454902 1 1 0.85098046 0.49411768 0 1 0.85098046 0.49411768 0 1 0.85098046 0.49411768 0 1 0.85098046 0.49411768 0 1 0.85098046 0.49411768 0 1 0.85098046 0.49411768 0 1 0.85098046 0.49411768 0 1 0.85098046 0.49411768 0</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi7_OptMesh_1_0_Color_array_id" count="25" stride="4">
+              <param name="R" type="float" />
+              <param name="G" type="float" />
+              <param name="B" type="float" />
+              <param name="A" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Chara_Rim_Black_fi7_OptMesh_1_0_vtx_id">
+          <input semantic="POSITION" source="#Chara_Rim_Black_fi7_OptMesh_1_0_Position_id" />
+        </vertices>
+        <triangles material="Mdl_0_Mtl_Chara_Rim_Black_fi7" count="40">
+          <input semantic="VERTEX" source="#Chara_Rim_Black_fi7_OptMesh_1_0_vtx_id" offset="0" />
+          <input semantic="TEXCOORD" source="#Chara_Rim_Black_fi7_OptMesh_1_0_TexCoord0_id" offset="0" set="0" />
+          <input semantic="COLOR" source="#Chara_Rim_Black_fi7_OptMesh_1_0_Color_id" offset="0" />
+          <p>0 1 2 1 5 2 5 6 2 6 7 2 7 3 2 3 4 2 2 4 8 8 0 2 4 3 9 4 9 8 10 9 3 9 11 8 0 8 12 11 12 8 0 12 1 12 13 1 5 1 14 13 14 1 5 14 6 14 15 6 7 6 16 15 16 6 7 16 3 16 10 3 18 10 16 16 15 18 17 10 18 9 10 19 19 10 17 19 11 9 20 11 19 12 11 21 21 11 20 21 13 12 22 13 21 14 13 23 23 13 22 23 15 14 24 15 23 18 15 24</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="Chara_Rim_Black_fi8_OptMesh_2_0_geo_id" name="Chara_Rim_Black_fi8_OptMesh_2_0">
+      <mesh>
+        <source id="Chara_Rim_Black_fi8_OptMesh_2_0_Position_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_Position">
+          <float_array id="Chara_Rim_Black_fi8_OptMesh_2_0_Position_array_id" count="180">0.15386 10.068442 -0.211771 0.248951 10.068442 -0.080889 0.338361 9.968443 -0.465713 0.547479 9.968443 -0.177887 0 10.068442 -0.261763 0 9.968443 -0.575653 -0.15386 10.068442 -0.211771 0 10.068442 -0.261763 -0.33836 9.968443 -0.465713 0 9.968443 -0.575653 -0.248951 10.068442 -0.080889 -0.547478 9.968443 -0.177887 -0.248951 10.068442 0.080889 -0.248951 10.068442 -0.080889 -0.547478 9.968443 0.177886 -0.547478 9.968443 -0.177887 -0.15386 10.068442 0.21177 -0.33836 9.968443 0.465713 0 10.068442 0.261763 -0.15386 10.068442 0.21177 0 9.968443 0.575653 -0.33836 9.968443 0.465713 0.15386 10.068442 0.21177 0.33836 9.968443 0.465713 0.248951 10.068442 0.080889 0.15386 10.068442 0.21177 0.547478 9.968443 0.177886 0.33836 9.968443 0.465713 0.248951 10.068442 -0.080889 0.547479 9.968443 -0.177887 0.099204 10.050681 -0.136543 0.160516 10.050681 -0.052155 0.218164 9.986204 -0.300276 0.352996 9.986204 -0.114695 0 10.050681 -0.168776 0 9.986204 -0.371162 -0.099204 10.050681 -0.136543 0 10.050681 -0.168776 -0.218163 9.986204 -0.300276 0 9.986204 -0.371162 -0.160515 10.050681 -0.052155 -0.352996 9.986204 -0.114695 -0.160515 10.050681 0.052155 -0.160515 10.050681 -0.052155 -0.352996 9.986204 0.114695 -0.352996 9.986204 -0.114695 -0.099204 10.050681 0.136542 -0.218163 9.986204 0.300276 0 10.050681 0.168776 -0.099204 10.050681 0.136542 0 9.986204 0.371162 -0.218163 9.986204 0.300276 0.099204 10.050681 0.136542 0.218163 9.986204 0.300276 0.160516 10.050681 0.052155 0.099204 10.050681 0.136542 0.352996 9.986204 0.114695 0.218163 9.986204 0.300276 0.160516 10.050681 -0.052155 0.352996 9.986204 -0.114695</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi8_OptMesh_2_0_Position_array_id" count="60" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi8_OptMesh_2_0_TexCoord0_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_TexCoord0">
+          <float_array id="Chara_Rim_Black_fi8_OptMesh_2_0_TexCoord0_array_id" count="120">0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75 0.5 -0 0.5 -0 0.5 0.75 0.5 0.75 0.5 -0 0.5 0.75</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi8_OptMesh_2_0_TexCoord0_array_id" count="60" stride="2">
+              <param name="S" type="float" />
+              <param name="T" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi8_OptMesh_2_0_Color_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_Color">
+          <float_array id="Chara_Rim_Black_fi8_OptMesh_2_0_Color_array_id" count="240">1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1 0.8431373 0.64705884 0.4156863 1 1 0.6901961 0.3254902 1 0.8431373 0.64705884 0.4156863 1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi8_OptMesh_2_0_Color_array_id" count="60" stride="4">
+              <param name="R" type="float" />
+              <param name="G" type="float" />
+              <param name="B" type="float" />
+              <param name="A" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Chara_Rim_Black_fi8_OptMesh_2_0_vtx_id">
+          <input semantic="POSITION" source="#Chara_Rim_Black_fi8_OptMesh_2_0_Position_id" />
+        </vertices>
+        <triangles material="Mdl_0_Mtl_Chara_Rim_Black_fi8" count="40">
+          <input semantic="VERTEX" source="#Chara_Rim_Black_fi8_OptMesh_2_0_vtx_id" offset="0" />
+          <input semantic="TEXCOORD" source="#Chara_Rim_Black_fi8_OptMesh_2_0_TexCoord0_id" offset="0" set="0" />
+          <input semantic="COLOR" source="#Chara_Rim_Black_fi8_OptMesh_2_0_Color_id" offset="0" />
+          <p>0 1 2 2 1 3 5 0 2 4 0 5 6 7 8 8 7 9 11 6 8 10 6 11 12 13 14 14 13 15 17 12 14 16 12 17 18 19 20 20 19 21 23 18 20 22 18 23 24 25 26 26 25 27 29 24 26 28 24 29 30 31 32 32 31 33 35 30 32 34 30 35 36 37 38 38 37 39 41 36 38 40 36 41 42 43 44 44 43 45 47 42 44 46 42 47 48 49 50 50 49 51 53 48 50 52 48 53 54 55 56 56 55 57 59 54 56 58 54 59</p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_controllers>
+    <controller id="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl">
+      <skin source="#Chara_Rim_Black_fi6_OptMesh_0_0_geo_id">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_names_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_names">
+          <Name_array id="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_names_array_id" count="6">it0002_00_sand GfAnimationRangeNode pCube13 joint1 joint2 joint3</Name_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_names_array_id" count="6" stride="1">
+              <param name="JOINT" type="Name" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_poses_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_poses">
+          <float_array id="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_poses_array_id" count="96">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 100 0 0 0 0 100 0 -999.99994 0 0 100 0 0 0 0 1 100 0 0 0 0 100 0 -999.99994 0 0 100 0 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_poses_array_id" count="6" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_weights_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_weights">
+          <float_array id="Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_weights_array_id" count="1">1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_weights_array_id" count="1" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_names_id" />
+          <input semantic="INV_BIND_MATRIX" source="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_poses_id" />
+        </joints>
+        <vertex_weights count="50">
+          <input semantic="JOINT" source="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_names_id" offset="0" />
+          <input semantic="WEIGHT" source="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_weights_id" offset="1" />
+          <vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+          <v>3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0</v>
+        </vertex_weights>
+      </skin>
+    </controller>
+    <controller id="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl">
+      <skin source="#Chara_Rim_Black_fi7_OptMesh_1_0_geo_id">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_names_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_names">
+          <Name_array id="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_names_array_id" count="6">it0002_00_sand GfAnimationRangeNode pCube13 joint1 joint2 joint3</Name_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_names_array_id" count="6" stride="1">
+              <param name="JOINT" type="Name" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_poses_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_poses">
+          <float_array id="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_poses_array_id" count="96">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 100 0 0 0 0 100 0 -999.99994 0 0 100 0 0 0 0 1 100 0 0 0 0 100 0 -999.99994 0 0 100 0 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_poses_array_id" count="6" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_weights_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_weights">
+          <float_array id="Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_weights_array_id" count="1">1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_weights_array_id" count="1" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_names_id" />
+          <input semantic="INV_BIND_MATRIX" source="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_poses_id" />
+        </joints>
+        <vertex_weights count="25">
+          <input semantic="JOINT" source="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_names_id" offset="0" />
+          <input semantic="WEIGHT" source="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_weights_id" offset="1" />
+          <vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+          <v>3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0 3 0</v>
+        </vertex_weights>
+      </skin>
+    </controller>
+    <controller id="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl">
+      <skin source="#Chara_Rim_Black_fi8_OptMesh_2_0_geo_id">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_names_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_names">
+          <Name_array id="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_names_array_id" count="6">it0002_00_sand GfAnimationRangeNode pCube13 joint1 joint2 joint3</Name_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_names_array_id" count="6" stride="1">
+              <param name="JOINT" type="Name" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_poses_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_poses">
+          <float_array id="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_poses_array_id" count="96">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 100 0 0 0 0 100 0 -999.99994 0 0 100 0 0 0 0 1 100 0 0 0 0 100 0 -999.99994 0 0 100 0 0 0 0 1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_poses_array_id" count="6" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_weights_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_weights">
+          <float_array id="Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_weights_array_id" count="1">1</float_array>
+          <technique_common>
+            <accessor source="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_weights_array_id" count="1" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_names_id" />
+          <input semantic="INV_BIND_MATRIX" source="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_poses_id" />
+        </joints>
+        <vertex_weights count="60">
+          <input semantic="JOINT" source="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_names_id" offset="0" />
+          <input semantic="WEIGHT" source="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_weights_id" offset="1" />
+          <vcount>1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1</vcount>
+          <v>4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 4 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0 5 0</v>
+        </vertex_weights>
+      </skin>
+    </controller>
+  </library_controllers>
+  <library_visual_scenes>
+    <visual_scene id="it0002_00_sand_00_id" name="it0002_00_sand_00">
+      <node id="it0002_00_sand_bone_id" name="it0002_00_sand" sid="it0002_00_sand" type="JOINT">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="GfAnimationRangeNode_bone_id" name="GfAnimationRangeNode" sid="GfAnimationRangeNode" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+        <node id="pCube13_bone_id" name="pCube13" sid="pCube13" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        </node>
+        <node id="joint1_bone_id" name="joint1" sid="joint1" type="JOINT">
+          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+          <node id="joint2_bone_id" name="joint2" sid="joint2" type="JOINT">
+            <matrix sid="transform">0.01 0 0 0 0 0.01 0 10 0 0 0.01 0 0 0 0 1</matrix>
+          </node>
+          <node id="joint3_bone_id" name="joint3" sid="joint3" type="JOINT">
+            <matrix sid="transform">0.01 0 0 0 0 0.01 0 10 0 0 0.01 0 0 0 0 1</matrix>
+          </node>
+        </node>
+      </node>
+      <node id="Chara_Rim_Black_fi6_OptMesh_0_0_node_id" name="Chara_Rim_Black_fi6_OptMesh_0_0_node" type="NODE">
+        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#Chara_Rim_Black_fi6_OptMesh_0_0_ctrl_id">
+          <skeleton>#it0002_00_sand_bone_id</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Mdl_0_Mtl_Chara_Rim_Black_fi6" target="#Chara_Rim_Black_fi6_mat_id">
+                <bind_vertex_input semantic="uv" input_semantic="TEXCOORD" input_set="0" />
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_controller>
+      </node>
+      <node id="Chara_Rim_Black_fi7_OptMesh_1_0_node_id" name="Chara_Rim_Black_fi7_OptMesh_1_0_node" type="NODE">
+        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#Chara_Rim_Black_fi7_OptMesh_1_0_ctrl_id">
+          <skeleton>#it0002_00_sand_bone_id</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Mdl_0_Mtl_Chara_Rim_Black_fi7" target="#Chara_Rim_Black_fi7_mat_id">
+                <bind_vertex_input semantic="uv" input_semantic="TEXCOORD" input_set="0" />
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_controller>
+      </node>
+      <node id="Chara_Rim_Black_fi8_OptMesh_2_0_node_id" name="Chara_Rim_Black_fi8_OptMesh_2_0_node" type="NODE">
+        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#Chara_Rim_Black_fi8_OptMesh_2_0_ctrl_id">
+          <skeleton>#it0002_00_sand_bone_id</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Mdl_0_Mtl_Chara_Rim_Black_fi8" target="#Chara_Rim_Black_fi8_mat_id">
+                <bind_vertex_input semantic="uv" input_semantic="TEXCOORD" input_set="0" />
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_controller>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#it0002_00_sand_00_id" />
+  </scene>
+</COLLADA>
