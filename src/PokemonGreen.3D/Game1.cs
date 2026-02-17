@@ -72,7 +72,7 @@ public class Game1 : Game
     private float _verticalVelocity;
 
     // Set to true to launch directly into the battle screen for debugging.
-    private const bool DebugStartInBattle = false;
+    private const bool DebugStartInBattle = true;
 
     // Virtual resolution for 2D UI — higher than the 2D game (800x600) so the
     // transform matrix scales DOWN at 1080p instead of up, keeping text crisp.
@@ -193,6 +193,16 @@ public class Game1 : Game
         // Initialize subsystems that need GPU resources
         _battleScreen = new BattleScreen3D(GraphicsDevice, _spriteBatch, _pixel,
             _kermFontRenderer, _kermFont);
+
+        // Load 3D battle scene models
+        string battleBGPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BattleBG");
+        if (!Directory.Exists(battleBGPath))
+        {
+            // Dev path fallback: Assets project
+            battleBGPath = Path.GetFullPath(Path.Combine(_assetsRoot, "..", "BattleBG"));
+        }
+        if (Directory.Exists(battleBGPath))
+            _battleScreen.LoadBattleModels(battleBGPath);
 
         _cubeSystem = new CubeCollectibleSystem(GraphicsDevice, _gridEffect, _spriteBatch,
             _pixel, _kermFontRenderer, _kermFont);
@@ -442,10 +452,13 @@ public class Game1 : Game
     {
         if (_battleScreen.InBattle)
         {
-            GraphicsDevice.Clear(new Color(24, 24, 40));
+            // 3D battle scene (backgrounds, platforms, Pokemon models)
+            _battleScreen.Draw3DScene();
+
+            // 2D UI overlay
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied,
                 SamplerState.PointClamp, transformMatrix: GetUITransform());
-            _battleScreen.Draw(UIFontScale);
+            _battleScreen.DrawUI(UIFontScale, VirtualWidth, VirtualHeight);
             _spriteBatch.End();
             base.Draw(gameTime);
             return;
