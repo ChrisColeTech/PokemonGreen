@@ -22,6 +22,9 @@ public class GameSaveData
     public float PlayerY { get; set; }
     public int Facing { get; set; } = 1; // Direction enum ordinal
 
+    // 3D POC: selected character model folder
+    public string? SelectedCharacter { get; set; }
+
     // Progress
     public int BadgeCount { get; set; }
     public HashSet<string> StoryFlags { get; set; } = new();

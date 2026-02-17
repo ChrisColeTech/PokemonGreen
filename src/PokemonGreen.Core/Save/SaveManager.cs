@@ -26,7 +26,7 @@ public class SaveSlotInfo
 /// </summary>
 public class SaveManager : IDisposable
 {
-    private const int SchemaVersion = 2;
+    private const int SchemaVersion = 3;
 
     public static string SaveDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -129,8 +129,8 @@ public class SaveManager : IDisposable
 
         // Player
         Exec(conn, @"INSERT OR REPLACE INTO player
-            (id, name, money, playtime_seconds, map_id, player_x, player_y, facing, badge_count, game_time_seconds, saved_at)
-            VALUES (1, @name, @money, @playtime, @map, @px, @py, @facing, @badges, @gametime, @saved)",
+            (id, name, money, playtime_seconds, map_id, player_x, player_y, facing, selected_character, badge_count, game_time_seconds, saved_at)
+            VALUES (1, @name, @money, @playtime, @map, @px, @py, @facing, @selchar, @badges, @gametime, @saved)",
             ("@name", data.PlayerName),
             ("@money", data.Money),
             ("@playtime", data.PlaytimeSeconds),
@@ -138,6 +138,7 @@ public class SaveManager : IDisposable
             ("@px", data.PlayerX),
             ("@py", data.PlayerY),
             ("@facing", data.Facing),
+            ("@selchar", (object?)data.SelectedCharacter ?? DBNull.Value),
             ("@badges", data.BadgeCount),
             ("@gametime", data.GameTimeSeconds),
             ("@saved", data.SavedAt.ToString("o")));
@@ -206,6 +207,8 @@ public class SaveManager : IDisposable
             data.PlayerX = reader.GetFloat(reader.GetOrdinal("player_x"));
             data.PlayerY = reader.GetFloat(reader.GetOrdinal("player_y"));
             data.Facing = reader.GetInt32(reader.GetOrdinal("facing"));
+            var selCharOrd = reader.GetOrdinal("selected_character");
+            data.SelectedCharacter = reader.IsDBNull(selCharOrd) ? null : reader.GetString(selCharOrd);
             data.BadgeCount = reader.GetInt32(reader.GetOrdinal("badge_count"));
             data.GameTimeSeconds = reader.GetDouble(reader.GetOrdinal("game_time_seconds"));
             var savedAtStr = reader.GetString(reader.GetOrdinal("saved_at"));
@@ -323,6 +326,7 @@ public class SaveManager : IDisposable
             player_x         REAL    NOT NULL,
             player_y         REAL    NOT NULL,
             facing           INTEGER NOT NULL DEFAULT 1,
+            selected_character TEXT,
             badge_count      INTEGER NOT NULL DEFAULT 0,
             game_time_seconds REAL   NOT NULL DEFAULT 900.0,
             saved_at         TEXT    NOT NULL
@@ -380,6 +384,10 @@ public class SaveManager : IDisposable
         if (fromVersion < 2)
         {
             Exec(conn, "ALTER TABLE player ADD COLUMN game_time_seconds REAL NOT NULL DEFAULT 900.0");
+        }
+        if (fromVersion < 3)
+        {
+            Exec(conn, "ALTER TABLE player ADD COLUMN selected_character TEXT");
         }
 
         Exec(conn, $"UPDATE schema_version SET version = {SchemaVersion}");

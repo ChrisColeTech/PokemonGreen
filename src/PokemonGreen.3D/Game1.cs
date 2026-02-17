@@ -41,6 +41,10 @@ public class Game1 : Game
     // Message box (reused from 2D game)
     private readonly Core.UI.MessageBox _messageBox = new();
 
+    // Pause menu (same MenuBox pattern as 2D game)
+    private readonly MenuBox _pauseMenuBox = new() { Columns = 1, UseStandardStyle = true };
+    private bool _isPaused;
+
     // Persistence
     private readonly SaveManager _saveManager = new();
     private const int SaveSlot = 99; // dedicated slot for 3D POC
@@ -49,10 +53,26 @@ public class Game1 : Game
     // Collectible cubes
     private static readonly Vector3[] CubeSpawnPositions =
     {
+        // Center map area
         new( 3, 0,  5), new(-4, 0,  8), new( 7, 0, -3),
         new(-6, 0, -7), new(10, 0,  2), new(-2, 0, 12),
         new( 8, 0, -9), new(-9, 0,  4), new( 5, 0, -12),
         new(12, 0,  9), new(-11, 0, -2), new( 1, 0, 15),
+        // North map
+        new( 4, 0, -20), new(14, 0, -25), new(24, 0, -18),
+        new(10, 0, -30), new(20, 0, -22), new( 8, 0, -15),
+        // South map
+        new( 6, 0,  38), new(18, 0,  42), new(26, 0,  35),
+        new(12, 0,  50), new(22, 0,  45), new( 2, 0,  55),
+        // West map
+        new(-18, 0,  6), new(-24, 0, 14), new(-12, 0, 22),
+        new(-28, 0, 10), new(-20, 0, 26), new(-15, 0, 18),
+        // East map
+        new( 38, 0,  4), new( 44, 0, 12), new( 50, 0,  8),
+        new( 36, 0, 20), new( 42, 0, 26), new( 55, 0, 16),
+        // Scattered extras
+        new( 16, 0, 16), new( 30, 0, 30), new(-5, 0, 30),
+        new( 28, 0, -8), new(-22, 0, -4), new( 48, 0, 22),
     };
     private bool[] _cubeCollected;
     private int _cubeCount;
@@ -64,30 +84,16 @@ public class Game1 : Game
     private const float CubeHoverHeight = 0.8f;
     private const float CubeCollectRadius = 1.5f;
 
+    // Encounter system
+    private readonly Random _encounterRng = new();
+    private float _encounterStepTimer;
+    private const float EncounterStepInterval = 0.4f; // check every 0.4s of walking
+    private const float EncounterChance = 0.15f; // 15% per check
+
     // Character data
     private string _assetsRoot;
     private string _currentCharacterFolder = "tr0001_00";
-    private static readonly (string folder, string name)[] Characters =
-    {
-        ("tr0001_00", "Character 1"),
-        ("tr0002_00", "Character 2"),
-        ("tr0003_00", "Character 3"),
-        ("tr0004_00", "Character 4"),
-        ("tr0005_00", "Character 5"),
-        ("tr0006_00", "Character 6"),
-        ("tr0007_00", "Character 7"),
-        ("tr0008_00", "Character 8"),
-        ("tr0009_00", "Character 9"),
-        ("tr0010_00", "Character 10"),
-        ("tr0011_00", "Character 11"),
-        ("tr0012_00", "Character 12"),
-        ("tr0013_00", "Character 13"),
-        ("tr0014_00", "Character 14"),
-        ("tr0015_00", "Character 15"),
-        ("tr0016_00", "Character 16"),
-        ("tr0017_00", "Character 17"),
-        ("tr0018_00", "Character 18"),
-    };
+    private (string folder, string name)[] _characters = Array.Empty<(string, string)>();
 
     private readonly Camera3D _camera = new(nearPlane: 0.1f, farPlane: 1000f);
     private readonly ThirdPersonInputMapper _input = new();
@@ -156,6 +162,13 @@ public class Game1 : Game
         // Load persisted state
         LoadSaveData();
 
+        // Pause menu items
+        _pauseMenuBox.SetItems(
+            new MenuItem("Resume", ClosePauseMenu),
+            new MenuItem("Reset Cubes", ResetCubes),
+            new MenuItem("Close", ClosePauseMenu));
+        _pauseMenuBox.OnCancel = ClosePauseMenu;
+
         base.Initialize();
     }
 
@@ -168,6 +181,18 @@ public class Game1 : Game
         // Resolve assets root
         string assemblyDir = Path.GetDirectoryName(typeof(Game1).Assembly.Location) ?? "";
         _assetsRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", "PokemonGreen.Assets", "Pokemon3D"));
+
+        // Auto-scan for character folders with manifest.json
+        string overworldDir = Path.Combine(_assetsRoot, "characters", "overworld");
+        if (Directory.Exists(overworldDir))
+        {
+            _characters = Directory.GetDirectories(overworldDir)
+                .Where(d => File.Exists(Path.Combine(d, "manifest.json")))
+                .Select(d => Path.GetFileName(d))
+                .OrderBy(f => f)
+                .Select(f => (folder: f, name: f))
+                .ToArray();
+        }
 
         // Load KermFont for UI overlays
         string kermFontPath = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", "PokemonGreen.Assets", "Content", "Fonts", "Kerm", "Battle.kermfont"));
@@ -210,9 +235,7 @@ public class Game1 : Game
     {
         var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         var keyboard = Keyboard.GetState();
-        bool confirmPressed = (keyboard.IsKeyDown(Keys.Enter) && !_prevKeyboard.IsKeyDown(Keys.Enter))
-                           || (keyboard.IsKeyDown(Keys.Z) && !_prevKeyboard.IsKeyDown(Keys.Z))
-                           || (keyboard.IsKeyDown(Keys.E) && !_prevKeyboard.IsKeyDown(Keys.E));
+        bool confirmPressed = keyboard.GetPressedKeyCount() > 0 && _prevKeyboard.GetPressedKeyCount() == 0;
 
         // Animate cubes regardless of state
         _cubeRotation += dt * 1.5f;
@@ -227,6 +250,23 @@ public class Game1 : Game
             return;
         }
 
+        // Handle pause menu (blocks all other input)
+        if (_isPaused)
+        {
+            var uiInput = BuildInputState(keyboard);
+            _pauseMenuBox.Update(
+                left: false, right: false,
+                up: uiInput.Up, down: uiInput.Down,
+                confirm: uiInput.Confirm,
+                cancel: uiInput.Cancel,
+                mousePosition: Point.Zero,
+                mouseClicked: false);
+
+            _prevKeyboard = keyboard;
+            base.Update(gameTime);
+            return;
+        }
+
         // Handle overlay
         if (_overlay != null)
         {
@@ -236,10 +276,22 @@ public class Game1 : Game
             if (_overlay.IsFinished)
             {
                 if (_overlay.SelectedFolder != null)
+                {
                     LoadCharacterModel(_overlay.SelectedFolder);
+                    PersistCharacterSelection(_overlay.SelectedFolder);
+                }
                 _overlay = null;
             }
 
+            _prevKeyboard = keyboard;
+            base.Update(gameTime);
+            return;
+        }
+
+        // Enter opens pause menu
+        if (keyboard.IsKeyDown(Keys.Enter) && !_prevKeyboard.IsKeyDown(Keys.Enter))
+        {
+            OpenPauseMenu();
             _prevKeyboard = keyboard;
             base.Update(gameTime);
             return;
@@ -250,8 +302,8 @@ public class Game1 : Game
             || (keyboard.IsKeyDown(Keys.Escape) && !_prevKeyboard.IsKeyDown(Keys.Escape)))
         {
             _overlay = new CharacterSelectScreen(
-                Characters.Select(c => c.folder).ToArray(),
-                Characters.Select(c => c.name).ToArray());
+                _characters.Select(c => c.folder).ToArray(),
+                _characters.Select(c => c.name).ToArray());
             _prevKeyboard = keyboard;
             base.Update(gameTime);
             return;
@@ -277,7 +329,34 @@ public class Game1 : Game
         if (isMoving)
         {
             var moveDir = Vector3.Normalize(move);
-            _playerPosition += moveDir * speed;
+            var desiredPos = _playerPosition + moveDir * speed;
+
+            // Collision check with wall sliding
+            if (_tileMapMesh != null)
+            {
+                bool fullOk = _tileMapMesh.IsWalkable(desiredPos.X, desiredPos.Z);
+                if (fullOk)
+                {
+                    _playerPosition = desiredPos;
+                }
+                else
+                {
+                    // Try sliding along X axis only
+                    var slideX = new Vector3(desiredPos.X, _playerPosition.Y, _playerPosition.Z);
+                    if (_tileMapMesh.IsWalkable(slideX.X, slideX.Z))
+                        _playerPosition = slideX;
+
+                    // Try sliding along Z axis only
+                    var slideZ = new Vector3(_playerPosition.X, _playerPosition.Y, desiredPos.Z);
+                    if (_tileMapMesh.IsWalkable(slideZ.X, slideZ.Z))
+                        _playerPosition = slideZ;
+                }
+            }
+            else
+            {
+                _playerPosition = desiredPos;
+            }
+
             _playerTargetYaw = MathF.Atan2(moveDir.X, moveDir.Z);
         }
 
@@ -303,6 +382,10 @@ public class Game1 : Game
 
         // Check cube collection
         CheckCubeCollection();
+
+        // Check encounter tiles (only while moving on the ground)
+        if (isMoving && isGrounded)
+            CheckEncounterTile();
 
         if (_animController is not null)
         {
@@ -411,6 +494,20 @@ public class Game1 : Game
                 null!, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
         }
 
+        // Pause menu (top-right, same as 2D game)
+        if (_isPaused)
+        {
+            int vw = GraphicsDevice.Viewport.Width;
+            int menuW = 160;
+            int menuH = 140;
+            int menuX = vw - menuW - 16;
+            int menuY = 16;
+
+            if (_kermFontRenderer != null && _kermFont != null)
+                _pauseMenuBox.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixel,
+                    new Rectangle(menuX, menuY, menuW, menuH), 3);
+        }
+
         // Message box (bottom of screen)
         if (_messageBox.IsActive)
         {
@@ -442,6 +539,10 @@ public class Game1 : Game
                    || (keyboard.IsKeyDown(Keys.Z) && !_prevKeyboard.IsKeyDown(Keys.Z)),
             Cancel = (keyboard.IsKeyDown(Keys.Escape) && !_prevKeyboard.IsKeyDown(Keys.Escape))
                   || (keyboard.IsKeyDown(Keys.X) && !_prevKeyboard.IsKeyDown(Keys.X)),
+            PageLeft = (keyboard.IsKeyDown(Keys.Q) && !_prevKeyboard.IsKeyDown(Keys.Q))
+                    || (keyboard.IsKeyDown(Keys.PageUp) && !_prevKeyboard.IsKeyDown(Keys.PageUp)),
+            PageRight = (keyboard.IsKeyDown(Keys.E) && !_prevKeyboard.IsKeyDown(Keys.E))
+                     || (keyboard.IsKeyDown(Keys.PageDown) && !_prevKeyboard.IsKeyDown(Keys.PageDown)),
             MousePosition = mouse.Position,
             MouseClicked = mouse.LeftButton == ButtonState.Pressed,
         };
@@ -495,6 +596,13 @@ public class Game1 : Game
                 }
             }
 
+            // Restore character selection
+            if (!string.IsNullOrEmpty(saveData.SelectedCharacter))
+            {
+                _currentCharacterFolder = saveData.SelectedCharacter;
+                Console.WriteLine($"[Save] Restored character: {_currentCharacterFolder}");
+            }
+
             Console.WriteLine($"[Save] Loaded {_cubeCount} collected cubes from slot {SaveSlot}");
         }
         else
@@ -502,6 +610,37 @@ public class Game1 : Game
             _storyFlags = new HashSet<string>();
             Console.WriteLine("[Save] No save found, starting fresh");
         }
+    }
+
+    private void OpenPauseMenu()
+    {
+        _isPaused = true;
+        _pauseMenuBox.IsActive = true;
+        _pauseMenuBox.SelectedIndex = 0;
+    }
+
+    private void ClosePauseMenu()
+    {
+        _isPaused = false;
+        _pauseMenuBox.IsActive = false;
+    }
+
+    private void ResetCubes()
+    {
+        for (int i = 0; i < CubeSpawnPositions.Length; i++)
+        {
+            _cubeCollected[i] = false;
+            _storyFlags.Remove($"cube_{i}");
+        }
+        _cubeCount = 0;
+        PerformSave();
+        ClosePauseMenu();
+        _messageBox.Show("All cubes have been reset!");
+    }
+
+    private void PersistCharacterSelection(string folderName)
+    {
+        PerformSave();
     }
 
     private void PerformSave()
@@ -512,6 +651,7 @@ public class Game1 : Game
             MapId = "3d_overworld",
             PlayerX = _playerPosition.X,
             PlayerY = _playerPosition.Z, // map Y = world Z
+            SelectedCharacter = _currentCharacterFolder,
             StoryFlags = _storyFlags,
             SavedAt = DateTime.UtcNow,
         };
@@ -544,6 +684,34 @@ public class Game1 : Game
                 PerformSave();
                 break; // one per frame
             }
+        }
+    }
+
+    // ── Encounter ──────────────────────────────────────────────────────
+
+    private void CheckEncounterTile()
+    {
+        if (_tileMapMesh == null || _messageBox.IsActive) return;
+
+        string? behavior = _tileMapMesh.GetOverlayBehavior(_playerPosition.X, _playerPosition.Z);
+        if (behavior == null || !behavior.Contains("encounter")) return;
+
+        _encounterStepTimer += (float)TargetElapsedTime.TotalSeconds;
+        if (_encounterStepTimer < EncounterStepInterval) return;
+        _encounterStepTimer = 0f;
+
+        if (_encounterRng.NextDouble() < EncounterChance)
+        {
+            string encounterType = behavior switch
+            {
+                "wild_encounter" => "A wild Pokemon appeared!",
+                "rare_encounter" => "A rare Pokemon appeared!",
+                "double_encounter" => "Wild Pokemon appeared!",
+                "cave_encounter" => "A wild cave Pokemon appeared!",
+                "fire_encounter" => "A wild fire Pokemon appeared!",
+                _ => "A wild Pokemon appeared!"
+            };
+            _messageBox.Show(encounterType);
         }
     }
 

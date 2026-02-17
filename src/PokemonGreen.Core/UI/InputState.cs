@@ -13,6 +13,8 @@ public readonly struct InputState
     public bool Down { get; init; }
     public bool Confirm { get; init; }
     public bool Cancel { get; init; }
+    public bool PageLeft { get; init; }
+    public bool PageRight { get; init; }
     public Point MousePosition { get; init; }
     public bool MouseClicked { get; init; }
 }

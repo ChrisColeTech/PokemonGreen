@@ -21,6 +21,9 @@ public sealed class TileMapMesh3D
     private int _triangleCount;
     private int _vertexCount;
 
+    /// <summary>Cached list of maps for collision/encounter lookups.</summary>
+    private List<MapDefinition> _worldMaps = new();
+
     /// <summary>World-space size of each tile.</summary>
     public float TileWorldSize { get; set; } = 2f;
 
@@ -52,6 +55,8 @@ public sealed class TileMapMesh3D
             Console.WriteLine($"[TileMapMesh3D] No maps found for world '{worldId}'");
             return;
         }
+
+        _worldMaps = maps;
 
         var verts = new List<VertexPositionColor>();
         var indices = new List<int>();
@@ -195,6 +200,86 @@ public sealed class TileMapMesh3D
         }
 
         return new Vector3((minX + maxX) / 2f, groundY, (minZ + maxZ) / 2f);
+    }
+
+    // ── Collision & encounter queries ─────────────────────────────
+
+    /// <summary>
+    /// Resolve a world-space position to the map and tile coordinates.
+    /// Returns false if the position is outside all maps.
+    /// </summary>
+    public bool TryGetTile(float worldX, float worldZ, out MapDefinition? map, out int tileX, out int tileY)
+    {
+        foreach (var m in _worldMaps)
+        {
+            float mapOriginX = m.WorldX * m.Width * TileWorldSize;
+            float mapOriginZ = m.WorldY * m.Height * TileWorldSize;
+
+            float localX = worldX - mapOriginX;
+            float localZ = worldZ - mapOriginZ;
+
+            int tx = (int)MathF.Floor(localX / TileWorldSize);
+            int ty = (int)MathF.Floor(localZ / TileWorldSize);
+
+            if (tx >= 0 && tx < m.Width && ty >= 0 && ty < m.Height)
+            {
+                map = m;
+                tileX = tx;
+                tileY = ty;
+                return true;
+            }
+        }
+
+        map = null;
+        tileX = 0;
+        tileY = 0;
+        return false;
+    }
+
+    /// <summary>
+    /// Check if a world-space position is walkable.
+    /// Returns false if out of bounds or on a non-walkable tile.
+    /// </summary>
+    public bool IsWalkable(float worldX, float worldZ)
+    {
+        if (!TryGetTile(worldX, worldZ, out var map, out int tx, out int ty))
+            return false; // outside all maps = blocked
+
+        // Check base tile
+        int baseTileId = map!.GetBaseTile(tx, ty);
+        var baseDef = TileRegistry.GetTile(baseTileId);
+        if (baseDef == null || !baseDef.Walkable)
+            return false;
+
+        // Check overlay tile
+        int? overlayId = map.GetOverlayTile(tx, ty);
+        if (overlayId is int oid)
+        {
+            var overlayDef = TileRegistry.GetTile(oid);
+            if (overlayDef != null && !overlayDef.Walkable)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Get the overlay behavior string at a world position (e.g. "wild_encounter").
+    /// Returns null if no overlay or no behavior.
+    /// </summary>
+    public string? GetOverlayBehavior(float worldX, float worldZ)
+    {
+        if (!TryGetTile(worldX, worldZ, out var map, out int tx, out int ty))
+            return null;
+
+        int? overlayId = map!.GetOverlayTile(tx, ty);
+        if (overlayId is int oid)
+        {
+            var overlayDef = TileRegistry.GetTile(oid);
+            return overlayDef?.OverlayBehavior;
+        }
+
+        return null;
     }
 
     // ── Geometry helpers ──────────────────────────────────────────
