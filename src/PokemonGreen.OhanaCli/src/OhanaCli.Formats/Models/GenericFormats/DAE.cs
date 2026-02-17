@@ -934,7 +934,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
 
                 bool hasNode = obj.vertices[0].node.Count > 0;
                 bool hasWeight = obj.vertices[0].weight.Count > 0;
-                bool hasController = hasNode && hasWeight;
+                bool hasController = hasNode && hasWeight && mdl.skeleton.Count > 0;
 
                 //Controller
                 daeController controller = new daeController();
