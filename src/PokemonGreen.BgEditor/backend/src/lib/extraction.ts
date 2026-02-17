@@ -1,23 +1,64 @@
 /**
- * CLI to extract a GARC archive end-to-end:
- *   GARC -> decompress -> FileIO.load -> group consecutive entries -> export
+ * GARC extraction pipeline — reusable library extracted from test/extract-garc.ts.
  *
- * Groups consecutive GARC entries the same way the C# OhanaCli does:
- *   - An entry with models+meshes starts a new group
- *   - Subsequent entries without meshes (textures, animations) merge into it
- *
- * Usage: npx tsx test/extract-garc.ts <garc-path> <output-dir> [--split-model-anims] [-n <limit>]
+ * Provides the core extraction logic with progress callbacks so it can be
+ * driven from API routes (or any other caller).
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { GARC } from '../src/lib/ohana/Containers/GARC.js';
-import { LZSS_Ninty } from '../src/lib/ohana/Compressions/LZSS_Ninty.js';
-import { FileIO, formatType } from '../src/lib/ohana/Core/FileIO.js';
-import type { LoadedFile } from '../src/lib/ohana/Core/FileIO.js';
-import { BinaryReader } from '../src/lib/ohana/Core/BinaryReader.js';
-import { DAE } from '../src/lib/ohana/Models/GenericFormats/DAE.js';
-import { OModelGroup, OTexture, OSkeletalAnimation } from '../src/lib/ohana/Core/RenderBase.js';
-import type { OContainer } from '../src/lib/ohana/Containers/OContainer.js';
+import { GARC } from './ohana/Containers/GARC.js';
+import { LZSS_Ninty } from './ohana/Compressions/LZSS_Ninty.js';
+import { FileIO, formatType } from './ohana/Core/FileIO.js';
+import type { LoadedFile } from './ohana/Core/FileIO.js';
+import { BinaryReader } from './ohana/Core/BinaryReader.js';
+import { DAE } from './ohana/Models/GenericFormats/DAE.js';
+import { OModelGroup, OTexture, OSkeletalAnimation } from './ohana/Core/RenderBase.js';
+import type { OContainer } from './ohana/Containers/OContainer.js';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export type ExtractionPhase = 'idle' | 'parsing' | 'grouping' | 'exporting' | 'done' | 'error' | 'stopped';
+
+export interface ExtractionStats {
+  totalEntries: number;
+  processedEntries: number;
+  groupsFound: number;
+  modelsExported: number;
+  texturesExported: number;
+  clipsExported: number;
+  parseErrors: number;
+  exportErrors: number;
+}
+
+export interface ExtractionProgress {
+  phase: ExtractionPhase;
+  stats: ExtractionStats;
+  logLines: string[];
+  elapsedSeconds: number;
+}
+
+export interface ExtractedGroupResult {
+  folderName: string;
+  modelCount: number;
+  textureCount: number;
+  clipCount: number;
+  files: string[];
+}
+
+export interface ExtractionConfig {
+  garcPath: string;
+  outputDir: string;
+  splitModelAnims: boolean;
+  entryLimit?: number;
+  deriveFolderNames?: boolean;
+}
+
+export type ProgressCallback = (progress: ExtractionProgress) => void;
+
+/** Callback that the runner checks periodically; return true to abort. */
+export type CancelCheck = () => boolean;
 
 // ---------------------------------------------------------------------------
 // Manifest types (matches C# OhanaCli SplitExportManifest)
@@ -48,27 +89,16 @@ interface Manifest {
 }
 
 // ---------------------------------------------------------------------------
-// Args
+// Grouped entry type
 // ---------------------------------------------------------------------------
-const args = process.argv.slice(2);
-const splitModelAnims = args.includes('--split-model-anims');
-const limitIdx = args.indexOf('-n');
-const limit = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : undefined;
-const positionalArgs = args.filter((a, i) => !a.startsWith('-') && (i === 0 || !args[i - 1].startsWith('-n')));
-const [garcPath, outputDir] = positionalArgs;
-
-if (!garcPath || !outputDir) {
-  console.error('Usage: npx tsx test/extract-garc.ts <garc-path> <output-dir> [--split-model-anims] [-n <limit>]');
-  process.exit(1);
+interface GroupedEntry {
+  startEntry: number;
+  endEntry: number;
+  modelGroup: OModelGroup;
 }
 
-if (splitModelAnims) console.log('Mode: split model + animation clips');
-if (limit) console.log(`Limit: ${limit} entries`);
-
-fs.mkdirSync(outputDir, { recursive: true });
-
 // ---------------------------------------------------------------------------
-// Helpers
+// Helpers (ported from test/extract-garc.ts)
 // ---------------------------------------------------------------------------
 
 /** Build an OModelGroup from any loaded result, recursing into containers. */
@@ -185,8 +215,13 @@ function sanitizeName(value: string): string {
   return value.replace(/[<>:"/\\|?*]/g, '_').trim() || 'unnamed';
 }
 
+/** Strip known image extensions to avoid double-extension filenames. */
+function stripImageExt(name: string): string {
+  return name.replace(/\.(tga|png|bmp|jpg|jpeg)$/i, '');
+}
+
 /**
- * Derive a group folder name matching C# OhanaCli convention:
+ * Derive a group folder name matching the C# OhanaCli convention:
  *   {groupIndex:D4}_{modelName}
  * e.g. 0000_model, 0001_model, 0002_tr0001_00_fi
  */
@@ -208,6 +243,10 @@ function deriveGroupName(group: OModelGroup, groupIndex: number, startEntry: num
   return `${idx}_entry_${String(startEntry).padStart(5, '0')}`;
 }
 
+/**
+ * Resolve semantic animation metadata from source name or clip index.
+ * Matches C# OhanaCli ResolveSemanticMetadata.
+ */
 /**
  * Overworld character animation slot map (GARC a/2/0/0).
  * From SPICA-README.md — slot numbers are sparse.
@@ -242,7 +281,8 @@ const OVERWORLD_SLOT_MAP: Record<number, string> = {
 
 /**
  * Pokemon battle animation slot map (GARC a/0/9/4).
- * Only slot 0 (Idle) is verified.
+ * Sequential index — OhanaCli names all clips "anim_0", so clipIndex is used.
+ * Only slot 0 (Idle) is verified; others are tentative.
  */
 const POKEMON_SLOT_MAP: Record<number, string> = {
   0: 'Idle',
@@ -266,7 +306,7 @@ function detectAssetType(group: OModelGroup): AnimAssetType {
   return 'unknown';
 }
 
-/** Parse trailing number from source name: "anim_4" → 4, "Motion_17" → 17. */
+/** Parse trailing number from source name: "anim_4" → 4, "Motion_17" → 17, "clip_003" → 3. */
 function parseSourceAnimIndex(sourceName: string, fallback: number): number {
   if (!sourceName) return fallback;
   const lastUnderscore = sourceName.lastIndexOf('_');
@@ -287,6 +327,8 @@ function resolveSemanticMetadata(sourceName: string, clipIndex: number, assetTyp
     if (lower.includes('jump')) return { name: 'Jump', source: 'source-name' };
   }
 
+  // Parse original animation number from source name (anim_4 → 4, Motion_17 → 17).
+  // OhanaCli Pokemon exports name ALL clips "anim_0", so fall back to clipIndex.
   const sourceIndex = parseSourceAnimIndex(sourceName, clipIndex);
 
   let mapped: string | undefined;
@@ -299,11 +341,6 @@ function resolveSemanticMetadata(sourceName: string, clipIndex: number, assetTyp
   return mapped
     ? { name: mapped, source: 'slot-map-v1' }
     : { name: null, source: null };
-}
-
-/** Strip known image extensions to avoid double-extension filenames (.tga.png). */
-function stripImageExt(name: string): string {
-  return name.replace(/\.(tga|png|bmp|jpg|jpeg)$/i, '');
 }
 
 /** Save texture data as PNG (via sharp) or raw RGBA fallback. */
@@ -323,32 +360,72 @@ async function saveTexture(tex: OTexture, outDir: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Grouped entry type
+// Main extraction runner
 // ---------------------------------------------------------------------------
-interface GroupedEntry {
-  startEntry: number;
-  endEntry: number;
-  modelGroup: OModelGroup;
-}
 
-// ---------------------------------------------------------------------------
-// Main extraction
-// ---------------------------------------------------------------------------
-async function main() {
+export async function runExtraction(
+  config: ExtractionConfig,
+  onProgress: ProgressCallback,
+  isCancelled: CancelCheck,
+): Promise<ExtractedGroupResult[]> {
   const startTime = performance.now();
-  console.log(`Loading GARC: ${garcPath}`);
+  const { garcPath, outputDir, splitModelAnims, entryLimit, deriveFolderNames } = config;
+
+  const stats: ExtractionStats = {
+    totalEntries: 0,
+    processedEntries: 0,
+    groupsFound: 0,
+    modelsExported: 0,
+    texturesExported: 0,
+    clipsExported: 0,
+    parseErrors: 0,
+    exportErrors: 0,
+  };
+
+  const logLines: string[] = [];
+
+  function elapsed(): number {
+    return (performance.now() - startTime) / 1000;
+  }
+
+  function log(line: string) {
+    logLines.push(line);
+  }
+
+  function emit(phase: ExtractionPhase) {
+    onProgress({
+      phase,
+      stats: { ...stats },
+      logLines: [...logLines],
+      elapsedSeconds: parseFloat(elapsed().toFixed(1)),
+    });
+  }
+
+  // -- Load GARC --
+  log(`Loading GARC: ${garcPath}`);
+  emit('parsing');
+
+  fs.mkdirSync(outputDir, { recursive: true });
+
   const container = GARC.loadFile(garcPath);
-  console.log(`Entries: ${container.content.length}`);
-
   const reader = container.data!;
-  const max = limit ? Math.min(container.content.length, limit) : container.content.length;
+  const max = entryLimit ? Math.min(container.content.length, entryLimit) : container.content.length;
+  stats.totalEntries = max;
 
-  // ── Phase 1: Load all entries and build model groups ──
-  console.log(`\nPhase 1: Loading and parsing ${max} entries...`);
+  log(`Entries: ${container.content.length}`);
+  if (entryLimit) log(`Limit: ${entryLimit} entries`);
+  log('');
+  log(`Phase 1: Loading and parsing ${max} entries...`);
+  emit('parsing');
+
+  if (isCancelled()) return [];
+
+  // -- Phase 1: Parse entries --
   const parsedEntries: { group: OModelGroup; hasMeshes: boolean }[] = [];
-  let parseErrors = 0;
 
   for (let i = 0; i < max; i++) {
+    if (isCancelled()) return [];
+
     const entry = container.content[i];
     try {
       reader.seek(entry.fileOffset);
@@ -359,6 +436,7 @@ async function main() {
 
       if (group.model.length === 0 && group.texture.length === 0 && group.skeletalAnimation.list.length === 0) {
         parsedEntries.push({ group, hasMeshes: false });
+        stats.processedEntries = i + 1;
         continue;
       }
 
@@ -366,16 +444,24 @@ async function main() {
       parsedEntries.push({ group, hasMeshes: group.model.length > 0 && meshCount > 0 });
     } catch {
       parsedEntries.push({ group: new OModelGroup(), hasMeshes: false });
-      parseErrors++;
+      stats.parseErrors++;
     }
 
+    stats.processedEntries = i + 1;
+
     if ((i + 1) % 1000 === 0 || i === max - 1) {
-      console.log(`  Parsed ${i + 1}/${max} entries...`);
+      log(`  Parsed ${i + 1}/${max} entries...`);
+      emit('parsing');
     }
   }
 
-  // ── Phase 2: Group consecutive entries (C# GroupContainerEntries logic) ──
-  console.log(`\nPhase 2: Grouping entries...`);
+  if (isCancelled()) return [];
+
+  // -- Phase 2: Group consecutive entries --
+  log('');
+  log('Phase 2: Grouping entries...');
+  emit('grouping');
+
   const groups: GroupedEntry[] = [];
   let current: GroupedEntry | null = null;
   let pendingPrefix = new OModelGroup();
@@ -386,13 +472,11 @@ async function main() {
     if (!hasContent) continue;
 
     if (hasMeshes) {
-      // Start a new group
       if (current) {
         deduplicateTextures(current.modelGroup);
         groups.push(current);
       }
 
-      // Merge any pending prefix (textures/anims before first model)
       if (pendingPrefix.model.length > 0 || pendingPrefix.texture.length > 0 || pendingPrefix.skeletalAnimation.list.length > 0) {
         part.merge(pendingPrefix);
         pendingPrefix = new OModelGroup();
@@ -400,11 +484,9 @@ async function main() {
 
       current = { startEntry: i, endEntry: i, modelGroup: part };
     } else if (current) {
-      // Merge into current group
       current.modelGroup.merge(part);
       current.endEntry = i;
     } else {
-      // No group yet, accumulate as prefix
       pendingPrefix.merge(part);
     }
   }
@@ -414,11 +496,11 @@ async function main() {
     groups.push(current);
   }
 
-  // ── Phase 2b: ExtendTrailingGroupForTextures (when -n limit truncates) ──
-  if (limit && max < container.content.length && groups.length > 0) {
+  // Phase 2b: Extend trailing group for textures when limited
+  if (entryLimit && max < container.content.length && groups.length > 0) {
     const trailing = groups[groups.length - 1];
     if (!hasAllReferencedTextures(trailing.modelGroup)) {
-      console.log(`  Extending trailing group past limit to find missing textures...`);
+      log('  Extending trailing group past limit to find missing textures...');
       for (let i = max; i < container.content.length; i++) {
         const entry = container.content[i];
         try {
@@ -431,7 +513,6 @@ async function main() {
           const hasContent = part.model.length > 0 || part.texture.length > 0 || part.skeletalAnimation.list.length > 0;
           if (!hasContent) continue;
 
-          // Stop if we hit a new model group (has models with meshes)
           if (part.model.length > 0 && countMeshes(part) > 0) break;
 
           trailing.modelGroup.merge(part);
@@ -446,37 +527,48 @@ async function main() {
     }
   }
 
-  console.log(`  Found ${groups.length} model groups from ${max} entries (${parseErrors} parse errors)`);
+  stats.groupsFound = groups.length;
+  log(`  Found ${groups.length} model groups from ${max} entries (${stats.parseErrors} parse errors)`);
+  log('');
+  emit('grouping');
 
-  // ── Phase 3: Export each group ──
-  console.log(`\nPhase 3: Exporting ${groups.length} groups...`);
-  let modelCount = 0;
-  let textureCount = 0;
-  let clipCount = 0;
-  let exportErrors = 0;
+  if (isCancelled()) return [];
+
+  // -- Phase 3: Export each group --
+  log(`Phase 3: Exporting ${groups.length} groups...`);
+  emit('exporting');
+
+  const results: ExtractedGroupResult[] = [];
 
   for (let gi = 0; gi < groups.length; gi++) {
+    if (isCancelled()) return results;
+
     const { startEntry, endEntry, modelGroup } = groups[gi];
     const assetType = detectAssetType(modelGroup);
-    const folderName = deriveGroupName(modelGroup, gi, startEntry);
+    const folderName = (deriveFolderNames !== false)
+      ? deriveGroupName(modelGroup, gi, startEntry)
+      : `group_${String(gi).padStart(4, '0')}_entry_${String(startEntry).padStart(5, '0')}`;
     const groupDir = path.join(outputDir, folderName);
     fs.mkdirSync(groupDir, { recursive: true });
 
+    const groupFiles: string[] = [];
+
     const skeletalClips = modelGroup.skeletalAnimation.list.filter(
-      (a): a is OSkeletalAnimation => a instanceof OSkeletalAnimation
+      (a): a is OSkeletalAnimation => a instanceof OSkeletalAnimation,
     );
 
-    // Write textures first
+    // Write textures
     const textureFileNames: string[] = [];
     for (const tex of modelGroup.texture) {
       if (!tex || !tex.texture) continue;
       const fileName = await saveTexture(tex, groupDir);
       textureFileNames.push(fileName);
-      textureCount++;
+      groupFiles.push(fileName);
+      stats.texturesExported++;
     }
 
     if (splitModelAnims) {
-      // ── Split model + clips mode ──
+      // -- Split model + clips mode --
       const manifestModels: ManifestModel[] = [];
       const usedNames = new Set<string>();
 
@@ -492,15 +584,15 @@ async function main() {
         }
         usedNames.add(uniqueName.toLowerCase());
 
-        // Export model-only DAE
         const modelFileName = `${uniqueName}.dae`;
         const modelPath = path.join(groupDir, modelFileName);
         try {
           DAE.exportModelOnly(modelGroup, modelPath, mi);
-          modelCount++;
+          stats.modelsExported++;
+          groupFiles.push(modelFileName);
         } catch (e: any) {
-          console.error(`  Group ${gi} model[${mi}] DAE export failed: ${e.message}`);
-          exportErrors++;
+          log(`  Error: Group ${gi} model[${mi}] DAE export failed: ${e.message}`);
+          stats.exportErrors++;
         }
 
         // Export clip DAEs
@@ -516,12 +608,16 @@ async function main() {
 
           try {
             DAE.exportClipOnly(modelGroup, clipPath, mi, ci);
-            clipCount++;
+            stats.clipsExported++;
+            groupFiles.push(clipRelPath);
           } catch (e: any) {
-            console.error(`  Group ${gi} model[${mi}] clip[${ci}] export failed: ${e.message}`);
-            exportErrors++;
+            log(`  Error: Group ${gi} model[${mi}] clip[${ci}] export failed: ${e.message}`);
+            stats.exportErrors++;
           }
+        }
 
+        for (let ci = 0; ci < skeletalClips.length; ci++) {
+          const clip = skeletalClips[ci];
           const clipId = `clip_${String(ci).padStart(3, '0')}`;
           const sourceName = clip.name?.trim() || clipId;
           const semantic = resolveSemanticMetadata(sourceName, ci, assetType);
@@ -532,7 +628,7 @@ async function main() {
             sourceName,
             semanticName: semantic.name,
             semanticSource: semantic.source,
-            file: clipRelPath,
+            file: `clips/${uniqueName}/clip_${String(ci).padStart(3, '0')}.dae`,
             frameCount: clip.frameSize,
             fps: 30,
           });
@@ -545,7 +641,6 @@ async function main() {
         });
       }
 
-      // Write manifest
       const manifest: Manifest = {
         version: 1,
         mode: 'split-model-anims',
@@ -553,8 +648,9 @@ async function main() {
         models: manifestModels,
       };
       fs.writeFileSync(path.join(groupDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+      groupFiles.push('manifest.json');
     } else {
-      // ── Default mode: one DAE per model (no animations) ──
+      // -- Default mode: one DAE per model (with animations baked in) --
       const usedNames = new Set<string>();
 
       for (let mi = 0; mi < modelGroup.model.length; mi++) {
@@ -572,34 +668,44 @@ async function main() {
         const daePath = path.join(groupDir, `${uniqueName}.dae`);
         try {
           DAE.export(modelGroup, daePath, mi);
-          modelCount++;
+          stats.modelsExported++;
+          groupFiles.push(`${uniqueName}.dae`);
         } catch (e: any) {
-          console.error(`  Group ${gi} model[${mi}] DAE export failed: ${e.message}`);
-          exportErrors++;
+          log(`  Error: Group ${gi} model[${mi}] DAE export failed: ${e.message}`);
+          stats.exportErrors++;
         }
       }
     }
 
+    const modelCountInGroup = modelGroup.model.filter(m => m.mesh.length > 0).length;
+    results.push({
+      folderName,
+      modelCount: modelCountInGroup,
+      textureCount: textureFileNames.length,
+      clipCount: skeletalClips.length,
+      files: groupFiles,
+    });
+
     if ((gi + 1) % 100 === 0 || gi === groups.length - 1) {
       const meshes = countMeshes(modelGroup);
-      console.log(`  Group ${gi + 1}/${groups.length}: entries ${startEntry}-${endEntry}, models=${modelGroup.model.length}, meshes=${meshes}, textures=${modelGroup.texture.length}, clips=${skeletalClips.length}`);
+      log(`  Group ${gi + 1}/${groups.length}: entries ${startEntry}-${endEntry}, models=${modelGroup.model.length}, meshes=${meshes}, textures=${modelGroup.texture.length}, clips=${skeletalClips.length}`);
+      emit('exporting');
     }
   }
 
-  const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
-  console.log('');
-  console.log('=== Extraction complete ===');
-  console.log(`  Time:      ${elapsed}s`);
-  console.log(`  Entries:   ${max} (of ${container.content.length})`);
-  console.log(`  Groups:    ${groups.length}`);
-  console.log(`  Models:    ${modelCount} DAE files`);
-  console.log(`  Clips:     ${clipCount} clip DAE files`);
-  console.log(`  Textures:  ${textureCount} texture files`);
-  console.log(`  Errors:    ${exportErrors} export failures, ${parseErrors} parse failures`);
-  console.log(`  Output:    ${outputDir}`);
-}
+  // -- Done --
+  const elapsedSec = elapsed().toFixed(1);
+  log('');
+  log('=== Extraction complete ===');
+  log(`  Time:      ${elapsedSec}s`);
+  log(`  Entries:   ${max} (of ${container.content.length})`);
+  log(`  Groups:    ${groups.length}`);
+  log(`  Models:    ${stats.modelsExported} DAE files`);
+  log(`  Clips:     ${stats.clipsExported} clip DAE files`);
+  log(`  Textures:  ${stats.texturesExported} texture files`);
+  log(`  Errors:    ${stats.exportErrors} export failures, ${stats.parseErrors} parse failures`);
+  log(`  Output:    ${outputDir}`);
+  emit('done');
 
-main().catch((e) => {
-  console.error('Fatal error:', e);
-  process.exit(1);
-});
+  return results;
+}

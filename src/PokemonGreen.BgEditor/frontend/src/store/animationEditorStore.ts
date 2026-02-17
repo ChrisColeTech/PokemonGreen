@@ -30,12 +30,33 @@ interface AnimationEditorState {
   reset: () => void
 }
 
-/** Simple slot-based auto-tagging for untagged clips */
-const BASE_SLOT_MAP: Record<number, string> = {
+/** Overworld character animation slot map — matches C# OhanaCli MapOverworldSlot */
+const OVERWORLD_SLOT_MAP: Record<number, string> = {
   0: 'Idle',
   1: 'Walk',
   2: 'Run',
   4: 'Jump',
+  5: 'Land',
+  7: 'ShortAction1',
+  8: 'LongAction1',
+  9: 'ShortAction2',
+  17: 'MediumAction',
+  20: 'Action',
+  23: 'Action2',
+  30: 'ShortAction3',
+  31: 'ShortAction4',
+  52: 'IdleVariant',
+  54: 'ShortAction5',
+  55: 'LongAction2',
+  56: 'ShortAction6',
+  59: 'Action3',
+  61: 'Action4',
+  72: 'Action5',
+  123: 'LongAction3',
+  124: 'Action6',
+  125: 'Action7',
+  127: 'Action8',
+  128: 'Action9',
 }
 
 export const useAnimationEditorStore = create<AnimationEditorState>()((set, get) => ({
@@ -154,7 +175,7 @@ export const useAnimationEditorStore = create<AnimationEditorState>()((set, get)
       if (clip.semanticName) continue // skip already tagged
 
       // Try index-based mapping
-      const tag = BASE_SLOT_MAP[clip.index]
+      const tag = OVERWORLD_SLOT_MAP[clip.index]
       if (tag) {
         clip.semanticName = tag
         clip.semanticSource = 'auto-index'
