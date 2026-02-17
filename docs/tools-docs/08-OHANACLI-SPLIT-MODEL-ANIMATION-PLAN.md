@@ -86,7 +86,10 @@ Per grouped model output folder (example `0000_model/`):
 - `textures[]`
 - `clips[]` with:
   - `index`
-  - `name` (if known)
+  - `id` (stable clip id, for example `clip_000`)
+  - `name` (legacy/display id, same as `id`)
+  - `sourceName` (raw source clip name when available)
+  - `semanticName` (gameplay label, for example `Idle`/`Walk`/`Run`, nullable)
   - `file`
   - `frameCount`
   - `fps`

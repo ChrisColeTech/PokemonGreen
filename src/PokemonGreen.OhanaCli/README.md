@@ -16,9 +16,9 @@ The CLI is designed to:
 - Load Pokemon model container data from split entries (model + textures + animation payloads)
 - Preserve texture mapping/binding fidelity in exported DAE/OBJ
 - Export skeletal animation in Blender-compatible COLLADA matrix channels
-- Support both animation output modes:
+- Support animation output modes:
   - per-clip DAE files (default)
-  - consolidated all-clips-in-one DAE (`--consolidate-animations`)
+  - split model + clip-only DAE files (`--split-model-anims`)
 - Provide diagnostics (`diagnose`, `--diag-anim`) for triage and parity checks
 
 ## Project layout
@@ -81,7 +81,7 @@ Options:
 - `-o, --output` (required): output directory
 - `-f, --format`: `dae` or `obj` (default `dae`)
 - `-a, --animation-index`: export one specific skeletal clip index
-- `--consolidate-animations`: for DAE, export one model file containing all clips
+- `--split-model-anims`: for DAE, export one shared model + separate clip-only DAE files + `manifest.json`
 - `-n, --limit`: max container entries to scan
 - `--diag-anim`: verbose per-bone exporter diagnostics to stderr
 
@@ -107,17 +107,18 @@ dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csp
 
 For `DAE`:
 
-1. **Default** (no `-a`, no `--consolidate-animations`)
+1. **Default** (no `-a`, no `--split-model-anims`)
    - Exports one DAE per animation clip per model
    - Example: `model.anim_000.dae`, `model.anim_001.dae`, ...
 
-2. **Consolidated mode** (`--consolidate-animations`)
-   - Exports one DAE per model containing all clips in one file
-   - Example: `model.dae`, `model_1.dae`
+2. **Split mode** (`--split-model-anims`)
+   - Exports one model DAE per model and separate clip-only DAE files
+   - Example: `model.dae`, `model_1.dae`, `clips/model/clip_000.dae`, ...
+   - Writes `manifest.json` with clip metadata for runtime lookup
 
 3. **Single clip mode** (`-a <index>`)
    - Exports one selected clip per model
-   - `-a` takes precedence over `--consolidate-animations`
+   - Example: `model.dae`, `model_1.dae`
 
 For `OBJ`:
 
@@ -131,10 +132,10 @@ For `OBJ`:
 dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o "src/PokemonGreen.Tests/exports-dae-perclip" -n 20
 ```
 
-### B) Consolidated DAE export (all clips in each model file)
+### B) Split model + clips export
 
 ```bash
-dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o "src/PokemonGreen.Tests/exports-dae-consolidated" -n 20 --consolidate-animations
+dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o "src/PokemonGreen.Tests/exports-dae-split" -n 20 --split-model-anims
 ```
 
 ### C) Explicit single clip export
@@ -169,6 +170,80 @@ For input `.../a/0/9/4`:
 ```
 
 Each group folder contains model files (`.dae` or `.obj`) plus exported textures (`.png`).
+
+When `--split-model-anims` is used, each group folder also includes:
+
+```text
+0000_model/
+  model.dae
+  model_1.dae
+  clips/
+    model/clip_000.dae
+    model/clip_001.dae
+    ...
+    model_1/clip_000.dae
+    model_1/clip_001.dae
+    ...
+  manifest.json
+```
+
+## Split manifest animation metadata
+
+`manifest.json` is the runtime contract for identifying clips without relying on file names.
+
+Per clip entry, fields are:
+
+- `index`: numeric clip index from source animation list
+- `id`: stable runtime key (for example `clip_000`)
+- `name`: legacy/display identifier (currently same as `id`)
+- `sourceName`: raw source clip name when available (for example `anim_0`)
+- `semanticName`: gameplay label (for example `Idle`, `Walk`, `Run`), nullable when unknown
+- `semanticSource`: how `semanticName` was produced (for example `source-name` or `index-map-v1`)
+- `file`: relative path to the clip DAE
+- `frameCount`: source frame count metadata
+- `fps`: source sampling rate metadata
+
+Recommended runtime lookup strategy:
+
+- Use `id` as the primary key (`clips["clip_012"]`)
+- Use `semanticName` for gameplay intent when present, otherwise fall back to `id`
+- Treat `sourceName` as source/debug metadata only
+- Use `index` for deterministic ordering
+
+## Game registry integration (overworld)
+
+For runtime use, folder names must match `overworldModel` entries in:
+
+- `src/PokemonGreen.Assets/Data/npcs.json`
+
+Those paths resolve under:
+
+- `src/PokemonGreen.Assets/Pokemon3D/characters/overworld/<modelName>`
+
+### Overworld export + mapping workflow
+
+1) Export field models from Sun/Moon overworld GARC:
+
+```bash
+dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/2/0/0" -o "src/PokemonGreen.Tests/exports-overworld-split" --split-model-anims
+```
+
+2) Map export folders (`0002_tr0001_00_fi`, etc.) into registry folder names under:
+
+- `src/PokemonGreen.Assets/Pokemon3D/characters/overworld/`
+
+This repo currently uses a scripted copy/mapping step (based on `npcs.json`) so each registry model path exists in the expected location.
+
+### Current known limitation (Sun/Moon `a/2/0/0`)
+
+- `a/2/0/0` exports field meshes + textures correctly.
+- It currently yields `clipsFound=0` for all groups in this dataset, so split manifests have empty clip lists.
+- This indicates overworld animation clips are not present in this container and must be sourced from a different archive and merged into the same registry folders.
+
+Practical implication:
+
+- Runtime model lookup by registry path is correct after mapping.
+- Skeletal clip playback for those overworld entries requires a second clip-source pass.
 
 ## Exit codes
 

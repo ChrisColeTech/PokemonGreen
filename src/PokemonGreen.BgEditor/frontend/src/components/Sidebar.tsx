@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { Hexagon, Play, Settings, type LucideIcon } from 'lucide-react'
+import { Hexagon, Play, Settings, Archive, type LucideIcon } from 'lucide-react'
 
 const navItems: { to: string; label: string; Icon: LucideIcon }[] = [
   { to: '/', label: 'Editor', Icon: Hexagon },
   { to: '/animations', label: 'Anim', Icon: Play },
   { to: '/tools', label: 'Tools', Icon: Settings },
+  { to: '/extraction', label: 'Extract', Icon: Archive },
 ]
 
 export default function Sidebar() {

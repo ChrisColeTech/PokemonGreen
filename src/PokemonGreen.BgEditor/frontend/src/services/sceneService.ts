@@ -444,6 +444,52 @@ function loadWithPromise<T>(loader: { load: (url: string, onLoad: (result: T) =>
   })
 }
 
+/**
+ * Load only the model DAE (no animations). Returns the scene and nothing else.
+ * Used by the animation editor to load the base mesh before loading individual clips.
+ */
+export async function loadModelOnly(dir: string, modelFile: string): Promise<THREE.Group> {
+  const dirToken = encodeDirToken(dir)
+  const baseUrl = `${API_BASE}/serve/${dirToken}/`
+  const modelUrl = `${baseUrl}${modelFile}`
+
+  const collada = await loadDaeWithManager(modelUrl)
+  const scene = collada.scene
+
+  fixSkeletonFromInverseBindMatrices(scene)
+  fixMaterials(scene)
+
+  return scene
+}
+
+/**
+ * Load a single clip DAE and parse its animations against an existing scene.
+ * Returns the parsed AnimationClip(s).
+ */
+export async function loadClipDae(dir: string, clipFile: string, scene: THREE.Group): Promise<THREE.AnimationClip[]> {
+  const dirToken = encodeDirToken(dir)
+  const baseUrl = `${API_BASE}/serve/${dirToken}/`
+  const clipUrl = `${baseUrl}${clipFile}`
+
+  // First try ColladaLoader
+  const collada = await loadDaeWithManager(clipUrl)
+  let animations = collada.animations
+
+  if (animations.length === 0 || (animations.length === 1 && animations[0].tracks.length === 0)) {
+    // Fall back to custom parser which handles per-axis Euler channels
+    try {
+      const customAnims = await parseColladaAnimations(clipUrl, scene)
+      if (customAnims.length > 0) {
+        animations = customAnims
+      }
+    } catch (err) {
+      console.warn('[SceneService] Custom animation parser failed for clip:', err)
+    }
+  }
+
+  return animations
+}
+
 function extractTextures(scene: THREE.Group): LoadedTexture[] {
   const textures: LoadedTexture[] = []
   const seen = new Set<string>()

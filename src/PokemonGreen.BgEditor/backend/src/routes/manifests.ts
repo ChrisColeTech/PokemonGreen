@@ -142,6 +142,48 @@ function collectManifests(folderPath: string): Manifest[] {
 export default async function manifestRoutes(app: FastifyInstance, opts: { assetsDir: string }) {
   const { assetsDir } = opts
 
+  // Read a raw manifest.json from a folder path
+  app.get<{ Querystring: { dir: string } }>('/api/manifests/read', async (request, reply) => {
+    const dir = request.query.dir
+    if (!dir) {
+      reply.code(400)
+      return { error: 'Missing "dir" query parameter' }
+    }
+    const manifestPath = path.join(dir, 'manifest.json')
+    if (!fs.existsSync(manifestPath)) {
+      reply.code(404)
+      return { error: `manifest.json not found in ${dir}` }
+    }
+    try {
+      const content = fs.readFileSync(manifestPath, 'utf-8')
+      return JSON.parse(content)
+    } catch (err) {
+      reply.code(500)
+      return { error: `Failed to read manifest: ${err}` }
+    }
+  })
+
+  // Write an updated manifest.json back to disk
+  app.post<{ Body: { dir: string; manifest: Record<string, unknown> } }>('/api/manifests/save', async (request, reply) => {
+    const { dir, manifest } = request.body || {}
+    if (!dir || !manifest) {
+      reply.code(400)
+      return { error: 'Missing "dir" or "manifest" in request body' }
+    }
+    if (!fs.existsSync(dir)) {
+      reply.code(404)
+      return { error: `Directory not found: ${dir}` }
+    }
+    try {
+      const manifestPath = path.join(dir, 'manifest.json')
+      fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+      return { ok: true }
+    } catch (err) {
+      reply.code(500)
+      return { error: `Failed to write manifest: ${err}` }
+    }
+  })
+
   // Get current config defaults
   app.get('/api/manifests/config', async () => {
     return {

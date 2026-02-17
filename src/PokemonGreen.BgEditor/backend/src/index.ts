@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import manifestRoutes from './routes/manifests.js'
 import textureRoutes from './routes/textures.js'
+import extractionRoutes from './routes/extraction.js'
 
 const ASSETS_DIR = "D:/Projects/PokemonGreen/src/PokemonGreen.Assets/Pokemon3D"
 const PORT = 3001
@@ -13,6 +14,7 @@ const app = Fastify({ logger: true, bodyLimit: 100 * 1024 * 1024 })
 await app.register(cors, { origin: true })
 await app.register(manifestRoutes, { assetsDir: path.resolve(ASSETS_DIR) })
 await app.register(textureRoutes)
+await app.register(extractionRoutes)
 
 // Serve model/texture files from any directory on disk.
 // The frontend encodes the manifest's `dir` (absolute path) as a base64url

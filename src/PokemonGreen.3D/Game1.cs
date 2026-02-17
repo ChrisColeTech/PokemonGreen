@@ -20,9 +20,8 @@ public class Game1 : Game
     private BasicEffect _effect;
     private BasicEffect _gridEffect;
     private SkinnedDaeModel _model;
-    private SplitModelAnimationSet? _animationSet;
-    private SkeletalAnimator? _animator;
-    private string _activeClip = string.Empty;
+    private AnimationController? _animController;
+    private bool _isJumping;
     private VertexPositionColor[] _gridVertices;
 
     // UI overlay system
@@ -64,8 +63,8 @@ public class Game1 : Game
     private const float PlayerTurnSpeed = 8f;
     private const float CameraYawFollowSpeed = 3.5f;
     private const float CameraFollowDelay = 0.12f;
-    private const float JumpVelocity = 6.5f;
-    private const float Gravity = -20f;
+    private const float JumpVelocity = 13f;
+    private const float Gravity = -35f;
 
     public Game1()
     {
@@ -132,20 +131,15 @@ public class Game1 : Game
         string dir = Path.Combine(_assetsRoot, "characters", "overworld", folderName);
         if (!Directory.Exists(dir)) return;
 
-        _animationSet = SplitModelAnimationSetLoader.Load(dir);
-        _animator = new SkeletalAnimator(_animationSet.Skeleton);
+        var animSet = SplitModelAnimationSetLoader.Load(dir);
+        _animController = new AnimationController(animSet);
 
         _model = new SkinnedDaeModel();
-        _model.Load(GraphicsDevice, _animationSet.ModelPath, _animationSet.Skeleton);
+        _model.Load(GraphicsDevice, animSet.ModelPath, animSet.Skeleton);
 
         // Start with idle animation
-        string idleClip = ResolveMovementClip(_animationSet, isMoving: false, isRunning: false);
-        if (!string.IsNullOrEmpty(idleClip) && _animationSet.Clips.TryGetValue(idleClip, out var clip))
-        {
-            _activeClip = idleClip;
-            _animator.Play(clip, loop: true, resetTime: true);
-            _model.UpdatePose(GraphicsDevice, _animator.SkinPose);
-        }
+        _animController.Play("Idle", loop: true, resetTime: true);
+        _model.UpdatePose(GraphicsDevice, _animController.SkinPose);
 
         _currentCharacterFolder = folderName;
     }
@@ -209,24 +203,12 @@ public class Game1 : Game
             _playerTargetYaw = MathF.Atan2(moveDir.X, moveDir.Z);
         }
 
-        if (_animationSet is not null && _animator is not null)
-        {
-            string targetClip = ResolveMovementClip(_animationSet, isMoving, input.IsRunning);
-            if (!string.Equals(targetClip, _activeClip, StringComparison.Ordinal) && _animationSet.Clips.TryGetValue(targetClip, out SkeletalAnimationClip? clip))
-            {
-                _activeClip = targetClip;
-                _animator.Play(clip, loop: true, resetTime: false);
-            }
-
-            _animator.Update(dt);
-            _model?.UpdatePose(GraphicsDevice, _animator.SkinPose);
-        }
-
         var isGrounded = _playerPosition.Y <= 0.001f;
         var jumpPressed = input.JumpPressed;
         if (jumpPressed && isGrounded)
         {
             _verticalVelocity = JumpVelocity;
+            _isJumping = true;
             isGrounded = false;
         }
 
@@ -238,6 +220,19 @@ public class Game1 : Game
         {
             _playerPosition.Y = 0f;
             _verticalVelocity = 0f;
+            _isJumping = false;
+        }
+
+        if (_animController is not null)
+        {
+            bool hasJumpClip = _isJumping && _animController.HasClip("Jump");
+            string tag = hasJumpClip ? "Jump"
+                : isMoving ? (input.IsRunning ? "Run" : "Walk")
+                : "Idle";
+
+            _animController.Play(tag, loop: !hasJumpClip, resetTime: hasJumpClip);
+            _animController.Update(dt);
+            _model?.UpdatePose(GraphicsDevice, _animController.SkinPose);
         }
 
         _playerYaw = MoveTowardsAngle(_playerYaw, _playerTargetYaw, PlayerTurnSpeed * dt);
@@ -370,19 +365,4 @@ public class Game1 : Game
         return current + MathF.Sign(delta) * maxDelta;
     }
 
-    private static string ResolveMovementClip(SplitModelAnimationSet set, bool isMoving, bool isRunning)
-    {
-        // Spica format: Motion_0 = idle, Motion_1 = walk, Motion_2 = run
-        // OhanaCli format: anim_0 = idle, anim_1 = walk, anim_2 = run
-        if (!isMoving) return FindClip(set, "Motion_0", "anim_0");
-        if (isRunning) return FindClip(set, "Motion_2", "anim_2");
-        return FindClip(set, "Motion_1", "anim_1");
-    }
-
-    private static string FindClip(SplitModelAnimationSet set, string primary, string fallback)
-    {
-        if (set.Clips.ContainsKey(primary)) return primary;
-        if (set.Clips.ContainsKey(fallback)) return fallback;
-        return set.Clips.Keys.OrderBy(x => x, StringComparer.Ordinal).FirstOrDefault() ?? string.Empty;
-    }
 }

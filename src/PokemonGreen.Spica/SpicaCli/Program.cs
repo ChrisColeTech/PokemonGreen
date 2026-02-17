@@ -337,7 +337,7 @@ class Program
         string texturesDir = Path.Combine(pokemonDir, "textures");
         Directory.CreateDirectory(texturesDir);
 
-        var textureManifest = new List<object>();
+        var textureFileNames = new List<string>();
         foreach (H3DTexture tex in scene.Textures)
         {
             try
@@ -345,7 +345,7 @@ class Program
                 string texPath = Path.Combine(texturesDir, $"{tex.Name}.png");
                 Bitmap bmp = tex.ToBitmap();
                 bmp.Save(texPath, ImageFormat.Png);
-                textureManifest.Add(new { name = tex.Name, file = $"textures/{tex.Name}.png", width = (int)tex.Width, height = (int)tex.Height });
+                textureFileNames.Add($"textures/{tex.Name}.png");
             }
             catch (Exception ex)
             {
@@ -353,8 +353,13 @@ class Program
             }
         }
 
-        // 2. Static models (no animation baked in)
-        var modelManifest = new List<object>();
+        // 2. Static models (no animation baked in) + clip-only DAEs
+        string clipsDir = Path.Combine(pokemonDir, "clips");
+        Directory.CreateDirectory(clipsDir);
+
+        string assetType = DetectAssetType(scene);
+        var modelEntries = new List<object>();
+
         for (int m = 0; m < scene.Models.Count; m++)
         {
             var dae = new DAE(scene, m, -1);
@@ -363,43 +368,45 @@ class Program
             dae.Save(daePath);
 
             var mdl = scene.Models[m];
-            modelManifest.Add(new { file = $"{name}.dae", meshCount = mdl.Meshes.Count, boneCount = mdl.Skeleton.Count });
             Console.WriteLine($"  {name}.dae ({mdl.Meshes.Count} meshes, {mdl.Skeleton.Count} bones)");
+
+            // 3. Clip-only DAEs → clips/ (attached to first model)
+            var clipEntries = new List<object>();
+            if (m == 0)
+            {
+                for (int a = 0; a < scene.SkeletalAnimations.Count; a++)
+                {
+                    try
+                    {
+                        var clipDae = new DAE(scene, 0, a, clipOnly: true);
+                        string clipFile = $"clip_{a:D3}.dae";
+                        string clipPath = Path.Combine(clipsDir, clipFile);
+                        clipDae.Save(clipPath);
+
+                        var anim = scene.SkeletalAnimations[a];
+                        string clipName = anim.Name ?? $"clip_{a}";
+                        string clipId = $"clip_{a:D3}";
+                        var (semName, semSource) = ResolveSemanticMetadata(clipName, a, assetType);
+                        clipEntries.Add(new { index = a, id = clipId, name = clipId, sourceName = clipName, file = $"clips/{clipFile}", frameCount = (int)anim.FramesCount, fps = 30, semanticName = semName, semanticSource = semSource });
+                        Console.WriteLine($"  clips/{clipFile} \"{clipName}\" ({(int)anim.FramesCount} frames){(semName != null ? $" [{semName}]" : "")}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"  clip_{a}: {ex.Message}");
+                    }
+                }
+            }
+
+            modelEntries.Add(new { name, modelFile = $"{name}.dae", clips = clipEntries });
         }
 
-        // 3. Clip-only DAEs → clips/
-        string clipsDir = Path.Combine(pokemonDir, "clips");
-        Directory.CreateDirectory(clipsDir);
-
-        var clipManifest = new List<object>();
-        for (int a = 0; a < scene.SkeletalAnimations.Count; a++)
-        {
-            try
-            {
-                var dae = new DAE(scene, 0, a, clipOnly: true);
-                string clipFile = $"clip_{a:D3}.dae";
-                string clipPath = Path.Combine(clipsDir, clipFile);
-                dae.Save(clipPath);
-
-                var anim = scene.SkeletalAnimations[a];
-                string clipName = anim.Name ?? $"clip_{a}";
-                clipManifest.Add(new { index = a, name = clipName, file = $"clips/{clipFile}", frameCount = (int)anim.FramesCount, fps = 30 });
-                Console.WriteLine($"  clips/{clipFile} \"{clipName}\" ({(int)anim.FramesCount} frames)");
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"  clip_{a}: {ex.Message}");
-            }
-        }
-
-        // 4. manifest.json
+        // 4. manifest.json — same format as OhanaCli
         var manifest = new
         {
             version = 1,
-            pokemonId = groupId,
-            models = modelManifest,
-            textures = textureManifest,
-            clips = clipManifest
+            mode = "split-model-anims",
+            textures = textureFileNames,
+            models = modelEntries
         };
 
         var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
@@ -464,5 +471,94 @@ class Program
                 Console.Error.WriteLine($"  Model[{m}] error: {ex.Message}");
             }
         }
+    }
+
+    // Detect asset type from H3D scene — checks texture/model names for "pm" vs "tr" prefix.
+    static string DetectAssetType(H3D scene)
+    {
+        foreach (var tex in scene.Textures)
+        {
+            if (tex.Name.StartsWith("pm", StringComparison.OrdinalIgnoreCase)) return "pokemon";
+            if (tex.Name.StartsWith("tr", StringComparison.OrdinalIgnoreCase)) return "overworld";
+            if (tex.Name.Contains("_fi", StringComparison.OrdinalIgnoreCase)) return "overworld";
+        }
+        foreach (var mdl in scene.Models)
+        {
+            if (mdl.Name.StartsWith("pm", StringComparison.OrdinalIgnoreCase)) return "pokemon";
+            if (mdl.Name.StartsWith("tr", StringComparison.OrdinalIgnoreCase)) return "overworld";
+        }
+        return "unknown";
+    }
+
+    // Semantic name resolution — shared slot maps with OhanaCli and Spica.Registry.
+    // See SPICA-README.md "Overworld Animation Slots" for full documentation.
+    static (string? Name, string? Source) ResolveSemanticMetadata(string sourceName, int clipIndex, string assetType)
+    {
+        if (!string.IsNullOrWhiteSpace(sourceName))
+        {
+            if (sourceName.Contains("idle", StringComparison.OrdinalIgnoreCase)) return ("Idle", "source-name");
+            if (sourceName.Contains("walk", StringComparison.OrdinalIgnoreCase)) return ("Walk", "source-name");
+            if (sourceName.Contains("run", StringComparison.OrdinalIgnoreCase)) return ("Run", "source-name");
+            if (sourceName.Contains("jump", StringComparison.OrdinalIgnoreCase)) return ("Jump", "source-name");
+        }
+
+        int sourceIndex = ParseSourceAnimIndex(sourceName, clipIndex);
+
+        string? mapped = assetType switch
+        {
+            "overworld" => MapOverworldSlot(sourceIndex),
+            "pokemon" => MapPokemonSlot(sourceIndex),
+            _ => sourceIndex switch { 0 => "Idle", _ => null }
+        };
+
+        return (mapped, mapped is null ? null : "slot-map-v1");
+    }
+
+    static string? MapOverworldSlot(int slot) => slot switch
+    {
+        0   => "Idle",
+        1   => "Walk",
+        2   => "Run",
+        4   => "Jump",
+        5   => "Land",
+        7   => "ShortAction1",
+        8   => "LongAction1",
+        9   => "ShortAction2",
+        17  => "MediumAction",
+        20  => "Action",
+        23  => "Action2",
+        30  => "ShortAction3",
+        31  => "ShortAction4",
+        52  => "IdleVariant",
+        54  => "ShortAction5",
+        55  => "LongAction2",
+        56  => "ShortAction6",
+        59  => "Action3",
+        61  => "Action4",
+        72  => "Action5",
+        123 => "LongAction3",
+        124 => "Action6",
+        125 => "Action7",
+        127 => "Action8",
+        128 => "Action9",
+        _ => null
+    };
+
+    static string? MapPokemonSlot(int slot) => slot switch
+    {
+        0 => "Idle",
+        _ => null
+    };
+
+    static int ParseSourceAnimIndex(string sourceName, int fallback)
+    {
+        if (string.IsNullOrWhiteSpace(sourceName)) return fallback;
+        int lastUnderscore = sourceName.LastIndexOf('_');
+        if (lastUnderscore >= 0 && lastUnderscore < sourceName.Length - 1)
+        {
+            if (int.TryParse(sourceName.AsSpan(lastUnderscore + 1), out int parsed))
+                return parsed;
+        }
+        return fallback;
     }
 }

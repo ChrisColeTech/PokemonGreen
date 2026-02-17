@@ -943,6 +943,7 @@ static ExportStats ExportSplitModelAnimations(
 {
     int writtenModels = 0;
     int clipsExported = 0;
+    AnimAssetType assetType = DetectAssetType(modelGroup);
 
     HashSet<string> usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     List<SplitModelManifestEntry> modelEntries = new List<SplitModelManifestEntry>();
@@ -973,10 +974,17 @@ static ExportStats ExportSplitModelAnimations(
             DAE.exportSkeletalClip(modelGroup, clipPath, i, clipIndex);
 
             RenderBase.OSkeletalAnimation clip = skeletalClips[clipIndex];
+            string clipId = $"clip_{clipIndex:D3}";
+            string sourceName = string.IsNullOrWhiteSpace(clip.name) ? clipId : clip.name;
+            (string? semanticName, string? semanticSource) = ResolveSemanticMetadata(sourceName, clipIndex, assetType);
             clipEntries.Add(new SplitClipManifestEntry
             {
                 Index = clipIndex,
-                Name = $"clip_{clipIndex:D3}",
+                Id = clipId,
+                Name = clipId,
+                SourceName = sourceName,
+                SemanticName = semanticName,
+                SemanticSource = semanticSource,
                 File = ToRelativePath(outputDir, clipPath),
                 FrameCount = clip.frameSize,
                 Fps = 30f
@@ -1019,6 +1027,106 @@ static string ToRelativePath(string rootDir, string fullPath)
 {
     string relative = Path.GetRelativePath(rootDir, fullPath);
     return relative.Replace('\\', '/');
+}
+
+static AnimAssetType DetectAssetType(RenderBase.OModelGroup modelGroup)
+{
+    // Check texture names for "pm" (Pokemon) or "tr"/"_fi" (overworld character)
+    foreach (RenderBase.OTexture tex in modelGroup.texture)
+    {
+        if (tex?.name == null) continue;
+        if (tex.name.StartsWith("pm", StringComparison.OrdinalIgnoreCase)) return AnimAssetType.Pokemon;
+        if (tex.name.StartsWith("tr", StringComparison.OrdinalIgnoreCase)) return AnimAssetType.Overworld;
+        if (tex.name.Contains("_fi", StringComparison.OrdinalIgnoreCase)) return AnimAssetType.Overworld;
+    }
+    // Check model names
+    foreach (RenderBase.OModel mdl in modelGroup.model)
+    {
+        if (mdl?.name == null) continue;
+        if (mdl.name.StartsWith("pm", StringComparison.OrdinalIgnoreCase)) return AnimAssetType.Pokemon;
+        if (mdl.name.StartsWith("tr", StringComparison.OrdinalIgnoreCase)) return AnimAssetType.Overworld;
+    }
+    return AnimAssetType.Unknown;
+}
+
+static (string? Name, string? Source) ResolveSemanticMetadata(string sourceName, int clipIndex, AnimAssetType assetType)
+{
+    // Try descriptive name match first (rare — Sun/Moon uses numeric names)
+    if (!string.IsNullOrWhiteSpace(sourceName))
+    {
+        if (sourceName.Contains("idle", StringComparison.OrdinalIgnoreCase)) return ("Idle", "source-name");
+        if (sourceName.Contains("walk", StringComparison.OrdinalIgnoreCase)) return ("Walk", "source-name");
+        if (sourceName.Contains("run", StringComparison.OrdinalIgnoreCase)) return ("Run", "source-name");
+        if (sourceName.Contains("jump", StringComparison.OrdinalIgnoreCase)) return ("Jump", "source-name");
+    }
+
+    // Parse original animation number from source name (anim_4 → 4, Motion_17 → 17).
+    // OhanaCli Pokemon exports name ALL clips "anim_0", so fall back to clipIndex.
+    int sourceIndex = ParseSourceAnimIndex(sourceName, clipIndex);
+
+    string? mapped = assetType switch
+    {
+        AnimAssetType.Overworld => MapOverworldSlot(sourceIndex),
+        AnimAssetType.Pokemon => MapPokemonSlot(sourceIndex),
+        _ => sourceIndex switch { 0 => "Idle", _ => null }
+    };
+
+    return (mapped, mapped is null ? null : "slot-map-v1");
+}
+
+// Sun/Moon overworld character animation slots (GARC a/2/0/0).
+// Slot numbers are sparse — not all characters have all slots.
+// See SPICA-README.md "Overworld Animation Slots" for full documentation.
+static string? MapOverworldSlot(int slot) => slot switch
+{
+    0   => "Idle",
+    1   => "Walk",
+    2   => "Run",
+    4   => "Jump",
+    5   => "Land",
+    7   => "ShortAction1",
+    8   => "LongAction1",
+    9   => "ShortAction2",
+    17  => "MediumAction",
+    20  => "Action",
+    23  => "Action2",
+    30  => "ShortAction3",
+    31  => "ShortAction4",
+    52  => "IdleVariant",
+    54  => "ShortAction5",
+    55  => "LongAction2",
+    56  => "ShortAction6",
+    59  => "Action3",
+    61  => "Action4",
+    72  => "Action5",
+    123 => "LongAction3",
+    124 => "Action6",
+    125 => "Action7",
+    127 => "Action8",
+    128 => "Action9",
+    _ => null
+};
+
+// Sun/Moon Pokemon battle animation slots (GARC a/0/9/4).
+// Sequential index — OhanaCli names all clips "anim_0", so clipIndex is used.
+// Slot purposes are tentative — update as identified.
+static string? MapPokemonSlot(int slot) => slot switch
+{
+    0 => "Idle",
+    _ => null
+};
+
+static int ParseSourceAnimIndex(string sourceName, int fallback)
+{
+    // Parses "anim_4" → 4, "Motion_17" → 17, "clip_003" → 3
+    if (string.IsNullOrWhiteSpace(sourceName)) return fallback;
+    int lastUnderscore = sourceName.LastIndexOf('_');
+    if (lastUnderscore >= 0 && lastUnderscore < sourceName.Length - 1)
+    {
+        if (int.TryParse(sourceName.AsSpan(lastUnderscore + 1), out int parsed))
+            return parsed;
+    }
+    return fallback;
 }
 
 static void DeduplicateTextures(RenderBase.OModelGroup modelGroup)
@@ -1277,6 +1385,11 @@ static string SanitizeNote(string message)
 readonly record struct ExportStats(int Models, int Textures, int ClipsFound, int ClipsExported, int ClipsSkipped);
 readonly record struct WriteTexturesResult(int Count, List<string> FileNames);
 
+// Asset types for selecting the correct animation slot map.
+// Overworld characters (GARC a/2/0/0) and Pokemon battle models (GARC a/0/9/4)
+// use completely different animation slot conventions.
+enum AnimAssetType { Overworld, Pokemon, Unknown }
+
 sealed class SplitExportManifest
 {
     public int Version { get; set; }
@@ -1295,7 +1408,11 @@ sealed class SplitModelManifestEntry
 sealed class SplitClipManifestEntry
 {
     public int Index { get; set; }
+    public required string Id { get; set; }
     public required string Name { get; set; }
+    public required string SourceName { get; set; }
+    public string? SemanticName { get; set; }
+    public string? SemanticSource { get; set; }
     public required string File { get; set; }
     public float FrameCount { get; set; }
     public float Fps { get; set; }
