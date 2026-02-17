@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PokemonGreen.Core.Data;
 using PokemonGreen.Core.Pokemon;
 
 namespace PokemonGreen.Core.Battle;
@@ -119,27 +120,71 @@ public class BattleTurnManager
 
         _showMessage($"{_ally.Nickname} gained {expGain} EXP. Points!", () =>
         {
-            // Award EXP to the source PartyPokemon if available
-            int levelsGained = 0;
-            if (_ally.Source != null)
+            if (_ally.Source == null)
             {
-                levelsGained = _ally.Source.AddEXP(expGain);
-                // Sync updated level/stats back to BattlePokemon
-                _ally.Level = _ally.Source.Level;
-                _ally.MaxHP = _ally.Source.MaxHP;
-                _ally.CurrentHP = _ally.Source.CurrentHP;
+                ShowVictory();
+                return;
             }
 
-            if (levelsGained > 0)
-                ShowLevelUp();
+            var result = _ally.Source.AddEXP(expGain);
+
+            // Sync updated level/stats back to BattlePokemon
+            _ally.Level = _ally.Source.Level;
+            _ally.MaxHP = _ally.Source.MaxHP;
+            _ally.CurrentHP = _ally.Source.CurrentHP;
+
+            if (result.LevelsGained > 0)
+                ShowLevelUp(result);
             else
                 ShowVictory();
         });
     }
 
-    private void ShowLevelUp()
+    private void ShowLevelUp(LevelUpResult result)
     {
-        _showMessage($"{_ally.Nickname} grew to Lv. {_ally.Level}!", () => ShowVictory());
+        _showMessage($"{_ally.Nickname} grew to Lv. {_ally.Level}!", () =>
+        {
+            ShowNewMoves(result, 0);
+        });
+    }
+
+    private void ShowNewMoves(LevelUpResult result, int index)
+    {
+        if (index >= result.NewMoveIds.Count)
+        {
+            // Done showing moves, check evolution
+            if (result.PendingEvolution != null)
+                ShowEvolution(result.PendingEvolution);
+            else
+                ShowVictory();
+            return;
+        }
+
+        int moveId = result.NewMoveIds[index];
+        var moveData = MoveRegistry.GetMove(moveId);
+        string moveName = moveData?.Name ?? "???";
+
+        _showMessage($"{_ally.Nickname} learned {moveName}!", () =>
+        {
+            ShowNewMoves(result, index + 1);
+        });
+    }
+
+    private void ShowEvolution(Data.EvolutionData evo)
+    {
+        string oldName = _ally.Nickname;
+        var newSpecies = SpeciesRegistry.GetSpecies(evo.ToSpeciesId);
+        string newName = newSpecies?.Name ?? "???";
+
+        // Perform the evolution
+        _ally.Source!.Evolve(evo.ToSpeciesId);
+
+        // Sync to BattlePokemon
+        _ally.Level = _ally.Source.Level;
+        _ally.MaxHP = _ally.Source.MaxHP;
+        _ally.CurrentHP = _ally.Source.CurrentHP;
+
+        _showMessage($"{oldName} evolved into {newName}!", () => ShowVictory());
     }
 
     private void ShowVictory()

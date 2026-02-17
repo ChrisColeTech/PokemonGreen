@@ -12,9 +12,10 @@ public class MoveData
     public int Power { get; }
     public int Accuracy { get; }
     public int MaxPP { get; }
+    public int Priority { get; }
 
     public MoveData(int id, string name, MoveType type, MoveCategory category,
-                    int power, int accuracy, int maxPP)
+                    int power, int accuracy, int maxPP, int priority = 0)
     {
         Id = id;
         Name = name;
@@ -23,5 +24,6 @@ public class MoveData
         Power = power;
         Accuracy = accuracy;
         MaxPP = maxPP;
+        Priority = priority;
     }
 }
