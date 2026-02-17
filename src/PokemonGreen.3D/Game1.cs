@@ -1,11 +1,16 @@
+#nullable enable
 using System;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using PokemonGreen.Core.Rendering;
 using PokemonGreen.Core.Rendering.Skeletal;
 using PokemonGreen.Core.Systems;
+using PokemonGreen.Core.UI;
+using PokemonGreen.Core.UI.Fonts;
+using PokemonGreen.Core.UI.Screens;
 
 namespace PokemonGreen._3D;
 
@@ -15,11 +20,31 @@ public class Game1 : Game
     private BasicEffect _effect;
     private BasicEffect _gridEffect;
     private SkinnedDaeModel _model;
-    private Texture2D _texture;
     private SplitModelAnimationSet? _animationSet;
     private SkeletalAnimator? _animator;
     private string _activeClip = string.Empty;
     private VertexPositionColor[] _gridVertices;
+
+    // UI overlay system
+    private SpriteBatch _spriteBatch;
+    private Texture2D _pixel;
+    private KermFont? _kermFont;
+    private KermFontRenderer? _kermFontRenderer;
+    private CharacterSelectScreen? _overlay;
+    private KeyboardState _prevKeyboard;
+
+    // Character data
+    private string _assetsRoot;
+    private string _currentCharacterFolder = "tr0001_00_fi";
+    private static readonly (string folder, string name)[] Characters =
+    {
+        ("tr0001_00_fi", "Character 1"),
+        ("tr0002_00_fi", "Character 2"),
+        ("tr0003_00_fi", "Character 3"),
+        ("tr0004_00_fi", "Character 4"),
+        ("tr0005_00_fi", "Character 5"),
+        ("tr0006_00_fi", "Character 6"),
+    };
 
     private readonly Camera3D _camera = new(nearPlane: 0.1f, farPlane: 1000f);
     private readonly ThirdPersonInputMapper _input = new();
@@ -47,6 +72,7 @@ public class Game1 : Game
         _graphics = new GraphicsDeviceManager(this);
         _graphics.PreferredBackBufferWidth = 1280;
         _graphics.PreferredBackBufferHeight = 720;
+        IsMouseVisible = true;
     }
 
     protected override void Initialize()
@@ -54,8 +80,8 @@ public class Game1 : Game
         _effect = new BasicEffect(GraphicsDevice);
         _effect.LightingEnabled = true;
         _effect.DirectionalLight0.Direction = Vector3.Normalize(new Vector3(-1, -2, -1));
-        _effect.DirectionalLight0.DiffuseColor = new Vector3(0.7f);
-        _effect.AmbientLightColor = new Vector3(0.3f);
+        _effect.DirectionalLight0.DiffuseColor = new Vector3(0.5f);
+        _effect.AmbientLightColor = new Vector3(0.6f);
 
         _gridEffect = new BasicEffect(GraphicsDevice)
         {
@@ -75,40 +101,93 @@ public class Game1 : Game
 
     protected override void LoadContent()
     {
-        var dir = "D:/Projects/PokemonGreen/src/PokemonGreen.Tests/exports-split-verify-20260217/4/0000_model";
+        _spriteBatch = new SpriteBatch(GraphicsDevice);
+        _pixel = new Texture2D(GraphicsDevice, 1, 1);
+        _pixel.SetData(new[] { Color.White });
 
-        if (Directory.Exists(dir))
+        // Resolve assets root
+        string assemblyDir = Path.GetDirectoryName(typeof(Game1).Assembly.Location) ?? "";
+        _assetsRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", "PokemonGreen.Assets", "Pokemon3D"));
+
+        // Load KermFont for UI overlays
+        string kermFontPath = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", "PokemonGreen.Assets", "Content", "Fonts", "Kerm", "Battle.kermfont"));
+        if (File.Exists(kermFontPath))
         {
-            _animationSet = SplitModelAnimationSetLoader.Load(dir, "model");
-            _animator = new SkeletalAnimator(_animationSet.Skeleton);
-
-            _model = new SkinnedDaeModel();
-            _model.Load(GraphicsDevice, _animationSet.ModelPath, _animationSet.Skeleton);
-
-            var firstClip = _animationSet.Clips.OrderBy(k => k.Key).FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(firstClip.Key))
+            var palette = new[]
             {
-                _activeClip = firstClip.Key;
-                _animator.Play(firstClip.Value, loop: true, resetTime: true);
-                _model.UpdatePose(GraphicsDevice, _animator.SkinPose);
-            }
-
-            string? texturePath = Directory.GetFiles(dir, "*.png").OrderBy(x => x).FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(texturePath) && File.Exists(texturePath))
-            {
-                using var stream = File.OpenRead(texturePath);
-                _texture = Texture2D.FromStream(GraphicsDevice, stream);
-            }
+                Color.Transparent,
+                new Color(239, 239, 239, 255),
+                new Color(80, 80, 80, 90),
+                new Color(40, 40, 40, 60),
+            };
+            _kermFont = new KermFont(GraphicsDevice, kermFontPath, palette: palette);
+            _kermFontRenderer = new KermFontRenderer(_kermFont);
         }
+
+        // Load default character
+        LoadCharacterModel(_currentCharacterFolder);
+    }
+
+    private void LoadCharacterModel(string folderName)
+    {
+        string dir = Path.Combine(_assetsRoot, "characters", "overworld", folderName);
+        if (!Directory.Exists(dir)) return;
+
+        _animationSet = SplitModelAnimationSetLoader.Load(dir);
+        _animator = new SkeletalAnimator(_animationSet.Skeleton);
+
+        _model = new SkinnedDaeModel();
+        _model.Load(GraphicsDevice, _animationSet.ModelPath, _animationSet.Skeleton);
+
+        // Start with idle animation
+        string idleClip = ResolveMovementClip(_animationSet, isMoving: false, isRunning: false);
+        if (!string.IsNullOrEmpty(idleClip) && _animationSet.Clips.TryGetValue(idleClip, out var clip))
+        {
+            _activeClip = idleClip;
+            _animator.Play(clip, loop: true, resetTime: true);
+            _model.UpdatePose(GraphicsDevice, _animator.SkinPose);
+        }
+
+        _currentCharacterFolder = folderName;
     }
 
     protected override void Update(GameTime gameTime)
     {
+        var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        var keyboard = Keyboard.GetState();
+
+        // Handle overlay
+        if (_overlay != null)
+        {
+            var uiInput = BuildInputState(keyboard);
+            _overlay.Update(dt, uiInput);
+
+            if (_overlay.IsFinished)
+            {
+                if (_overlay.SelectedFolder != null)
+                    LoadCharacterModel(_overlay.SelectedFolder);
+                _overlay = null;
+            }
+
+            _prevKeyboard = keyboard;
+            base.Update(gameTime);
+            return;
+        }
+
+        // Tab or Escape opens character select
+        if ((keyboard.IsKeyDown(Keys.Tab) && !_prevKeyboard.IsKeyDown(Keys.Tab))
+            || (keyboard.IsKeyDown(Keys.Escape) && !_prevKeyboard.IsKeyDown(Keys.Escape)))
+        {
+            _overlay = new CharacterSelectScreen(
+                Characters.Select(c => c.folder).ToArray(),
+                Characters.Select(c => c.name).ToArray());
+            _prevKeyboard = keyboard;
+            base.Update(gameTime);
+            return;
+        }
+
         _input.Update();
         var input = _input.State;
-        if (input.ExitRequested) Exit();
-
-        var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
         _playerTargetYaw += input.Turn * 2f * dt;
         _camera.Rotate(0f, input.Pitch * dt);
@@ -187,6 +266,7 @@ public class Game1 : Game
         _effect.View = _camera.ViewMatrix;
         _effect.Projection = _camera.ProjectionMatrix;
 
+        _prevKeyboard = keyboard;
         base.Update(gameTime);
     }
 
@@ -213,24 +293,46 @@ public class Game1 : Game
 
         if (_model?.VertexBuffer != null)
         {
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            GraphicsDevice.BlendState = BlendState.Opaque;
+            GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+
             _effect.World =
                 Matrix.CreateScale(PlayerModelScale)
                 * Matrix.CreateRotationY(_playerYaw)
                 * Matrix.CreateTranslation(_playerPosition + Vector3.Up * PlayerModelHeightOffset);
-            _effect.Texture = _texture;
-            _effect.TextureEnabled = _texture != null;
 
-            GraphicsDevice.SetVertexBuffer(_model.VertexBuffer);
-            GraphicsDevice.Indices = _model.IndexBuffer;
+            _model.Draw(GraphicsDevice, _effect);
+        }
 
-            foreach (var pass in _effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _model.PrimitiveCount);
-            }
+        // Draw UI overlay on top of 3D scene
+        if (_overlay != null)
+        {
+            _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+            _overlay.Draw(_spriteBatch, _pixel, _kermFontRenderer, _kermFont,
+                null!, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+            _spriteBatch.End();
         }
 
         base.Draw(gameTime);
+    }
+
+    private InputState BuildInputState(KeyboardState keyboard)
+    {
+        var mouse = Mouse.GetState();
+        return new InputState
+        {
+            Left = keyboard.IsKeyDown(Keys.Left) && !_prevKeyboard.IsKeyDown(Keys.Left),
+            Right = keyboard.IsKeyDown(Keys.Right) && !_prevKeyboard.IsKeyDown(Keys.Right),
+            Up = keyboard.IsKeyDown(Keys.Up) && !_prevKeyboard.IsKeyDown(Keys.Up),
+            Down = keyboard.IsKeyDown(Keys.Down) && !_prevKeyboard.IsKeyDown(Keys.Down),
+            Confirm = (keyboard.IsKeyDown(Keys.Enter) && !_prevKeyboard.IsKeyDown(Keys.Enter))
+                   || (keyboard.IsKeyDown(Keys.Z) && !_prevKeyboard.IsKeyDown(Keys.Z)),
+            Cancel = (keyboard.IsKeyDown(Keys.Escape) && !_prevKeyboard.IsKeyDown(Keys.Escape))
+                  || (keyboard.IsKeyDown(Keys.X) && !_prevKeyboard.IsKeyDown(Keys.X)),
+            MousePosition = mouse.Position,
+            MouseClicked = mouse.LeftButton == ButtonState.Pressed,
+        };
     }
 
     private static VertexPositionColor[] CreateGridVertices()
@@ -270,11 +372,17 @@ public class Game1 : Game
 
     private static string ResolveMovementClip(SplitModelAnimationSet set, bool isMoving, bool isRunning)
     {
-        string[] ordered = set.Clips.Keys.OrderBy(x => x, StringComparer.Ordinal).ToArray();
-        if (ordered.Length == 0) return string.Empty;
-        if (!isMoving) return ordered[0];
-        if (isRunning && ordered.Length > 2) return ordered[2];
-        if (ordered.Length > 1) return ordered[1];
-        return ordered[0];
+        // Spica format: Motion_0 = idle, Motion_1 = walk, Motion_2 = run
+        // OhanaCli format: anim_0 = idle, anim_1 = walk, anim_2 = run
+        if (!isMoving) return FindClip(set, "Motion_0", "anim_0");
+        if (isRunning) return FindClip(set, "Motion_2", "anim_2");
+        return FindClip(set, "Motion_1", "anim_1");
+    }
+
+    private static string FindClip(SplitModelAnimationSet set, string primary, string fallback)
+    {
+        if (set.Clips.ContainsKey(primary)) return primary;
+        if (set.Clips.ContainsKey(fallback)) return fallback;
+        return set.Clips.Keys.OrderBy(x => x, StringComparer.Ordinal).FirstOrDefault() ?? string.Empty;
     }
 }

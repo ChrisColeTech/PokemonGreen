@@ -10,6 +10,7 @@ public sealed class SkinnedDaeModel
     private static readonly XNamespace ColladaNs = "http://www.collada.org/2005/11/COLLADASchema";
 
     private readonly List<SkinnedMesh> _meshes = new();
+    private readonly List<MeshDrawBatch> _batches = new();
 
     public VertexBuffer? VertexBuffer { get; private set; }
     public IndexBuffer? IndexBuffer { get; private set; }
@@ -18,23 +19,70 @@ public sealed class SkinnedDaeModel
     public void Load(GraphicsDevice graphics, string daePath, SkeletonRig rig)
     {
         XDocument doc = XDocument.Load(daePath);
+        string baseDir = Path.GetDirectoryName(Path.GetFullPath(daePath)) ?? ".";
 
         Dictionary<string, GeometryData> geometries = ParseGeometries(doc);
         Dictionary<string, ControllerSkinData> skins = ParseControllers(doc, rig);
+        Dictionary<string, string> materialToImage = ParseMaterialImageMap(doc);
+        Dictionary<string, string> symbolToMaterial = ParseBindMaterialMap(doc);
 
         _meshes.Clear();
+        _batches.Clear();
+
+        string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "skinned_dae_log.txt");
+        File.WriteAllText(logPath, $"[SkinnedDae] Loading {daePath}\n");
+        File.AppendAllText(logPath, $"[SkinnedDae] Geometries: {geometries.Count}, Skins: {skins.Count}, Materials: {materialToImage.Count}, Symbols: {symbolToMaterial.Count}\n");
+
         foreach ((string geometryId, GeometryData geometry) in geometries)
         {
             if (!skins.TryGetValue(geometryId, out ControllerSkinData? skinData))
             {
+                File.AppendAllText(logPath, $"[SkinnedDae] SKIP {geometryId}: no skin controller\n");
                 continue;
             }
 
             SkinnedMesh? mesh = BuildMesh(geometry, skinData);
-            if (mesh is not null)
+            if (mesh is null)
             {
-                _meshes.Add(mesh);
+                File.AppendAllText(logPath, $"[SkinnedDae] SKIP {geometryId}: BuildMesh returned null ({geometry.Indices.Length} indices)\n");
+                continue;
             }
+
+            // Resolve texture for this mesh
+            string? texturePath = null;
+            if (!string.IsNullOrWhiteSpace(geometry.MaterialSymbol))
+            {
+                string matSymbol = geometry.MaterialSymbol;
+                bool gotMat = symbolToMaterial.TryGetValue(matSymbol, out string? matId);
+                bool gotImage = gotMat && materialToImage.TryGetValue(matId!, out string? imageFile);
+                string? imgFile = gotImage ? materialToImage[matId!] : null;
+                if (gotImage)
+                    texturePath = ResolveTexturePath(baseDir, imgFile!);
+
+                File.AppendAllText(logPath, $"[SkinnedDae] {geometryId}: verts={mesh.Vertices.Length} tris={mesh.Indices.Length / 3} mat='{matSymbol}' matId={matId ?? "NULL"} img={imgFile ?? "NULL"} path={texturePath ?? "NULL"} exists={texturePath != null && File.Exists(texturePath)}\n");
+            }
+            else
+            {
+                File.AppendAllText(logPath, $"[SkinnedDae] {geometryId}: no material symbol\n");
+            }
+
+            Texture2D? texture = null;
+            if (!string.IsNullOrWhiteSpace(texturePath) && File.Exists(texturePath))
+            {
+                using var stream = File.OpenRead(texturePath);
+                texture = Texture2D.FromStream(graphics, stream);
+
+                // 3DS models use alpha test (cutout), not alpha blend.
+                // Force all pixels fully opaque — UV mapping handles visibility.
+                Color[] pixels = new Color[texture.Width * texture.Height];
+                texture.GetData(pixels);
+                for (int p = 0; p < pixels.Length; p++)
+                    pixels[p].A = 255;
+                texture.SetData(pixels);
+            }
+
+            mesh.Texture = texture;
+            _meshes.Add(mesh);
         }
 
         RebuildBuffers(graphics, rig.InverseBindTransforms);
@@ -45,15 +93,41 @@ public sealed class SkinnedDaeModel
         RebuildBuffers(graphics, skinPose);
     }
 
+    public void Draw(GraphicsDevice graphics, BasicEffect effect)
+    {
+        if (VertexBuffer is null || IndexBuffer is null || _batches.Count == 0) return;
+
+        graphics.SetVertexBuffer(VertexBuffer);
+        graphics.Indices = IndexBuffer;
+
+        foreach (MeshDrawBatch batch in _batches)
+        {
+            effect.Texture = batch.Texture;
+            effect.TextureEnabled = batch.Texture is not null;
+
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphics.DrawIndexedPrimitives(
+                    PrimitiveType.TriangleList,
+                    batch.BaseVertex,
+                    batch.StartIndex,
+                    batch.PrimitiveCount);
+            }
+        }
+    }
+
     private void RebuildBuffers(GraphicsDevice graphics, Matrix[] skinMatrices)
     {
         List<VertexPositionNormalTexture> allVertices = new();
         List<int> allIndices = new();
+        _batches.Clear();
 
         for (int meshIndex = 0; meshIndex < _meshes.Count; meshIndex++)
         {
             SkinnedMesh mesh = _meshes[meshIndex];
             int baseVertex = allVertices.Count;
+            int startIndex = allIndices.Count;
 
             for (int i = 0; i < mesh.Vertices.Length; i++)
             {
@@ -69,6 +143,18 @@ public sealed class SkinnedDaeModel
             for (int i = 0; i < mesh.Indices.Length; i++)
             {
                 allIndices.Add(baseVertex + mesh.Indices[i]);
+            }
+
+            int primitiveCount = mesh.Indices.Length / 3;
+            if (primitiveCount > 0)
+            {
+                _batches.Add(new MeshDrawBatch
+                {
+                    BaseVertex = 0,
+                    StartIndex = startIndex,
+                    PrimitiveCount = primitiveCount,
+                    Texture = mesh.Texture
+                });
             }
         }
 
@@ -89,7 +175,7 @@ public sealed class SkinnedDaeModel
 
     private static Matrix ComputeSkinMatrix(SkinnedVertex v, Matrix[] skinMatrices)
     {
-        Matrix result = Matrix.Identity;
+        Matrix result = default; // zero matrix — accumulate weighted bones
         float total = 0f;
 
         for (int i = 0; i < 4; i++)
@@ -110,6 +196,99 @@ public sealed class SkinnedDaeModel
         }
 
         return result;
+    }
+
+    private static Dictionary<string, string> ParseMaterialImageMap(XDocument doc)
+    {
+        // Map: material id → image file path
+        // Chain: material → effect → surface → image → init_from
+
+        // image id → file path
+        Dictionary<string, string> images = new(StringComparer.Ordinal);
+        foreach (XElement image in doc.Descendants(ColladaNs + "image"))
+        {
+            string? imageId = image.Attribute("id")?.Value;
+            string? initFrom = image.Element(ColladaNs + "init_from")?.Value;
+            if (!string.IsNullOrWhiteSpace(imageId) && !string.IsNullOrWhiteSpace(initFrom))
+            {
+                images[imageId] = initFrom;
+            }
+        }
+
+        // effect id → image id (follow surface → sampler → texture chain)
+        Dictionary<string, string> effectToImage = new(StringComparer.Ordinal);
+        foreach (XElement effect in doc.Descendants(ColladaNs + "effect"))
+        {
+            string? effectId = effect.Attribute("id")?.Value;
+            if (string.IsNullOrWhiteSpace(effectId)) continue;
+
+            // Find first surface init_from (points to image id)
+            XElement? surface = effect.Descendants(ColladaNs + "surface").FirstOrDefault();
+            string? surfaceInitFrom = surface?.Element(ColladaNs + "init_from")?.Value;
+            if (!string.IsNullOrWhiteSpace(surfaceInitFrom))
+            {
+                effectToImage[effectId] = surfaceInitFrom;
+            }
+        }
+
+        // material id → effect id
+        Dictionary<string, string> result = new(StringComparer.Ordinal);
+        foreach (XElement material in doc.Descendants(ColladaNs + "material"))
+        {
+            string? matId = material.Attribute("id")?.Value;
+            XElement? instanceEffect = material.Element(ColladaNs + "instance_effect");
+            string? effectUrl = instanceEffect?.Attribute("url")?.Value?.TrimStart('#');
+            if (string.IsNullOrWhiteSpace(matId) || string.IsNullOrWhiteSpace(effectUrl)) continue;
+
+            if (effectToImage.TryGetValue(effectUrl, out string? imageId) &&
+                images.TryGetValue(imageId, out string? filePath))
+            {
+                result[matId] = filePath;
+            }
+        }
+
+        return result;
+    }
+
+    private static Dictionary<string, string> ParseBindMaterialMap(XDocument doc)
+    {
+        // Map: material symbol (from <triangles material="...">) → material id
+        Dictionary<string, string> result = new(StringComparer.Ordinal);
+
+        foreach (XElement instanceMaterial in doc.Descendants(ColladaNs + "instance_material"))
+        {
+            string? symbol = instanceMaterial.Attribute("symbol")?.Value;
+            string? target = instanceMaterial.Attribute("target")?.Value?.TrimStart('#');
+            if (!string.IsNullOrWhiteSpace(symbol) && !string.IsNullOrWhiteSpace(target))
+            {
+                result[symbol] = target;
+            }
+        }
+
+        return result;
+    }
+
+    private static string? ResolveTexturePath(string baseDir, string imageFile)
+    {
+        // Image paths might be relative (./file.png) or just filename
+        string cleaned = imageFile.TrimStart('.', '/');
+        string direct = Path.Combine(baseDir, cleaned);
+        if (File.Exists(direct)) return direct;
+
+        // Check textures/ subdirectory
+        string inTextures = Path.Combine(baseDir, "textures", cleaned);
+        if (File.Exists(inTextures)) return inTextures;
+
+        // Try with .png suffix appended
+        if (!cleaned.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+        {
+            string withPng = direct + ".png";
+            if (File.Exists(withPng)) return withPng;
+            withPng = inTextures + ".png";
+            if (File.Exists(withPng)) return withPng;
+        }
+
+        return null;
     }
 
     private static Dictionary<string, GeometryData> ParseGeometries(XDocument doc)
@@ -141,6 +320,8 @@ public sealed class SkinnedDaeModel
             XElement? triangles = mesh.Element(ColladaNs + "triangles");
             if (triangles is null) continue;
 
+            string materialSymbol = triangles.Attribute("material")?.Value ?? string.Empty;
+
             List<InputSpec> inputs = triangles.Elements(ColladaNs + "input")
                 .Select(x => new InputSpec
                 {
@@ -165,7 +346,8 @@ public sealed class SkinnedDaeModel
                 Uvs = uvs,
                 Inputs = inputs,
                 Indices = indexData,
-                Stride = stride
+                Stride = stride,
+                MaterialSymbol = materialSymbol
             };
         }
 
@@ -369,6 +551,7 @@ public sealed class SkinnedDaeModel
         public required List<InputSpec> Inputs { get; init; }
         public required int[] Indices { get; init; }
         public required int Stride { get; init; }
+        public string MaterialSymbol { get; init; } = string.Empty;
     }
 
     private sealed class ControllerSkinData
@@ -380,6 +563,15 @@ public sealed class SkinnedDaeModel
     {
         public required SkinnedVertex[] Vertices { get; init; }
         public required int[] Indices { get; init; }
+        public Texture2D? Texture { get; set; }
+    }
+
+    private sealed class MeshDrawBatch
+    {
+        public required int BaseVertex { get; init; }
+        public required int StartIndex { get; init; }
+        public required int PrimitiveCount { get; init; }
+        public Texture2D? Texture { get; init; }
     }
 
     private sealed class SkinnedVertex

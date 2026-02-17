@@ -230,11 +230,13 @@ public static class ColladaSkeletalLoader
 
     private static Matrix ParseMatrix(float[] values, int offset)
     {
-        return new Matrix(
+        // COLLADA stores row-major column-vector matrices; XNA uses row-vector convention.
+        // Transpose so translation lands in M41/M42/M43 instead of M14/M24/M34.
+        return Matrix.Transpose(new Matrix(
             values[offset], values[offset + 1], values[offset + 2], values[offset + 3],
             values[offset + 4], values[offset + 5], values[offset + 6], values[offset + 7],
             values[offset + 8], values[offset + 9], values[offset + 10], values[offset + 11],
-            values[offset + 12], values[offset + 13], values[offset + 14], values[offset + 15]);
+            values[offset + 12], values[offset + 13], values[offset + 14], values[offset + 15]));
     }
 
     private static float[] ParseFloats(string? value)
