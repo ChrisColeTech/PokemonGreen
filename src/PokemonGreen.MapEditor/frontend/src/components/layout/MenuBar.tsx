@@ -17,21 +17,11 @@ interface MenuDefinition {
   items: MenuItem[]
 }
 
-function downloadFile(filename: string, content: string) {
-  const blob = new Blob([content], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
+const CS_FILTERS = [{ name: 'C# Files', extensions: ['cs'] }]
 
 export function MenuBar() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const csMapInputRef = useRef<HTMLInputElement>(null)
-  const csRegistryInputRef = useRef<HTMLInputElement>(null)
 
   const mapName = useEditorStore(s => s.mapName)
   const importCSharpMap = useEditorStore(s => s.importCSharpMap)
@@ -50,51 +40,32 @@ export function MenuBar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  function handleImportCSharp() {
-    csMapInputRef.current?.click()
+  async function handleImportCSharp() {
+    const result = await window.electronAPI.openFile(CS_FILTERS)
+    if (result) importCSharpMap(result.content)
   }
 
-  function handleCSharpMapChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      importCSharpMap(ev.target?.result as string)
-    }
-    reader.readAsText(file)
-    e.target.value = ''
-  }
-
-  function handleExportCSharp() {
+  async function handleExportCSharp() {
     const code = exportCSharp()
     const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
     const className = toPascalCase(mapId) || 'UntitledMap'
-    downloadFile(`${className}.g.cs`, code)
+    await window.electronAPI.saveFile(`${className}.g.cs`, CS_FILTERS, code)
   }
 
-  function handleExportRegistryCSharp() {
-    const code = exportRegistryCSharp()
-    downloadFile('TileRegistry.cs', code)
-  }
-
-  function handleLoadCSharpRegistry() {
-    csRegistryInputRef.current?.click()
-  }
-
-  function handleCSharpRegistryChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const registry = parseCSharpRegistry(ev.target?.result as string)
-        setRegistry(registry)
-      } catch (err) {
-        alert(`Invalid C# registry: ${err instanceof Error ? err.message : 'Unknown error'}`)
-      }
+  async function handleLoadCSharpRegistry() {
+    const result = await window.electronAPI.openFile(CS_FILTERS)
+    if (!result) return
+    try {
+      const registry = parseCSharpRegistry(result.content)
+      setRegistry(registry)
+    } catch (err) {
+      alert(`Invalid C# registry: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
-    reader.readAsText(file)
-    e.target.value = ''
+  }
+
+  async function handleExportRegistryCSharp() {
+    const code = exportRegistryCSharp()
+    await window.electronAPI.saveFile('TileRegistry.cs', CS_FILTERS, code)
   }
 
   const menus: MenuDefinition[] = [
@@ -104,10 +75,10 @@ export function MenuBar() {
         { label: 'New Map', shortcut: 'Ctrl+N', onClick: clear },
         { separator: true, label: '' },
         { label: 'Import Map (C#)...', onClick: handleImportCSharp },
-        { label: 'Export Map (C#)', onClick: handleExportCSharp },
+        { label: 'Export Map (C#)...', onClick: handleExportCSharp },
         { separator: true, label: '' },
         { label: 'Load Registry (C#)...', onClick: handleLoadCSharpRegistry },
-        { label: 'Export Registry (C#)', onClick: handleExportRegistryCSharp },
+        { label: 'Export Registry (C#)...', onClick: handleExportRegistryCSharp },
       ],
     },
     {
@@ -132,7 +103,7 @@ export function MenuBar() {
     <div
       ref={menuRef}
       className="h-[30px] bg-[#1e1e1e] border-b border-[#2d2d2d] flex items-center select-none"
-      style={{ fontSize: '13px' }}
+      style={{ fontSize: '13px', flexShrink: 0 }}
     >
       {menus.map((menu, i) => (
         <div key={menu.label} className="relative">
@@ -174,21 +145,6 @@ export function MenuBar() {
       ))}
 
       <div className="flex-1" />
-
-      <input
-        ref={csMapInputRef}
-        type="file"
-        accept=".cs"
-        className="hidden"
-        onChange={handleCSharpMapChange}
-      />
-      <input
-        ref={csRegistryInputRef}
-        type="file"
-        accept=".cs"
-        className="hidden"
-        onChange={handleCSharpRegistryChange}
-      />
     </div>
   )
 }
