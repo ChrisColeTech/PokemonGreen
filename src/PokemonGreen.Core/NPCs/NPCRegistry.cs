@@ -28,7 +28,9 @@ public static class NPCRegistry
                         data.FrameWidth,
                         data.FrameHeight,
                         data.FramesPerDirection,
-                        data.Animations
+                        data.Animations,
+                        data.BattleModel,
+                        data.OverworldModel
                     );
                     _npcs[data.Id] = definition;
                 }

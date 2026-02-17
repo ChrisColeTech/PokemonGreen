@@ -37,9 +37,55 @@ Options:
 
 - `-o <dir>` — output directory (required)
 - `-n <count>` — limit processing to first N GARC entries
-- `--anim <index>` — animation index to export (default: 0, use -1 for none)
+- `--anim <index>` — animation index to bake into the model DAE (default: 0, use -1 for none)
+- `--split-model-anims` — split export: static model DAE + separate clip DAEs + textures + manifest (incompatible with `--anim`)
 
-The converter decompresses LZ11 entries, identifies formats, exports models as DAE with skeletal animation baked in, and writes textures as PNG. Skeleton data is tracked across entries so animations from later entries can reference earlier models.
+#### Default mode (individual export)
+
+Each GARC entry is exported independently. Models get a single animation baked in (controlled by `--anim`). This is the original behavior, useful for quick inspection or when you only need one animation per model.
+
+#### Split mode (`--split-model-anims`)
+
+Groups GARC entries by Pokemon (model entry starts a group, subsequent texture/animation entries attach to it) and exports each group as:
+
+```
+<output>/
+  pm0001_00/
+    model.dae              Static skeletal mesh (no baked animation, animIdx=-1)
+    model_lowpoly.dae      Low-poly variant (if present)
+    textures/
+      pm0001_00_BodyA1.png
+      pm0001_00_Eye1.png
+      ...
+    clips/
+      clip_000.dae         Animation clip 0 (skeleton + matrix keyframes, no mesh)
+      clip_001.dae         Animation clip 1
+      ...
+    manifest.json          Registry of all models, textures, and clips
+```
+
+Pokemon IDs are extracted from material texture names (pattern: `pm0001_00`). The manifest contains metadata for each clip (index, name, file path, frame count, fps).
+
+**Clip DAE format**: Each clip DAE contains only the skeleton hierarchy and `<library_animations>` with matrix channels. Channel targets use the format `{BoneName}_bone_id/transform` with 4x4 matrix output (16 floats per keyframe, COLLADA row-major). No mesh geometry is included.
+
+**Manifest schema**:
+
+```json
+{
+  "version": 1,
+  "pokemonId": "pm0001_00",
+  "models": [
+    { "file": "model.dae", "meshCount": 5, "boneCount": 51 }
+  ],
+  "textures": [
+    { "name": "pm0001_00_BodyA1", "file": "textures/pm0001_00_BodyA1.png", "width": 128, "height": 128 }
+  ],
+  "clips": [
+    { "index": 0, "name": "Motion_0", "file": "clips/clip_000.dae", "frameCount": 42, "fps": 30 },
+    { "index": 1, "name": "Motion_1", "file": "clips/clip_001.dae", "frameCount": 44, "fps": 30 }
+  ]
+}
+```
 
 ## Supported formats
 
@@ -87,15 +133,25 @@ SpicaCli/
 dotnet run --project src/PokemonGreen.Spica/SpicaCli/SpicaCli.csproj -- \
   info "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4"
 
-# Convert the first 20 entries to DAE + PNG
+# Default: export entries individually with baked animation
 dotnet run --project src/PokemonGreen.Spica/SpicaCli/SpicaCli.csproj -- \
   convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o exports -n 20
 
-# Convert a single file with a specific animation
+# Split mode: per-Pokemon folders with static model + separate clip DAEs
+dotnet run --project src/PokemonGreen.Spica/SpicaCli/SpicaCli.csproj -- \
+  convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o exports-split --split-model-anims -n 20
+
+# Convert a single file with a specific animation baked in
 dotnet run --project src/PokemonGreen.Spica/SpicaCli/SpicaCli.csproj -- \
   convert "model.bch" -o exports --anim 2
+
+# Convert a single file with no animation (static mesh only)
+dotnet run --project src/PokemonGreen.Spica/SpicaCli/SpicaCli.csproj -- \
+  convert "model.bch" -o exports --anim -1
 ```
 
 ## Output
 
-Models are written as `.dae` files with the selected animation baked in. Textures are exported as `.png` alongside the model files. For GARC containers, each entry gets its own subdirectory.
+**Default mode**: Models are written as `.dae` files with the selected animation baked in. Textures are exported as `.png` alongside the model files.
+
+**Split mode**: Per-Pokemon directories with `model.dae` (static), `clips/clip_NNN.dae` (animation-only), `textures/*.png`, and `manifest.json`. This is the format consumed by the game engine's `PokemonModelLoader`, which reads the manifest and lazy-loads clips on demand.

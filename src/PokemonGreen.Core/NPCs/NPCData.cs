@@ -28,4 +28,10 @@ public class NPCData
     
     [JsonPropertyName("animations")]
     public string[] Animations { get; set; } = System.Array.Empty<string>();
+
+    [JsonPropertyName("battleModel")]
+    public string? BattleModel { get; set; }
+
+    [JsonPropertyName("overworldModel")]
+    public string? OverworldModel { get; set; }
 }

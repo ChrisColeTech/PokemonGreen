@@ -115,7 +115,7 @@ public class Game1 : Game
         _graphics.ApplyChanges();
 
         // Resolve Pokemon3D/ assets from the Assets project source directory
-        PokemonModelLoader.InitializeDevPaths();
+        ModelLoader.InitializeDevPaths();
 
         SpeciesRegistry.Initialize();
         WorldRegistry.Initialize();
@@ -915,7 +915,7 @@ public class Game1 : Game
     {
         var species = SpeciesRegistry.GetSpecies(speciesId);
         if (species?.ModelFolder == null) return null;
-        var model = PokemonModelLoader.Load(species.ModelFolder, GraphicsDevice);
+        var model = ModelLoader.Load(species.ModelFolder, GraphicsDevice);
         if (model != null)
         {
             var min = model.BoundsMin;

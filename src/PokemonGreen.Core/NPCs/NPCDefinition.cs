@@ -8,5 +8,7 @@ public record NPCDefinition(
     int FrameWidth,
     int FrameHeight,
     int FramesPerDirection,
-    string[] Animations
+    string[] Animations,
+    string? BattleModelFolder,
+    string? OverworldModelFolder
 );
