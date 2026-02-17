@@ -70,6 +70,16 @@ ipcMain.handle('save-file', async (_event, defaultName, filters, content) => {
   return result.filePath.replace(/\\/g, '/')
 })
 
+// Read a file by absolute path
+ipcMain.handle('read-file', async (_event, filePath) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    return content
+  } catch {
+    return null
+  }
+})
+
 // Persistent settings
 ipcMain.handle('store-get', (_event, key) => {
   return store.get(key)

@@ -460,8 +460,7 @@ public class Game1 : Game
         // Check coin collection
         if (_cubeSystem.CheckCollection(_playerPosition, _persistence.StoryFlags))
         {
-            _messageBox.Show("You found a coin!");
-            _messageBox.OnFinished = null; // just dismiss
+            _cubeSystem.NotifyCoinCollected();
             _persistence.Save(_playerPosition, _currentCharacterFolder, _cubeSystem.CubeCount);
         }
 
@@ -598,6 +597,7 @@ public class Game1 : Game
 
         // Coin counter (upper-left)
         _cubeSystem.DrawCounter(UIFontScale);
+        _cubeSystem.DrawPickupFeedback(VirtualWidth, UIFontScale);
 
         // Character select overlay
         if (_overlay != null)

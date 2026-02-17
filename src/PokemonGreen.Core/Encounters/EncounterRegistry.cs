@@ -1,49 +1,27 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
+using PokemonGreen.Core.Maps;
 
 namespace PokemonGreen.Core.Encounters;
 
 /// <summary>
-/// Central service for loading, caching, and querying encounter data.
-/// All encounter definitions are data-driven via JSON files.
+/// Central service for querying encounter data from map definitions.
+/// Encounter tables are baked into generated MapDefinition subclasses.
 /// </summary>
 public static class EncounterRegistry
 {
-    private static readonly Dictionary<string, MapEncounterData> _cache = new();
-    private static MapEncounterData? _currentMapEncounters;
+    private static EncounterTable[] _currentEncounterGroups = [];
+    private static float _currentProgressMultiplier;
     private static readonly Random _random = new();
 
     /// <summary>
-    /// Load encounter data for a map. Called when the map becomes current.
+    /// Load encounter data from a map definition. Called when the map becomes current.
     /// </summary>
-    public static void LoadForMap(string mapId)
+    public static void LoadForMap(MapDefinition mapDef)
     {
-        if (_cache.TryGetValue(mapId, out var cached))
-        {
-            _currentMapEncounters = cached;
-            return;
-        }
-
-        string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Content", "Data", "Encounters", $"{mapId}.json");
-        if (!File.Exists(path))
-        {
-            _currentMapEncounters = null;
-            return;
-        }
-
-        var data = JsonSerializer.Deserialize<MapEncounterData>(File.ReadAllText(path));
-        if (data != null)
-        {
-            _cache[mapId] = data;
-            _currentMapEncounters = data;
-        }
-        else
-        {
-            _currentMapEncounters = null;
-        }
+        _currentEncounterGroups = mapDef.EncounterGroups.ToArray();
+        _currentProgressMultiplier = mapDef.ProgressMultiplier;
     }
 
     /// <summary>
@@ -51,10 +29,7 @@ public static class EncounterRegistry
     /// </summary>
     public static EncounterTable? GetTable(string encounterType)
     {
-        if (_currentMapEncounters == null)
-            return null;
-
-        foreach (var group in _currentMapEncounters.EncounterGroups)
+        foreach (var group in _currentEncounterGroups)
         {
             if (group.EncounterType == encounterType)
                 return group;
@@ -93,19 +68,19 @@ public static class EncounterRegistry
             entry.MaxLevel,
             progress.HighestPartyLevel,
             progress.BadgeCount,
-            _currentMapEncounters?.ProgressMultiplier ?? 0f);
+            _currentProgressMultiplier);
 
         // 5. Build result
         return new WildEncounterResult(entry.SpeciesId, level, encounterType);
     }
 
     /// <summary>
-    /// Clear the cache (e.g., when starting a new game).
+    /// Clear loaded encounter data (e.g., when starting a new game).
     /// </summary>
     public static void ClearCache()
     {
-        _cache.Clear();
-        _currentMapEncounters = null;
+        _currentEncounterGroups = [];
+        _currentProgressMultiplier = 0f;
     }
 
     private static EncounterEntry[] FilterByProgress(EncounterEntry[] entries, PlayerProgress progress)

@@ -1,5 +1,7 @@
 #nullable enable
 
+using PokemonGreen.Core.Encounters;
+
 namespace PokemonGreen.Core.Maps;
 
 /// <summary>
@@ -14,6 +16,8 @@ public abstract class MapDefinition
     private readonly HashSet<int> _walkableTileIds;
     private readonly WarpConnection[] _warps;
     private readonly MapConnection[] _connections;
+    private readonly EncounterTable[] _encounterGroups;
+    private readonly float _progressMultiplier;
 
     /// <summary>Identifier of the world this map belongs to (e.g., "small_world").</summary>
     public string WorldId { get; }
@@ -45,6 +49,12 @@ public abstract class MapDefinition
     /// <summary>Edge connections to adjacent maps.</summary>
     public IReadOnlyList<MapConnection> Connections => _connections;
 
+    /// <summary>Encounter tables defined for this map.</summary>
+    public IReadOnlyList<EncounterTable> EncounterGroups => _encounterGroups;
+
+    /// <summary>Progress-based level scaling multiplier for encounters on this map.</summary>
+    public float ProgressMultiplier => _progressMultiplier;
+
     /// <summary>
     /// Creates a MapDefinition from flat row-major tile arrays.
     /// Automatically registers this map in MapCatalog.
@@ -55,7 +65,9 @@ public abstract class MapDefinition
         int[] baseTileData, int?[] overlayTileData, int[] walkableTileIds,
         WarpConnection[]? warps = null,
         MapConnection[]? connections = null,
-        int worldX = 0, int worldY = 0)
+        int worldX = 0, int worldY = 0,
+        EncounterTable[]? encounterGroups = null,
+        float progressMultiplier = 0f)
     {
         WorldId = worldId;
         Id = id;
@@ -70,6 +82,8 @@ public abstract class MapDefinition
         _walkableTileIds = new HashSet<int>(walkableTileIds);
         _warps = warps ?? [];
         _connections = connections ?? [];
+        _encounterGroups = encounterGroups ?? [];
+        _progressMultiplier = progressMultiplier;
 
         MapCatalog.TryRegister(this);
     }

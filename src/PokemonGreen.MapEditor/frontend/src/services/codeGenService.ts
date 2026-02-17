@@ -1,9 +1,10 @@
 import type { EditorTileRegistry, EditorTileDefinition } from '../types/editor'
+import type { MapEncounterData, SpeciesInfo } from '../types/encounters'
 
 // --- C# class template (from MapClass.tpl) ---
 
 const MAP_CLASS_TEMPLATE = `#nullable enable
-{{TILE_LEGEND}}
+{{USING_ENCOUNTERS}}{{TILE_LEGEND}}
 namespace PokemonGreen.Core.Maps;
 
 public sealed class {{CLASS_NAME}} : MapDefinition
@@ -22,7 +23,7 @@ public sealed class {{CLASS_NAME}} : MapDefinition
     [
 {{WALKABLE_TILE_IDS}}
     ];
-
+{{ENCOUNTER_DATA}}
     public static {{CLASS_NAME}} Instance { get; } = new();
 
     private {{CLASS_NAME}}()
@@ -187,6 +188,42 @@ function buildTileLegend(
   return '\n' + lines.join('\n')
 }
 
+// --- Encounter data formatter ---
+
+function formatEncounterData(encounterData: MapEncounterData | undefined, species: SpeciesInfo[]): string {
+  if (!encounterData || encounterData.encounterGroups.length === 0) return ''
+
+  const speciesByName = new Map<string, SpeciesInfo>()
+  for (const s of species) speciesByName.set(s.name.toLowerCase(), s)
+
+  const lines: string[] = ['']
+  lines.push(`    public const float ProgressMultiplier = ${encounterData.progressMultiplier.toFixed(1)}f;`)
+  lines.push('')
+  lines.push('    private static readonly EncounterTable[] EncounterGroups =')
+  lines.push('    [')
+
+  for (const group of encounterData.encounterGroups) {
+    if (group.entries.length === 0) continue
+    lines.push(`        new() { EncounterType = "${escapeString(group.encounterType)}", BaseEncounterRate = ${group.baseEncounterRate}, Entries =`)
+    lines.push('        [')
+    for (const entry of group.entries) {
+      const sp = speciesByName.get(entry.speciesId.toLowerCase())
+      const id = sp?.id ?? 0
+      let args = `SpeciesId = ${id}, MinLevel = ${entry.minLevel}, MaxLevel = ${entry.maxLevel}, Weight = ${entry.weight}`
+      if (entry.requiredBadges) args += `, RequiredBadges = ${entry.requiredBadges}`
+      if (entry.requiredFlags && entry.requiredFlags.length > 0) {
+        const flags = entry.requiredFlags.map(f => `"${escapeString(f)}"`).join(', ')
+        args += `, RequiredFlags = new[] { ${flags} }`
+      }
+      lines.push(`            new() { ${args} }, // ${entry.speciesId}`)
+    }
+    lines.push('        ] },')
+  }
+
+  lines.push('    ];')
+  return lines.join('\n')
+}
+
 // --- Main code generator ---
 
 export function generateMapClass(
@@ -200,6 +237,8 @@ export function generateMapClass(
   worldX: number = 0,
   worldY: number = 0,
   baseTile: number = FALLBACK_BASE_TILE_ID,
+  encounterData?: MapEncounterData,
+  species: SpeciesInfo[] = [],
 ): string {
   const mapId = mapName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
   const className = toPascalCase(mapId) || 'UntitledMap'
@@ -216,14 +255,22 @@ export function generateMapClass(
     .filter(id => tilesById.get(id)?.walkable === true)
     .sort((a, b) => a - b)
 
-  // Extra constructor args: warps, connections, worldX, worldY (only when non-zero)
-  const extraCtorArgs = (worldX !== 0 || worldY !== 0)
-    ? `, null, null, ${worldX}, ${worldY}`
-    : ''
-
   const tileLegend = buildTileLegend(mapData, mapWidth, mapHeight, tilesById, baseTile)
+  const hasEncounters = encounterData && encounterData.encounterGroups.some(g => g.entries.length > 0)
+
+  // Extra constructor args: warps, connections, worldX, worldY, encounterGroups, progressMultiplier
+  const hasWorldPos = worldX !== 0 || worldY !== 0
+
+  let extraCtorArgs = ''
+  if (hasWorldPos || hasEncounters) {
+    extraCtorArgs += `, null, null, ${worldX}, ${worldY}`
+  }
+  if (hasEncounters) {
+    extraCtorArgs += `, EncounterGroups, ProgressMultiplier`
+  }
 
   return MAP_CLASS_TEMPLATE
+    .replace('{{USING_ENCOUNTERS}}', hasEncounters ? 'using PokemonGreen.Core.Encounters;\n' : '')
     .replace('{{TILE_LEGEND}}', tileLegend)
     .replace(/\{\{CLASS_NAME\}\}/g, className)
     .replace('{{WORLD_ID}}', escapeString(worldId))
@@ -235,6 +282,7 @@ export function generateMapClass(
     .replace('{{BASE_TILE_DATA}}', formatBaseTiles(mapData, mapWidth, mapHeight, tilesById, baseTile))
     .replace('{{OVERLAY_TILE_DATA}}', formatOverlayTiles(mapData, mapWidth, mapHeight, tilesById))
     .replace('{{WALKABLE_TILE_IDS}}', formatWalkableIds(walkableIds))
+    .replace('{{ENCOUNTER_DATA}}', formatEncounterData(encounterData, species))
     .replace('{{EXTRA_CTOR_ARGS}}', extraCtorArgs)
 }
 

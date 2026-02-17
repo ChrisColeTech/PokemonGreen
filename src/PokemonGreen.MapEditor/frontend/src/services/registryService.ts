@@ -125,6 +125,9 @@ export function parseCSharpRegistry(source: string): EditorTileRegistry {
 
 // --- C# generated map (.g.cs) parser ---
 
+import type { MapEncounterData, EncounterGroup, EncounterEntry } from '../types/encounters'
+import { defaultMapEncounterData } from '../types/encounters'
+
 export interface ParsedCSharpMap {
   worldId: string
   mapId: string
@@ -135,6 +138,7 @@ export interface ParsedCSharpMap {
   worldX: number
   worldY: number
   mapData: number[][]
+  encounterData: MapEncounterData
 }
 
 export function parseCSharpMap(source: string): ParsedCSharpMap {
@@ -209,7 +213,71 @@ export function parseCSharpMap(source: string): ParsedCSharpMap {
     worldY = parseInt(worldPosMatch[2])
   }
 
-  return { worldId, mapId, displayName, width, height, tileSize, worldX, worldY, mapData }
+  // Parse encounter data
+  const encounterData = parseEncounterData(source)
+
+  return { worldId, mapId, displayName, width, height, tileSize, worldX, worldY, mapData, encounterData }
+}
+
+function parseEncounterData(source: string): MapEncounterData {
+  const data = defaultMapEncounterData()
+
+  // Parse ProgressMultiplier
+  const progMatch = /ProgressMultiplier\s*=\s*([\d.]+)f?/.exec(source)
+  if (progMatch) {
+    data.progressMultiplier = parseFloat(progMatch[1])
+  }
+
+  // Parse EncounterGroups array (object initializer format)
+  const groupsMatch = /EncounterGroups\s*=\s*\[([\s\S]*?)\];\s*$/m.exec(source)
+  if (!groupsMatch) return data
+
+  // Match each new() { EncounterType = "...", BaseEncounterRate = N, Entries = [...] }
+  const groupPattern = /EncounterType\s*=\s*"([^"]+)"\s*,\s*BaseEncounterRate\s*=\s*(\d+)\s*,\s*Entries\s*=\s*\[([\s\S]*?)\]\s*\}/g
+  let groupMatch: RegExpExecArray | null
+  while ((groupMatch = groupPattern.exec(groupsMatch[1])) !== null) {
+    const group: EncounterGroup = {
+      encounterType: groupMatch[1],
+      baseEncounterRate: parseInt(groupMatch[2]),
+      entries: [],
+    }
+
+    // Match entries: new() { SpeciesId = N, MinLevel = N, ... }, // SpeciesName
+    const entryPattern = /new\(\)\s*\{([^}]+)\}[^,]*?(?:,\s*\/\/\s*(\S+))?/g
+    let entryMatch: RegExpExecArray | null
+    while ((entryMatch = entryPattern.exec(groupMatch[3])) !== null) {
+      const props = entryMatch[1]
+      const commentName = entryMatch[2] || ''
+
+      const speciesIdMatch = /SpeciesId\s*=\s*(\d+)/.exec(props)
+      const minMatch = /MinLevel\s*=\s*(\d+)/.exec(props)
+      const maxMatch = /MaxLevel\s*=\s*(\d+)/.exec(props)
+      const weightMatch = /Weight\s*=\s*(\d+)/.exec(props)
+
+      if (!speciesIdMatch || !minMatch || !maxMatch || !weightMatch) continue
+
+      const entry: EncounterEntry = {
+        speciesId: commentName || `#${speciesIdMatch[1]}`,
+        minLevel: parseInt(minMatch[1]),
+        maxLevel: parseInt(maxMatch[1]),
+        weight: parseInt(weightMatch[1]),
+      }
+
+      const badgeMatch = /RequiredBadges\s*=\s*(\d+)/.exec(props)
+      if (badgeMatch && parseInt(badgeMatch[1]) > 0) entry.requiredBadges = parseInt(badgeMatch[1])
+
+      const flagsMatch = /RequiredFlags\s*=\s*new\[\]\s*\{([^}]*)\}/.exec(props)
+      if (flagsMatch) {
+        entry.requiredFlags = flagsMatch[1].match(/"([^"]+)"/g)?.map(s => s.slice(1, -1)) ?? []
+      }
+
+      group.entries.push(entry)
+    }
+
+    data.encounterGroups.push(group)
+  }
+
+  return data
 }
 
 // --- Derived lookups ---

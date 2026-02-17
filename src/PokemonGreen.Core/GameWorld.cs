@@ -76,7 +76,7 @@ public class GameWorld
         _prevTileY = Player.TileY;
         _encounterCheckPending = false;
 
-        EncounterRegistry.LoadForMap(mapDef.Id);
+        EncounterRegistry.LoadForMap(mapDef);
 
         SnapCamera(px, py);
     }

@@ -58,6 +58,20 @@ public class CubeCollectibleSystem
     private readonly short[] _cubeIndices;
     private float _cubeRotation;
     private float _cubeBobTimer;
+    private float _pickupHudTimer;
+    private int _pickupBurstCount;
+    private float _levelUpHudTimer;
+    private int _coinLevel = 1;
+    private int _coinsIntoLevel;
+
+    private const float PickupHudDuration = 1.0f;
+    private const float LevelUpHudDuration = 1.1f;
+    private const int BaseCoinsPerLevel = 12;
+    private const int CoinsPerLevelStep = 4;
+    private const int MaxCoinsPerLevel = 60;
+    private const string CoinLevelPrefix = "coin_stat_level_";
+    private const string CoinProgressPrefix = "coin_stat_progress_";
+    private const string CoinTotalPrefix = "coin_stat_total_";
 
     /// <summary>Number of cubes collected so far.</summary>
     public int CubeCount => _cubeCount;
@@ -94,7 +108,7 @@ public class CubeCollectibleSystem
     {
         var generated = new List<Vector3>();
         var generatedFlags = new List<string>();
-        const int targetTotalCoins = 84;
+        const int targetTotalCoins = 42;
 
         var maps = MapCatalog.GetAllMaps()
             .Where(m => string.Equals(m.WorldId, worldId, StringComparison.OrdinalIgnoreCase))
@@ -208,7 +222,7 @@ public class CubeCollectibleSystem
     public void LoadFromFlags(System.Collections.Generic.HashSet<string> storyFlags)
     {
         _cubeCollected = new bool[_spawnPositions.Length];
-        _cubeCount = 0;
+        int collectedThisCycle = 0;
 
         for (int i = 0; i < _spawnPositions.Length; i++)
         {
@@ -222,9 +236,29 @@ public class CubeCollectibleSystem
             if (collected)
             {
                 _cubeCollected[i] = true;
-                _cubeCount++;
+                collectedThisCycle++;
             }
         }
+
+        _cubeCount = ReadStatFlag(storyFlags, CoinTotalPrefix, -1);
+        if (_cubeCount < 0)
+            _cubeCount = collectedThisCycle;
+
+        _coinLevel = ReadStatFlag(storyFlags, CoinLevelPrefix, 1);
+        _coinsIntoLevel = ReadStatFlag(storyFlags, CoinProgressPrefix, -1);
+        if (_coinsIntoLevel < 0)
+        {
+            DeriveLevelAndProgressFromTotalCoins(_cubeCount, out _coinLevel, out _coinsIntoLevel);
+            PersistProgressStats(storyFlags);
+        }
+        else
+        {
+            _coinLevel = Math.Max(1, _coinLevel);
+            int needed = GetCoinsRequiredForNextLevel(_coinLevel);
+            _coinsIntoLevel = Math.Clamp(_coinsIntoLevel, 0, needed - 1);
+        }
+
+        PersistProgressStats(storyFlags);
     }
 
     /// <summary>Advance cube animation timers.</summary>
@@ -232,6 +266,29 @@ public class CubeCollectibleSystem
     {
         _cubeRotation += dt * 1.5f;
         _cubeBobTimer += dt;
+
+        if (_pickupHudTimer > 0f)
+        {
+            _pickupHudTimer -= dt;
+            if (_pickupHudTimer <= 0f)
+            {
+                _pickupHudTimer = 0f;
+                _pickupBurstCount = 0;
+            }
+        }
+
+        if (_levelUpHudTimer > 0f)
+        {
+            _levelUpHudTimer -= dt;
+            if (_levelUpHudTimer < 0f)
+                _levelUpHudTimer = 0f;
+        }
+    }
+
+    public void NotifyCoinCollected()
+    {
+        _pickupBurstCount = Math.Clamp(_pickupBurstCount + 1, 1, 99);
+        _pickupHudTimer = PickupHudDuration;
     }
 
     /// <summary>
@@ -255,6 +312,9 @@ public class CubeCollectibleSystem
                 _cubeCollected[i] = true;
                 _cubeCount++;
                 storyFlags.Add(_spawnFlagKeys[i]);
+                bool leveledUp = AdvanceProgress(storyFlags);
+                if (!leveledUp && AreAllCoinsCollected())
+                    RespawnCoinsForNextLevel(storyFlags);
                 return true;
             }
         }
@@ -275,6 +335,11 @@ public class CubeCollectibleSystem
             _cubeCollected[i] = false;
         }
         _cubeCount = 0;
+        _coinLevel = 1;
+        _coinsIntoLevel = 0;
+        _pickupHudTimer = 0f;
+        _pickupBurstCount = 0;
+        _levelUpHudTimer = 0f;
     }
 
     /// <summary>Draw the 3D rotating cubes in the world (call outside SpriteBatch).</summary>
@@ -315,27 +380,48 @@ public class CubeCollectibleSystem
     /// <summary>Draw the cube counter HUD element (call within SpriteBatch.Begin/End).</summary>
     public void DrawCounter(int fontScale = 2)
     {
-        string text = $"Coins: {_cubeCount}";
+        string text = $"Coins: {_cubeCount}   Lv {_coinLevel}";
+        int coinsNeeded = GetCoinsRequiredForNextLevel(_coinLevel);
+        string progressText = $"{_coinsIntoLevel}/{coinsNeeded}";
 
         // Background panel
         int px = 12, py = 12, padX = 12, padY = 8;
         int textW = text.Length * 6 * fontScale; // approximate
         int textH = 7 * fontScale;
+        int progressW = progressText.Length * 6 * fontScale;
+        int barW = 168;
+        int barH = 10;
 
         if (_kermFont != null)
         {
             var size = _kermFont.MeasureString(text);
             textW = size.X * fontScale;
             textH = size.Y * fontScale;
+
+            var progressSize = _kermFont.MeasureString(progressText);
+            progressW = progressSize.X * fontScale;
         }
 
-        var panelRect = new Rectangle(px, py, textW + padX * 2, textH + padY * 2);
+        int panelW = Math.Max(textW + padX * 2, barW + progressW + padX * 3 + 4);
+        int panelH = textH + padY * 2 + barH + 10;
+        var panelRect = new Rectangle(px, py, panelW, panelH);
         UIStyle.DrawBattlePanel(_spriteBatch, _pixel, panelRect);
 
         if (_kermFontRenderer != null)
         {
             _kermFontRenderer.DrawString(_spriteBatch, text,
                 new Vector2(px + padX, py + padY), fontScale, Color.White);
+
+            int barX = px + padX;
+            int barY = py + padY + textH + 4;
+            _spriteBatch.Draw(_pixel, new Rectangle(barX, barY, barW, barH), new Color(48, 58, 72));
+
+            float ratio = _coinsIntoLevel / (float)coinsNeeded;
+            int fillW = Math.Clamp((int)MathF.Round((barW - 2) * ratio), 0, barW - 2);
+            _spriteBatch.Draw(_pixel, new Rectangle(barX + 1, barY + 1, fillW, barH - 2), new Color(88, 220, 120));
+
+            _kermFontRenderer.DrawString(_spriteBatch, progressText,
+                new Vector2(barX + barW + 8, barY - 1), fontScale, new Color(180, 220, 190));
         }
     }
 
@@ -429,6 +515,146 @@ public class CubeCollectibleSystem
             for (int i = 0; i < text.Length; i++)
                 hash = (hash ^ text[i]) * 16777619;
             return hash;
+        }
+    }
+
+    private bool AdvanceProgress(HashSet<string> storyFlags)
+    {
+        _coinsIntoLevel++;
+        int coinsNeeded = GetCoinsRequiredForNextLevel(_coinLevel);
+        if (_coinsIntoLevel >= coinsNeeded)
+        {
+            _coinsIntoLevel = 0;
+            _coinLevel++;
+            _levelUpHudTimer = LevelUpHudDuration;
+            RespawnCoinsForNextLevel(storyFlags);
+            PersistProgressStats(storyFlags);
+            return true;
+        }
+
+        PersistProgressStats(storyFlags);
+        return false;
+    }
+
+    private void RespawnCoinsForNextLevel(HashSet<string> storyFlags)
+    {
+        for (int i = 0; i < _spawnPositions.Length; i++)
+            _cubeCollected[i] = false;
+
+        foreach (var key in _spawnFlagKeys)
+            storyFlags.Remove(key);
+
+        var legacyKeys = storyFlags.Where(k => k.StartsWith("cube_", StringComparison.Ordinal)).ToList();
+        foreach (var key in legacyKeys)
+            storyFlags.Remove(key);
+    }
+
+    private static int GetCoinsRequiredForNextLevel(int level)
+    {
+        int required = BaseCoinsPerLevel + (Math.Max(1, level) - 1) * CoinsPerLevelStep;
+        return Math.Clamp(required, BaseCoinsPerLevel, MaxCoinsPerLevel);
+    }
+
+    private static void DeriveLevelAndProgressFromTotalCoins(int totalCoins, out int level, out int coinsIntoLevel)
+    {
+        level = 1;
+        int remaining = Math.Max(0, totalCoins);
+
+        for (int safety = 0; safety < 1000; safety++)
+        {
+            int needed = GetCoinsRequiredForNextLevel(level);
+            if (remaining < needed)
+            {
+                coinsIntoLevel = remaining;
+                return;
+            }
+
+            remaining -= needed;
+            level++;
+        }
+
+        coinsIntoLevel = 0;
+    }
+
+    private void PersistProgressStats(HashSet<string> storyFlags)
+    {
+        ReplaceStatFlag(storyFlags, CoinLevelPrefix, _coinLevel);
+        ReplaceStatFlag(storyFlags, CoinProgressPrefix, _coinsIntoLevel);
+        ReplaceStatFlag(storyFlags, CoinTotalPrefix, _cubeCount);
+    }
+
+    private bool AreAllCoinsCollected()
+    {
+        for (int i = 0; i < _cubeCollected.Length; i++)
+        {
+            if (!_cubeCollected[i])
+                return false;
+        }
+
+        return _cubeCollected.Length > 0;
+    }
+
+    private static int ReadStatFlag(HashSet<string> storyFlags, string prefix, int defaultValue)
+    {
+        foreach (var flag in storyFlags)
+        {
+            if (!flag.StartsWith(prefix, StringComparison.Ordinal))
+                continue;
+
+            string raw = flag.Substring(prefix.Length);
+            if (int.TryParse(raw, out int value))
+                return value;
+        }
+
+        return defaultValue;
+    }
+
+    private static void ReplaceStatFlag(HashSet<string> storyFlags, string prefix, int value)
+    {
+        var existing = storyFlags.Where(f => f.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+        foreach (var f in existing)
+            storyFlags.Remove(f);
+        storyFlags.Add($"{prefix}{value}");
+    }
+
+    public void DrawPickupFeedback(int virtualWidth, int fontScale = 2)
+    {
+        if (_pickupHudTimer <= 0f || _pickupBurstCount <= 0)
+            return;
+
+        float fadeOut = MathHelper.Clamp(_pickupHudTimer / PickupHudDuration, 0f, 1f);
+        int panelW = 132;
+        int panelH = 34;
+        int x = virtualWidth - panelW - 12;
+        int y = 12;
+
+        var panel = new Rectangle(x, y, panelW, panelH);
+        UIStyle.DrawBattlePanel(_spriteBatch, _pixel, panel);
+
+        var coinOuter = new Rectangle(x + 10, y + 8, 16, 16);
+        var coinInner = new Rectangle(x + 13, y + 11, 10, 10);
+        _spriteBatch.Draw(_pixel, coinOuter, new Color(210, 150, 30) * fadeOut);
+        _spriteBatch.Draw(_pixel, coinInner, new Color(255, 220, 90) * fadeOut);
+
+        if (_kermFontRenderer != null)
+        {
+            _kermFontRenderer.DrawString(
+                _spriteBatch,
+                $"+{_pickupBurstCount}",
+                new Vector2(x + 34, y + 9),
+                fontScale,
+                new Color(90, 230, 120) * fadeOut);
+
+            if (_levelUpHudTimer > 0f)
+            {
+                float levelFade = MathHelper.Clamp(_levelUpHudTimer / LevelUpHudDuration, 0f, 1f);
+                _kermFontRenderer.DrawString(
+                    _spriteBatch,
+                    $"LEVEL UP!  Lv {_coinLevel}",
+                    new Vector2(x - 156, y + 9),
+                    fontScale,
+                    new Color(255, 230, 120) * levelFade);
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { EditorTileRegistry, EditorTileDefinition } from '../types/editor'
+import type { MapEncounterData, EncounterEntry, SpeciesInfo } from '../types/encounters'
+import { defaultMapEncounterData, defaultEncounterGroup, defaultEncounterEntry } from '../types/encounters'
 import {
   loadDefaultRegistry,
   buildTilesById,
@@ -61,6 +63,7 @@ interface PersistedState {
   worldY: number
   selectedTile: number
   baseTile: number
+  encounterData?: MapEncounterData
 }
 
 function loadPersisted(): PersistedState | null {
@@ -98,6 +101,11 @@ interface EditorState {
   worldX: number
   worldY: number
 
+  // Encounters
+  encounterData: MapEncounterData
+  species: SpeciesInfo[]
+  speciesLoaded: boolean
+
   // Selection
   selectedTile: number
   selectedBuilding: number | null
@@ -119,6 +127,17 @@ interface EditorState {
   setMapData: (data: number[][], width: number, height: number) => void
   setCellSize: (size: number) => void
   setMapName: (name: string) => void
+
+  // Actions — encounters
+  loadSpecies: () => Promise<void>
+  setProgressMultiplier: (value: number) => void
+  addEncounterGroup: (encounterType?: string) => void
+  removeEncounterGroup: (index: number) => void
+  updateEncounterGroupType: (index: number, encounterType: string) => void
+  updateEncounterGroupRate: (index: number, rate: number) => void
+  addEncounterEntry: (groupIndex: number) => void
+  removeEncounterEntry: (groupIndex: number, entryIndex: number) => void
+  updateEncounterEntry: (groupIndex: number, entryIndex: number, partial: Partial<EncounterEntry>) => void
 
   // Actions — IO
   importJson: (json: string) => void
@@ -150,6 +169,10 @@ export const useEditorStore = create<EditorState>()(
     worldId: saved?.worldId ?? 'default',
     worldX: saved?.worldX ?? 0,
     worldY: saved?.worldY ?? 0,
+
+    encounterData: saved?.encounterData ?? defaultMapEncounterData(),
+    species: [],
+    speciesLoaded: false,
 
     selectedTile: saved?.selectedTile ?? fallbackTileId(initRegistry),
     selectedBuilding: null,
@@ -215,6 +238,7 @@ export const useEditorStore = create<EditorState>()(
       state.selectedTile = fallbackTileId(state.registry as EditorTileRegistry)
       state.selectedBuilding = null
       state.buildingRotation = 0
+      state.encounterData = defaultMapEncounterData() as MapEncounterData
     }),
 
     rotateMap: (direction) => set(state => {
@@ -264,6 +288,60 @@ export const useEditorStore = create<EditorState>()(
 
     setWorldY: (y) => set(state => {
       state.worldY = y
+    }),
+
+    loadSpecies: async () => {
+      if (get().speciesLoaded) return
+      try {
+        const result = await window.electronAPI.openFile([{ name: 'JSON Files', extensions: ['json'] }])
+        if (!result) return
+        const data = JSON.parse(result.content) as Array<{ id: number; name: string; type1: string; type2?: string | null }>
+        const species: SpeciesInfo[] = data.map(s => ({
+          id: s.id,
+          name: s.name,
+          type1: s.type1,
+          type2: s.type2 ?? null,
+        }))
+        set(state => {
+          state.species = species as SpeciesInfo[]
+          state.speciesLoaded = true
+        })
+      } catch {
+        alert('Failed to load species data')
+      }
+    },
+
+    setProgressMultiplier: (value) => set(state => {
+      state.encounterData.progressMultiplier = value
+    }),
+
+    addEncounterGroup: (encounterType) => set(state => {
+      state.encounterData.encounterGroups.push(defaultEncounterGroup(encounterType) as ReturnType<typeof defaultEncounterGroup>)
+    }),
+
+    removeEncounterGroup: (index) => set(state => {
+      state.encounterData.encounterGroups.splice(index, 1)
+    }),
+
+    updateEncounterGroupType: (index, encounterType) => set(state => {
+      state.encounterData.encounterGroups[index].encounterType = encounterType
+    }),
+
+    updateEncounterGroupRate: (index, rate) => set(state => {
+      state.encounterData.encounterGroups[index].baseEncounterRate = Math.max(0, Math.min(255, rate))
+    }),
+
+    addEncounterEntry: (groupIndex) => set(state => {
+      state.encounterData.encounterGroups[groupIndex].entries.push(defaultEncounterEntry() as ReturnType<typeof defaultEncounterEntry>)
+    }),
+
+    removeEncounterEntry: (groupIndex, entryIndex) => set(state => {
+      state.encounterData.encounterGroups[groupIndex].entries.splice(entryIndex, 1)
+    }),
+
+    updateEncounterEntry: (groupIndex, entryIndex, partial) => set(state => {
+      const entry = state.encounterData.encounterGroups[groupIndex].entries[entryIndex]
+      Object.assign(entry, partial)
     }),
 
     importJson: (json) => {
@@ -329,6 +407,7 @@ export const useEditorStore = create<EditorState>()(
           state.worldX = parsed.worldX
           state.worldY = parsed.worldY
           state.baseTile = detectBaseTile(parsed.mapData)
+          state.encounterData = parsed.encounterData as MapEncounterData
         })
       } catch (err) {
         alert(`Invalid C# map: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -336,8 +415,8 @@ export const useEditorStore = create<EditorState>()(
     },
 
     exportCSharp: () => {
-      const { mapData, mapWidth, mapHeight, cellSize, mapName, worldId, worldX, worldY, tilesById, baseTile } = get()
-      return generateMapClass(mapData, mapWidth, mapHeight, mapName, cellSize, tilesById as Map<number, EditorTileDefinition>, worldId, worldX, worldY, baseTile)
+      const { mapData, mapWidth, mapHeight, cellSize, mapName, worldId, worldX, worldY, tilesById, baseTile, encounterData, species } = get()
+      return generateMapClass(mapData, mapWidth, mapHeight, mapName, cellSize, tilesById as Map<number, EditorTileDefinition>, worldId, worldX, worldY, baseTile, encounterData, species)
     },
 
     exportRegistryCSharp: () => {
@@ -435,5 +514,6 @@ useEditorStore.subscribe((state) => {
     worldY: state.worldY,
     selectedTile: state.selectedTile,
     baseTile: state.baseTile,
+    encounterData: state.encounterData,
   })
 })
