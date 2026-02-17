@@ -38,6 +38,200 @@ namespace SPICA.Formats.Generic.COLLADA
 
         public DAE() { }
 
+        /// <summary>
+        /// Clip-only export: skeleton hierarchy + animation channels, no mesh/geometry/textures.
+        /// Use for separate animation clip files that pair with a model exported via DAE(Scene, MdlIndex, -1).
+        /// </summary>
+        public DAE(H3D Scene, int MdlIndex, int AnimIndex, bool clipOnly)
+        {
+            if (!clipOnly) { /* fall through to normal constructor logic via the other overload */ return; }
+
+            H3DModel Mdl = Scene.Models[MdlIndex];
+
+            // Visual scene with skeleton only (no mesh nodes)
+            library_visual_scenes = new List<DAEVisualScene>();
+
+            DAEVisualScene VN = new DAEVisualScene();
+            VN.name = $"{Mdl.Name}_{MdlIndex:D2}_clip";
+            VN.id   = $"{VN.name}_id";
+
+            // Build skeleton hierarchy — same bone IDs as model export
+            if ((Mdl.Skeleton?.Count ?? 0) > 0)
+            {
+                Queue<Tuple<H3DBone, DAENode>> ChildBones = new Queue<Tuple<H3DBone, DAENode>>();
+
+                DAENode RootNode = new DAENode();
+                ChildBones.Enqueue(Tuple.Create(Mdl.Skeleton[0], RootNode));
+
+                while (ChildBones.Count > 0)
+                {
+                    Tuple<H3DBone, DAENode> Bone_Node = ChildBones.Dequeue();
+                    H3DBone Bone = Bone_Node.Item1;
+
+                    if (string.IsNullOrEmpty(Bone.Name))
+                    {
+                        foreach (H3DBone B in Mdl.Skeleton)
+                        {
+                            if (B.ParentIndex == -1) continue;
+                            if (Mdl.Skeleton[B.ParentIndex] == Bone)
+                                ChildBones.Enqueue(Tuple.Create(B, Bone_Node.Item2));
+                        }
+                        continue;
+                    }
+
+                    Bone_Node.Item2.id   = $"{Bone.Name}_bone_id";
+                    Bone_Node.Item2.name = Bone.Name;
+                    Bone_Node.Item2.sid  = Bone.Name;
+                    Bone_Node.Item2.type = DAENodeType.JOINT;
+
+                    // Always use matrix format — matches animation channel targets
+                    Bone_Node.Item2.SetBoneMatrix(Bone.Transform);
+
+                    foreach (H3DBone B in Mdl.Skeleton)
+                    {
+                        if (B.ParentIndex == -1) continue;
+                        if (Mdl.Skeleton[B.ParentIndex] == Bone)
+                        {
+                            DAENode Node = new DAENode();
+                            ChildBones.Enqueue(Tuple.Create(B, Node));
+                            if (Bone_Node.Item2.Nodes == null) Bone_Node.Item2.Nodes = new List<DAENode>();
+                            Bone_Node.Item2.Nodes.Add(Node);
+                        }
+                    }
+                }
+
+                VN.node.Add(RootNode);
+            }
+
+            library_visual_scenes.Add(VN);
+            scene.instance_visual_scene.url = $"#{VN.id}";
+
+            // Animation channels (reuses the same code path as baked export)
+            if (AnimIndex >= 0 && AnimIndex < Scene.SkeletalAnimations.Count)
+            {
+                library_animations = new List<DAEAnimation>();
+
+                H3DAnimation SklAnim = Scene.SkeletalAnimations[AnimIndex];
+                H3DDict<H3DBone> Skeleton = Mdl.Skeleton;
+                int FramesCount = (int)SklAnim.FramesCount + 1;
+
+                Dictionary<string, int> BoneNameToIdx = new Dictionary<string, int>();
+                for (int i = 0; i < Skeleton.Count; i++)
+                {
+                    if (!string.IsNullOrEmpty(Skeleton[i].Name))
+                        BoneNameToIdx[Skeleton[i].Name] = i;
+                }
+
+                foreach (H3DAnimationElement Elem in SklAnim.Elements)
+                {
+                    if (string.IsNullOrEmpty(Elem.Name)) continue;
+                    if (Elem.PrimitiveType != H3DPrimitiveType.Transform &&
+                        Elem.PrimitiveType != H3DPrimitiveType.QuatTransform) continue;
+                    if (!BoneNameToIdx.ContainsKey(Elem.Name)) continue;
+
+                    int BoneIdx = BoneNameToIdx[Elem.Name];
+                    H3DBone SklBone = Skeleton[BoneIdx];
+
+                    H3DBone Parent = null;
+                    H3DAnimationElement PElem = null;
+
+                    if (SklBone.ParentIndex != -1)
+                    {
+                        Parent = Skeleton[SklBone.ParentIndex];
+                        PElem = SklAnim.Elements.FirstOrDefault(x => x.Name == Parent.Name);
+                    }
+
+                    string[] AnimTimes = new string[FramesCount];
+                    string[] AnimPoses = new string[FramesCount];
+                    string[] AnimLerps = new string[FramesCount];
+
+                    for (int Frame = 0; Frame < FramesCount; Frame++)
+                    {
+                        Vector3 T = SklBone.Translation;
+                        Vector3 S = SklBone.Scale;
+                        Matrix4x4 R;
+
+                        if (Elem.Content is H3DAnimTransform Transform)
+                        {
+                            if (Transform.TranslationX.Exists) T.X = Transform.TranslationX.GetFrameValue(Frame);
+                            if (Transform.TranslationY.Exists) T.Y = Transform.TranslationY.GetFrameValue(Frame);
+                            if (Transform.TranslationZ.Exists) T.Z = Transform.TranslationZ.GetFrameValue(Frame);
+
+                            float Rx = Transform.RotationX.Exists ? Transform.RotationX.GetFrameValue(Frame) : SklBone.Rotation.X;
+                            float Ry = Transform.RotationY.Exists ? Transform.RotationY.GetFrameValue(Frame) : SklBone.Rotation.Y;
+                            float Rz = Transform.RotationZ.Exists ? Transform.RotationZ.GetFrameValue(Frame) : SklBone.Rotation.Z;
+
+                            R = Matrix4x4.CreateRotationX(Rx) *
+                                Matrix4x4.CreateRotationY(Ry) *
+                                Matrix4x4.CreateRotationZ(Rz);
+
+                            if (Transform.ScaleX.Exists) S.X = Transform.ScaleX.GetFrameValue(Frame);
+                            if (Transform.ScaleY.Exists) S.Y = Transform.ScaleY.GetFrameValue(Frame);
+                            if (Transform.ScaleZ.Exists) S.Z = Transform.ScaleZ.GetFrameValue(Frame);
+                        }
+                        else if (Elem.Content is H3DAnimQuatTransform QT)
+                        {
+                            if (QT.HasTranslation) T = QT.GetTranslationValue(Frame);
+                            if (QT.HasRotation)    R = Matrix4x4.CreateFromQuaternion(QT.GetRotationValue(Frame));
+                            else                   R = Matrix4x4.CreateRotationX(SklBone.Rotation.X) *
+                                                       Matrix4x4.CreateRotationY(SklBone.Rotation.Y) *
+                                                       Matrix4x4.CreateRotationZ(SklBone.Rotation.Z);
+                            if (QT.HasScale)       S = QT.GetScaleValue(Frame);
+                        }
+                        else
+                        {
+                            R = Matrix4x4.CreateRotationX(SklBone.Rotation.X) *
+                                Matrix4x4.CreateRotationY(SklBone.Rotation.Y) *
+                                Matrix4x4.CreateRotationZ(SklBone.Rotation.Z);
+                        }
+
+                        if (Parent != null && (SklBone.Flags & H3DBoneFlags.IsSegmentScaleCompensate) != 0)
+                        {
+                            Vector3 PS = Parent.Scale;
+                            if (PElem != null)
+                            {
+                                if (PElem.Content is H3DAnimTransform PT)
+                                {
+                                    if (PT.ScaleX.Exists) PS.X = PT.ScaleX.GetFrameValue(Frame);
+                                    if (PT.ScaleY.Exists) PS.Y = PT.ScaleY.GetFrameValue(Frame);
+                                    if (PT.ScaleZ.Exists) PS.Z = PT.ScaleZ.GetFrameValue(Frame);
+                                }
+                                else if (PElem.Content is H3DAnimQuatTransform PQT && PQT.HasScale)
+                                {
+                                    PS = PQT.GetScaleValue(Frame);
+                                }
+                            }
+                            S /= PS;
+                        }
+
+                        Matrix4x4 LocalMtx = Matrix4x4.CreateScale(S) * R * Matrix4x4.CreateTranslation(T);
+
+                        AnimTimes[Frame] = (Frame / 30f).ToString(CultureInfo.InvariantCulture);
+                        AnimPoses[Frame] = DAEUtils.MatrixStr(new Matrix3x4(LocalMtx));
+                        AnimLerps[Frame] = "LINEAR";
+                    }
+
+                    DAEAnimation Anim = new DAEAnimation();
+                    Anim.name = $"{SklAnim.Name}_{SklBone.Name}_transform";
+                    Anim.id   = $"{Anim.name}_id";
+
+                    Anim.src.Add(new DAESource($"{Anim.name}_frame",  1, AnimTimes, "TIME",          "float"));
+                    Anim.src.Add(new DAESource($"{Anim.name}_interp", 1, AnimLerps, "INTERPOLATION", "Name"));
+                    Anim.src.Add(new DAESource($"{Anim.name}_pose",  16, AnimPoses, "TRANSFORM",     "float4x4"));
+
+                    Anim.sampler.AddInput("INPUT",         $"#{Anim.src[0].id}");
+                    Anim.sampler.AddInput("INTERPOLATION", $"#{Anim.src[1].id}");
+                    Anim.sampler.AddInput("OUTPUT",        $"#{Anim.src[2].id}");
+
+                    Anim.sampler.id     = $"{Anim.name}_samp_id";
+                    Anim.channel.source = $"#{Anim.sampler.id}";
+                    Anim.channel.target = $"{SklBone.Name}_bone_id/transform";
+
+                    library_animations.Add(Anim);
+                }
+            }
+        }
+
         public DAE(H3D Scene, int MdlIndex, int AnimIndex = -1)
         {
             if (MdlIndex != -1)
@@ -123,11 +317,28 @@ namespace SPICA.Formats.Generic.COLLADA
 
                         H3DBone Bone = Bone_Node.Item1;
 
+                        // Skip bones with empty names — they produce invalid IDs like "_bone_id"
+                        if (string.IsNullOrEmpty(Bone.Name))
+                        {
+                            // Still enqueue children so they aren't lost from the hierarchy
+                            foreach (H3DBone B in Mdl.Skeleton)
+                            {
+                                if (B.ParentIndex == -1) continue;
+                                if (Mdl.Skeleton[B.ParentIndex] == Bone)
+                                {
+                                    ChildBones.Enqueue(Tuple.Create(B, Bone_Node.Item2));
+                                }
+                            }
+                            continue;
+                        }
+
                         Bone_Node.Item2.id   = $"{Bone.Name}_bone_id";
                         Bone_Node.Item2.name = Bone.Name;
                         Bone_Node.Item2.sid  = Bone.Name;
                         Bone_Node.Item2.type = DAENodeType.JOINT;
-                        Bone_Node.Item2.SetBoneEuler(Bone.Translation, Bone.Rotation, Bone.Scale);
+
+                        // Always use matrix format for consistent bone SIDs across model + clip files
+                        Bone_Node.Item2.SetBoneMatrix(Bone.Transform);
 
                         foreach (H3DBone B in Mdl.Skeleton)
                         {
@@ -172,13 +383,27 @@ namespace SPICA.Formats.Generic.COLLADA
                     for (int tc = 0; tc < TexCoords.Length; tc++)
                         TexMtx[tc] = TexCoords[tc].GetTransform();
 
+                    System.Diagnostics.Debug.WriteLine($"  Mesh {MeshIndex} mtl={MtlTex.Name} tex0={MtlTex.Texture0Name} " +
+                        $"Scale=({TexCoords[0].Scale.X},{TexCoords[0].Scale.Y}) " +
+                        $"Rot={TexCoords[0].Rotation} Trans=({TexCoords[0].Translation.X},{TexCoords[0].Translation.Y}) " +
+                        $"Type={TexCoords[0].TransformType} Map={TexCoords[0].MappingType} " +
+                        $"Mtx=[{TexMtx[0].M11:F4} {TexMtx[0].M12:F4} | {TexMtx[0].M21:F4} {TexMtx[0].M22:F4} | {TexMtx[0].M41:F4} {TexMtx[0].M42:F4}]");
+                    Console.Error.WriteLine($"  Mesh {MeshIndex} mtl={MtlTex.Name} tex0={MtlTex.Texture0Name} " +
+                        $"Scale=({TexCoords[0].Scale.X},{TexCoords[0].Scale.Y}) " +
+                        $"Rot={TexCoords[0].Rotation} Trans=({TexCoords[0].Translation.X},{TexCoords[0].Translation.Y}) " +
+                        $"Type={TexCoords[0].TransformType} Map={TexCoords[0].MappingType} " +
+                        $"Mtx=[{TexMtx[0].M11:F4} {TexMtx[0].M12:F4} | {TexMtx[0].M21:F4} {TexMtx[0].M22:F4} | {TexMtx[0].M41:F4} {TexMtx[0].M42:F4}]");
+
+                    PICATextureWrap WrapU = MtlTex.TextureMappers[0].WrapU;
+                    PICATextureWrap WrapV = MtlTex.TextureMappers[0].WrapV;
+
                     for (int vi = 0; vi < Vertices.Length; vi++)
                     {
-                        Vertices[vi].TexCoord0 = TransformUV(Vertices[vi].TexCoord0, TexMtx[0]);
+                        Vertices[vi].TexCoord0 = TransformUV(Vertices[vi].TexCoord0, TexMtx[0], WrapU, WrapV);
                         if (TexCoords.Length > 1)
-                            Vertices[vi].TexCoord1 = TransformUV(Vertices[vi].TexCoord1, TexMtx[1]);
+                            Vertices[vi].TexCoord1 = TransformUV(Vertices[vi].TexCoord1, TexMtx[1], WrapU, WrapV);
                         if (TexCoords.Length > 2)
-                            Vertices[vi].TexCoord2 = TransformUV(Vertices[vi].TexCoord2, TexMtx[2]);
+                            Vertices[vi].TexCoord2 = TransformUV(Vertices[vi].TexCoord2, TexMtx[2], WrapU, WrapV);
                     }
 
                     string MtlName = $"Mdl_{MdlIndex}_Mtl_{Mdl.Materials[Mesh.MaterialIndex].Name}";
@@ -469,190 +694,175 @@ namespace SPICA.Formats.Generic.COLLADA
             {
                 library_animations = new List<DAEAnimation>();
 
-                string[] AnimElemNames = { "translate", "rotateX", "rotateY", "rotateZ", "scale" };
-
                 H3DAnimation SklAnim = Scene.SkeletalAnimations[AnimIndex];
 
                 H3DDict<H3DBone> Skeleton = Scene.Models[0].Skeleton;
 
                 int FramesCount = (int)SklAnim.FramesCount + 1;
 
+                // Build bone name → index map
+                Dictionary<string, int> BoneNameToIdx = new Dictionary<string, int>();
+                for (int i = 0; i < Skeleton.Count; i++)
+                {
+                    if (!string.IsNullOrEmpty(Skeleton[i].Name))
+                        BoneNameToIdx[Skeleton[i].Name] = i;
+                }
+
+                // Only export channels for bones that have actual animation data
                 foreach (H3DAnimationElement Elem in SklAnim.Elements)
                 {
+                    if (string.IsNullOrEmpty(Elem.Name)) continue;
+
                     if (Elem.PrimitiveType != H3DPrimitiveType.Transform &&
-                        Elem.PrimitiveType != H3DPrimitiveType.QuatTransform) continue;
+                        Elem.PrimitiveType != H3DPrimitiveType.QuatTransform)
+                        continue;
 
-                    H3DBone SklBone = Skeleton.FirstOrDefault(x => x.Name == Elem.Name);
+                    if (!BoneNameToIdx.ContainsKey(Elem.Name)) continue;
+
+                    int BoneIdx = BoneNameToIdx[Elem.Name];
+                    H3DBone SklBone = Skeleton[BoneIdx];
+
                     H3DBone Parent = null;
+                    H3DAnimationElement PElem = null;
 
-                    if (SklBone != null && SklBone.ParentIndex != -1)
+                    if (SklBone.ParentIndex != -1)
                     {
                         Parent = Skeleton[SklBone.ParentIndex];
+                        PElem = SklAnim.Elements.FirstOrDefault(x => x.Name == Parent.Name);
                     }
 
-                    for (int i = 0; i < 5; i++)
+                    string[] AnimTimes = new string[FramesCount];
+                    string[] AnimPoses = new string[FramesCount];
+                    string[] AnimLerps = new string[FramesCount];
+
+                    for (int Frame = 0; Frame < FramesCount; Frame++)
                     {
-                        string[] AnimTimes = new string[FramesCount];
-                        string[] AnimPoses = new string[FramesCount];
-                        string[] AnimLerps = new string[FramesCount];
+                        Vector3 T = SklBone.Translation;
+                        Vector3 S = SklBone.Scale;
+                        Matrix4x4 R;
 
-                        bool IsRotation = i > 0 && i < 4; //1, 2, 3
-
-                        bool Skip =
-                            Elem.PrimitiveType != H3DPrimitiveType.Transform &&
-                            Elem.PrimitiveType != H3DPrimitiveType.QuatTransform;
-
-                        if (!Skip)
+                        if (Elem.Content is H3DAnimTransform Transform)
                         {
-                            if (Elem.Content is H3DAnimTransform Transform)
-                            {
-                                switch (i)
-                                {
-                                    case 0: Skip = !Transform.TranslationExists; break;
-                                    case 1: Skip = !Transform.RotationX.Exists;  break;
-                                    case 2: Skip = !Transform.RotationY.Exists;  break;
-                                    case 3: Skip = !Transform.RotationZ.Exists;  break;
-                                    case 4: Skip = !Transform.ScaleExists;       break;
-                                }
-                            }
-                            else if (Elem.Content is H3DAnimQuatTransform QuatTransform)
-                            {
-                                switch (i)
-                                {
-                                    case 0: Skip = !QuatTransform.HasTranslation; break;
-                                    case 1: Skip = !QuatTransform.HasRotation;    break;
-                                    case 2: Skip = !QuatTransform.HasRotation;    break;
-                                    case 3: Skip = !QuatTransform.HasRotation;    break;
-                                    case 4: Skip = !QuatTransform.HasScale;       break;
-                                }
-                            }
+                            if (Transform.TranslationX.Exists) T.X = Transform.TranslationX.GetFrameValue(Frame);
+                            if (Transform.TranslationY.Exists) T.Y = Transform.TranslationY.GetFrameValue(Frame);
+                            if (Transform.TranslationZ.Exists) T.Z = Transform.TranslationZ.GetFrameValue(Frame);
+
+                            float Rx = Transform.RotationX.Exists ? Transform.RotationX.GetFrameValue(Frame) : SklBone.Rotation.X;
+                            float Ry = Transform.RotationY.Exists ? Transform.RotationY.GetFrameValue(Frame) : SklBone.Rotation.Y;
+                            float Rz = Transform.RotationZ.Exists ? Transform.RotationZ.GetFrameValue(Frame) : SklBone.Rotation.Z;
+
+                            R = Matrix4x4.CreateRotationX(Rx) *
+                                Matrix4x4.CreateRotationY(Ry) *
+                                Matrix4x4.CreateRotationZ(Rz);
+
+                            if (Transform.ScaleX.Exists) S.X = Transform.ScaleX.GetFrameValue(Frame);
+                            if (Transform.ScaleY.Exists) S.Y = Transform.ScaleY.GetFrameValue(Frame);
+                            if (Transform.ScaleZ.Exists) S.Z = Transform.ScaleZ.GetFrameValue(Frame);
+                        }
+                        else if (Elem.Content is H3DAnimQuatTransform QT)
+                        {
+                            if (QT.HasTranslation) T = QT.GetTranslationValue(Frame);
+                            if (QT.HasRotation)    R = Matrix4x4.CreateFromQuaternion(QT.GetRotationValue(Frame));
+                            else                   R = Matrix4x4.CreateRotationX(SklBone.Rotation.X) *
+                                                       Matrix4x4.CreateRotationY(SklBone.Rotation.Y) *
+                                                       Matrix4x4.CreateRotationZ(SklBone.Rotation.Z);
+                            if (QT.HasScale)       S = QT.GetScaleValue(Frame);
+                        }
+                        else
+                        {
+                            R = Matrix4x4.CreateRotationX(SklBone.Rotation.X) *
+                                Matrix4x4.CreateRotationY(SklBone.Rotation.Y) *
+                                Matrix4x4.CreateRotationZ(SklBone.Rotation.Z);
                         }
 
-                        if (Skip) continue;
-
-                        for (int Frame = 0; Frame < FramesCount; Frame++)
+                        // Scale compensation — remove parent scale inheritance
+                        if (Parent != null && (SklBone.Flags & H3DBoneFlags.IsSegmentScaleCompensate) != 0)
                         {
-                            string StrTrans = string.Empty;
+                            Vector3 PS = Parent.Scale;
 
-                            H3DAnimationElement PElem = SklAnim.Elements.FirstOrDefault(x => x.Name == Parent?.Name);
-
-                            Vector3 InvScale = Vector3.One;
-
-                            if (Elem.Content is H3DAnimTransform Transform)
+                            if (PElem != null)
                             {
-                                //Compensate parent bone scale (basically, don't inherit scales)
-                                if (Parent != null && (SklBone.Flags & H3DBoneFlags.IsSegmentScaleCompensate) != 0)
+                                if (PElem.Content is H3DAnimTransform PT)
                                 {
-                                    if (PElem != null)
-                                    {
-                                        H3DAnimTransform PTrans = (H3DAnimTransform)PElem.Content;
-
-                                        InvScale /= new Vector3(
-                                            PTrans.ScaleX.Exists ? PTrans.ScaleX.GetFrameValue(Frame) : Parent.Scale.X,
-                                            PTrans.ScaleY.Exists ? PTrans.ScaleY.GetFrameValue(Frame) : Parent.Scale.Y,
-                                            PTrans.ScaleZ.Exists ? PTrans.ScaleZ.GetFrameValue(Frame) : Parent.Scale.Z);
-                                    }
-                                    else
-                                    {
-                                        InvScale /= Parent.Scale;
-                                    }
+                                    if (PT.ScaleX.Exists) PS.X = PT.ScaleX.GetFrameValue(Frame);
+                                    if (PT.ScaleY.Exists) PS.Y = PT.ScaleY.GetFrameValue(Frame);
+                                    if (PT.ScaleZ.Exists) PS.Z = PT.ScaleZ.GetFrameValue(Frame);
                                 }
-
-                                switch (i)
+                                else if (PElem.Content is H3DAnimQuatTransform PQT && PQT.HasScale)
                                 {
-                                    //Translation
-                                    case 0:
-                                        StrTrans = DAEUtils.VectorStr(new Vector3(
-                                            Transform.TranslationX.Exists //X
-                                            ? Transform.TranslationX.GetFrameValue(Frame) : SklBone.Translation.X,
-                                            Transform.TranslationY.Exists //Y
-                                            ? Transform.TranslationY.GetFrameValue(Frame) : SklBone.Translation.Y,
-                                            Transform.TranslationZ.Exists //Z
-                                            ? Transform.TranslationZ.GetFrameValue(Frame) : SklBone.Translation.Z));
-                                        break;
-
-                                    //Scale
-                                    case 4:
-                                        StrTrans = DAEUtils.VectorStr(InvScale * new Vector3(
-                                            Transform.ScaleX.Exists //X
-                                            ? Transform.ScaleX.GetFrameValue(Frame) : SklBone.Scale.X,
-                                            Transform.ScaleY.Exists //Y
-                                            ? Transform.ScaleY.GetFrameValue(Frame) : SklBone.Scale.Y,
-                                            Transform.ScaleZ.Exists //Z
-                                            ? Transform.ScaleZ.GetFrameValue(Frame) : SklBone.Scale.Z));
-                                        break;
-
-                                    //Rotation
-                                    case 1: StrTrans = DAEUtils.RadToDegStr(Transform.RotationX.GetFrameValue(Frame)); break;
-                                    case 2: StrTrans = DAEUtils.RadToDegStr(Transform.RotationY.GetFrameValue(Frame)); break;
-                                    case 3: StrTrans = DAEUtils.RadToDegStr(Transform.RotationZ.GetFrameValue(Frame)); break;
-                                }
-                            }
-                            else if (Elem.Content is H3DAnimQuatTransform QuatTransform)
-                            {
-                                //Compensate parent bone scale (basically, don't inherit scales)
-                                if (Parent != null && (SklBone.Flags & H3DBoneFlags.IsSegmentScaleCompensate) != 0)
-                                {
-                                    if (PElem != null)
-                                        InvScale /= ((H3DAnimQuatTransform)PElem.Content).GetScaleValue(Frame);
-                                    else
-                                        InvScale /= Parent.Scale;
-                                }
-
-                                switch (i)
-                                {
-                                    case 0: StrTrans = DAEUtils.VectorStr(QuatTransform.GetTranslationValue(Frame));            break;
-                                    case 1: StrTrans = DAEUtils.RadToDegStr(QuatTransform.GetRotationValue(Frame).ToEuler().X); break;
-                                    case 2: StrTrans = DAEUtils.RadToDegStr(QuatTransform.GetRotationValue(Frame).ToEuler().Y); break;
-                                    case 3: StrTrans = DAEUtils.RadToDegStr(QuatTransform.GetRotationValue(Frame).ToEuler().Z); break;
-                                    case 4: StrTrans = DAEUtils.VectorStr(InvScale * QuatTransform.GetScaleValue(Frame));       break;
+                                    PS = PQT.GetScaleValue(Frame);
                                 }
                             }
 
-                            //This is the Time in seconds, so we divide by the target FPS
-                            AnimTimes[Frame] = (Frame / 30f).ToString(CultureInfo.InvariantCulture);
-                            AnimPoses[Frame] = StrTrans;
-                            AnimLerps[Frame] = "LINEAR";
+                            S /= PS;
                         }
 
-                        DAEAnimation Anim = new DAEAnimation();
+                        // Build local transform: S * R * T (same order as H3DBone.Transform)
+                        Matrix4x4 LocalMtx = Matrix4x4.CreateScale(S) * R * Matrix4x4.CreateTranslation(T);
 
-                        Anim.name = $"{SklAnim.Name}_{Elem.Name}_{AnimElemNames[i]}";
-                        Anim.id   = $"{Anim.name}_id";
+                        AnimTimes[Frame] = (Frame / 30f).ToString(CultureInfo.InvariantCulture);
+                        AnimPoses[Frame] = DAEUtils.MatrixStr(new Matrix3x4(LocalMtx));
+                        AnimLerps[Frame] = "LINEAR";
+                    }
 
-                        Anim.src.Add(new DAESource($"{Anim.name}_frame",  1, AnimTimes, "TIME",          "float"));
-                        Anim.src.Add(new DAESource($"{Anim.name}_interp", 1, AnimLerps, "INTERPOLATION", "Name"));
+                    DAEAnimation Anim = new DAEAnimation();
 
-                        Anim.src.Add(IsRotation
-                            ? new DAESource($"{Anim.name}_pose", 1, AnimPoses, "ANGLE", "float")
-                            : new DAESource($"{Anim.name}_pose", 3, AnimPoses,
-                            "X", "float",
-                            "Y", "float",
-                            "Z", "float"));
+                    Anim.name = $"{SklAnim.Name}_{SklBone.Name}_transform";
+                    Anim.id   = $"{Anim.name}_id";
 
-                        Anim.sampler.AddInput("INPUT",         $"#{Anim.src[0].id}");
-                        Anim.sampler.AddInput("INTERPOLATION", $"#{Anim.src[1].id}");
-                        Anim.sampler.AddInput("OUTPUT",        $"#{Anim.src[2].id}");
+                    Anim.src.Add(new DAESource($"{Anim.name}_frame",  1, AnimTimes, "TIME",          "float"));
+                    Anim.src.Add(new DAESource($"{Anim.name}_interp", 1, AnimLerps, "INTERPOLATION", "Name"));
+                    Anim.src.Add(new DAESource($"{Anim.name}_pose",  16, AnimPoses, "TRANSFORM",     "float4x4"));
 
-                        Anim.sampler.id     = $"{Anim.name}_samp_id";
-                        Anim.channel.source = $"#{Anim.sampler.id}";
-                        Anim.channel.target = $"{Elem.Name}_bone_id/{AnimElemNames[i]}";
+                    Anim.sampler.AddInput("INPUT",         $"#{Anim.src[0].id}");
+                    Anim.sampler.AddInput("INTERPOLATION", $"#{Anim.src[1].id}");
+                    Anim.sampler.AddInput("OUTPUT",        $"#{Anim.src[2].id}");
 
-                        if (IsRotation) Anim.channel.target += ".ANGLE";
+                    Anim.sampler.id     = $"{Anim.name}_samp_id";
+                    Anim.channel.source = $"#{Anim.sampler.id}";
+                    Anim.channel.target = $"{SklBone.Name}_bone_id/transform";
 
-                        library_animations.Add(Anim);
-                    } //Axis 0-5
-                } //SklAnim.Elements
+                    library_animations.Add(Anim);
+                } //Animation elements
             } //AnimIndex != -1
         }
 
-        private static Vector4 TransformUV(Vector4 uv, Matrix3x4 m)
+        private static float ApplyWrap(float coord, PICATextureWrap wrap)
+        {
+            switch (wrap)
+            {
+                case PICATextureWrap.Mirror:
+                    // Fold into 0-2 range, then mirror the 1-2 portion
+                    coord = Math.Abs(coord);
+                    int period = (int)Math.Floor(coord);
+                    float frac = coord - period;
+                    return (period % 2 == 0) ? frac : 1f - frac;
+
+                case PICATextureWrap.Repeat:
+                    coord = coord % 1f;
+                    if (coord < 0) coord += 1f;
+                    return coord;
+
+                case PICATextureWrap.ClampToEdge:
+                    return Math.Clamp(coord, 0f, 1f);
+
+                case PICATextureWrap.ClampToBorder:
+                    return Math.Clamp(coord, 0f, 1f);
+
+                default:
+                    return coord;
+            }
+        }
+
+        private static Vector4 TransformUV(Vector4 uv, Matrix3x4 m, PICATextureWrap wrapU, PICATextureWrap wrapV)
         {
             float u = uv.X;
             float v = uv.Y;
+            float tu = m.M11 * u + m.M21 * v + m.M41;
+            float tv = m.M12 * u + m.M22 * v + m.M42;
             return new Vector4(
-                m.M11 * u + m.M21 * v + m.M41,
-                m.M12 * u + m.M22 * v + m.M42,
+                ApplyWrap(tu, wrapU),
+                ApplyWrap(tv, wrapV),
                 uv.Z,
                 uv.W);
         }

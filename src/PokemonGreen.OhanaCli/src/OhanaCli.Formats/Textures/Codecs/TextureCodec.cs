@@ -229,10 +229,16 @@ namespace OhanaCli.Formats
                                 int y = (tileOrder[pixel] - x) / 8;
                                 long outputOffset = ((tX * 8) + x + (((tY * 8 + y)) * width)) * 4;
 
-                                output[outputOffset] = (byte)(data[dataOffset] >> 4);
-                                output[outputOffset + 1] = (byte)(data[dataOffset] >> 4);
-                                output[outputOffset + 2] = (byte)(data[dataOffset] >> 4);
-                                output[outputOffset + 3] = (byte)(data[dataOffset] & 0xf);
+                                byte l = (byte)(data[dataOffset] >> 4);
+                                l = (byte)((l << 4) | l);
+
+                                byte a = (byte)(data[dataOffset] & 0xf);
+                                a = (byte)((a << 4) | a);
+
+                                output[outputOffset] = l;
+                                output[outputOffset + 1] = l;
+                                output[outputOffset + 2] = l;
+                                output[outputOffset + 3] = a;
 
                                 dataOffset++;
                             }

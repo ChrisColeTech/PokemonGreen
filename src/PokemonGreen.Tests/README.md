@@ -78,15 +78,15 @@ Key GARC files:
 
 When converted to DAE, each Pokemon entry produces:
 
-- **model.anim_000.dae**, **model.anim_001.dae**, ... (and `model_1.anim_000.dae`, etc.) when `-a` is not specified and `--consolidate-animations` is not set:
+- **model.anim_000.dae**, **model.anim_001.dae**, ... (and `model_1.anim_000.dae`, etc.) when `-a` is not specified and `--split-model-anims` is not set:
   - One DAE per skeletal clip (default behavior)
   - Deterministic naming with zero-padded animation index
   - No silent animation omission when clips are present in the processed entry range
-- **model.dae** / **model_1.dae** when `--consolidate-animations` is specified (without `-a`):
-  - One DAE per model containing all skeletal clips consolidated in a single file
 - **model.dae** / **model_1.dae** when `-a <index>` is specified:
   - Single-clip DAE export using the selected animation index
-  - `-a` takes precedence over `--consolidate-animations`
+- **model.dae** / **model_1.dae** plus `clips/<modelName>/clip_###.dae` and `manifest.json` when `--split-model-anims` is specified:
+  - Split export with one shared model and separate clip-only DAE files
+  - Recommended for Blender/runtime workflows
 - All DAE files include:
   - Multiple meshes (6-9 per model)
   - Full skeleton (40-65 bones)
@@ -215,8 +215,8 @@ Export models/textures from the GARC:
 # Quick smoke (exports all skeletal clips by default for DAE)
 dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o "src/PokemonGreen.Tests/exports-allanims" -n 20
 
-# Consolidated DAE (one DAE per model with all clips)
-dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o "src/PokemonGreen.Tests/exports-consolidated" -n 20 --consolidate-animations
+# Split model + clips (one model DAE plus clip-only DAE files + manifest)
+dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o "src/PokemonGreen.Tests/exports-split" -n 20 --split-model-anims
 
 # Single animation clip only (index 0)
 dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csproj -- convert "src/PokemonGreen.Tests/sun-moon-dump/RomFS/a/0/9/4" -o "src/PokemonGreen.Tests/exports-singleanim" -n 20 -a 0
@@ -231,15 +231,15 @@ dotnet run --project src/PokemonGreen.OhanaCli/src/OhanaCli.App/OhanaCli.App.csp
 Useful options:
 - `-o, --output` (required)
 - `-f, --format` (`dae` or `obj`, default `dae`)
-- `-a, --animation-index` (optional; selects one clip and overrides `--consolidate-animations`)
-- `--consolidate-animations` (optional; DAE only; emits one DAE per model with all clips)
+- `-a, --animation-index` (optional; selects one clip)
+- `--split-model-anims` (optional; DAE only; emits one model DAE plus separate clip-only DAEs and `manifest.json`)
 - `-n, --limit` (max container entries to inspect)
 - `--diag-anim` (per-bone animation diagnostics)
 
 Important behavior notes:
-- DAE default (no `-a`, no `--consolidate-animations`): all skeletal clips are exported (`*.anim_###.dae`).
-- DAE with `--consolidate-animations` (and no `-a`): one consolidated file per model (`model.dae`, `model_1.dae`, ...).
-- DAE with `-a`: one clip is exported to the legacy name (`model.dae`, `model_1.dae`, ...), and `-a` overrides consolidation.
+- DAE default (no `-a`, no `--split-model-anims`): all skeletal clips are exported (`*.anim_###.dae`).
+- DAE with `--split-model-anims`: emits `model.dae` + `model_1.dae`, per-model clip files under `clips/`, and `manifest.json`.
+- DAE with `-a`: one clip is exported to the legacy name (`model.dae`, `model_1.dae`, ...).
 - OBJ: static-only export (no animation), textures still exported as PNG.
 - If `--limit` is too small to include animation entries, the CLI emits an explicit warning telling you to raise/remove `--limit`.
 
@@ -302,6 +302,25 @@ exports/
 Notes:
 - Group folders are generated from grouped container entries (`0000_*`, `0001_*`, ...).
 - Textures are exported as `.png` files.
+
+When using `--split-model-anims`, each group folder also includes:
+
+```
+0000_model/
+  model.dae
+  model_1.dae
+  clips/
+    model/
+      clip_000.dae
+      clip_001.dae
+      ...
+    model_1/
+      clip_000.dae
+      clip_001.dae
+      ...
+  manifest.json
+  *.png
+```
 a/0/0/0 - 
 a/0/0/1 - 
 a/0/0/2 - 

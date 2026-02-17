@@ -27,7 +27,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 output.AppendLine("g " + mdl.mesh[objIndex].name);
                 output.AppendLine(null);
 
-                RenderBase.OMaterial meshMaterial = mdl.material[mdl.mesh[objIndex].materialId];
+                RenderBase.OMaterial meshMaterial = getMeshMaterial(mdl, mdl.mesh[objIndex]);
 
                 output.AppendLine("usemtl " + meshMaterial.name0 + ".png");
                 output.AppendLine(null);
@@ -88,10 +88,23 @@ namespace OhanaCli.Formats.Models.GenericFormats
             float rotatedU = (centeredU * cos) - (centeredV * sin);
             float rotatedV = (centeredU * sin) + (centeredV * cos);
 
-            float transformedU = (rotatedU + 0.5f) * scaleU - coordinator.translateU;
-            float transformedV = (rotatedV + 0.5f) * scaleV - coordinator.translateV;
+            float transformedU = scaleU * (rotatedU + 0.5f - coordinator.translateU);
+            float transformedV = scaleV * (rotatedV + 0.5f - coordinator.translateV);
 
             return new RenderBase.OVector2(transformedU, transformedV);
+        }
+
+        private static RenderBase.OMaterial getMeshMaterial(RenderBase.OModel model, RenderBase.OMesh mesh)
+        {
+            if (model.material.Count == 0) return new RenderBase.OMaterial();
+
+            int materialIndex = mesh.materialId;
+            if (materialIndex < 0 || materialIndex >= model.material.Count)
+            {
+                return model.material[0];
+            }
+
+            return model.material[materialIndex];
         }
 
         /// <summary>

@@ -93,6 +93,22 @@ public class SkeletalModelData : IDisposable
     internal double AnimDuration;
     internal double TicksPerSecond;
 
+    // Multi-clip support (lazy-loaded)
+    private readonly Dictionary<string, AnimationClip> _clips = new();
+    private readonly Dictionary<string, string> _pendingClipPaths = new();
+    private readonly List<string> _clipOrder = new(); // preserves manifest insertion order
+    private Dictionary<string, int>? _boneNameMap;
+    private AnimationClip? _activeClip;
+
+    /// <summary>All available animation clip names (both loaded and pending), in manifest order.</summary>
+    public IReadOnlyList<string> ClipNames => _clipOrder;
+
+    /// <summary>Number of registered animation clips.</summary>
+    public int ClipCount => _clipOrder.Count;
+
+    /// <summary>Name of the currently playing clip, or null if using baked animation.</summary>
+    public string? ActiveClipName => _activeClip?.Name;
+
     private XnaMatrix[] _boneLocalTransforms = Array.Empty<XnaMatrix>();
     private bool _loggedFirstFrame;
 
@@ -100,15 +116,60 @@ public class SkeletalModelData : IDisposable
     private static void Log(string msg) => File.AppendAllText(_logPath, msg + "\n");
 
     /// <summary>
+    /// Switch to a named animation clip. If the clip hasn't been parsed yet,
+    /// it will be lazy-loaded from the registered DAE path on first play.
+    /// </summary>
+    public void Play(string clipName)
+    {
+        if (_clips.TryGetValue(clipName, out var clip))
+        {
+            _activeClip = clip;
+            return;
+        }
+
+        // Lazy load: parse the clip DAE on first Play()
+        if (_pendingClipPaths.Remove(clipName, out var clipPath))
+        {
+            LoadClipInternal(clipPath, clipName);
+            if (_clips.TryGetValue(clipName, out clip))
+                _activeClip = clip;
+        }
+    }
+
+    /// <summary>Play a clip by its manifest order index (0-based).</summary>
+    public void PlayIndex(int index)
+    {
+        if (index >= 0 && index < _clipOrder.Count)
+            Play(_clipOrder[index]);
+    }
+
+    /// <summary>
+    /// Register a clip for lazy loading. The DAE file will only be parsed
+    /// when Play() is called for this clip name.
+    /// </summary>
+    public void RegisterClip(string clipName, string clipDaePath)
+    {
+        _pendingClipPaths[clipName] = clipDaePath;
+        if (!_clipOrder.Contains(clipName))
+            _clipOrder.Add(clipName);
+    }
+
+    /// <summary>
     /// Advance the skeleton animation and transform all mesh vertices on the CPU.
+    /// Uses the active clip if set, otherwise falls back to baked animation data.
     /// </summary>
     public void Update(double totalSeconds)
     {
-        if (Bones.Length == 0 || Channels.Length == 0)
+        // Determine which animation data to use
+        var channels = _activeClip?.Channels ?? Channels;
+        double animDuration = _activeClip?.Duration ?? AnimDuration;
+        double ticksPerSecond = _activeClip?.TicksPerSecond ?? TicksPerSecond;
+
+        if (Bones.Length == 0 || channels.Length == 0)
             return;
 
-        double tps = TicksPerSecond > 0 ? TicksPerSecond : 25.0;
-        double durationSec = AnimDuration / tps;
+        double tps = ticksPerSecond > 0 ? ticksPerSecond : 25.0;
+        double durationSec = animDuration / tps;
         if (durationSec <= 0) return;
 
         double t = (totalSeconds % durationSec) * tps; // time in ticks, looping
@@ -121,7 +182,7 @@ public class SkeletalModelData : IDisposable
             _boneLocalTransforms[i] = Bones[i].LocalBindPose;
 
         // 2. Override with animated transforms where we have channels
-        foreach (ref readonly var ch in Channels.AsSpan())
+        foreach (ref readonly var ch in channels.AsSpan())
         {
             var pos = InterpolateVec(ch.PositionKeys, t);
             var rot = InterpolateQuat(ch.RotationKeys, t);
@@ -236,6 +297,190 @@ public class SkeletalModelData : IDisposable
         device.SamplerStates[0] = prevSampler;
     }
 
+    /// <summary>
+    /// Eagerly load an animation clip from a clip-only DAE file.
+    /// Prefer RegisterClip() + Play() for lazy loading.
+    /// </summary>
+    public void LoadClip(string clipDaePath, string clipName)
+    {
+        LoadClipInternal(clipDaePath, clipName);
+        if (!_clipOrder.Contains(clipName))
+            _clipOrder.Add(clipName);
+    }
+
+    private void LoadClipInternal(string clipDaePath, string clipName)
+    {
+        var clip = ParseClipDae(clipDaePath, clipName, GetBoneNameMap());
+        if (clip != null)
+            _clips[clipName] = clip;
+    }
+
+    /// <summary>
+    /// Cached bone name → index map. Built once, supports both "Waist" (Assimp node name)
+    /// and "Waist_bone_id" (COLLADA node id, used in animation channel targets).
+    /// </summary>
+    private Dictionary<string, int> GetBoneNameMap()
+    {
+        if (_boneNameMap == null)
+        {
+            _boneNameMap = new Dictionary<string, int>();
+            for (int i = 0; i < Bones.Length; i++)
+            {
+                _boneNameMap[Bones[i].Name] = i;
+                _boneNameMap[Bones[i].Name + "_bone_id"] = i;
+            }
+        }
+        return _boneNameMap;
+    }
+
+    /// <summary>
+    /// Parse a clip-only DAE file that uses matrix animation channels.
+    /// Channel targets: "{BoneName}_bone_id/transform" with 4x4 matrix output.
+    /// </summary>
+    private static AnimationClip? ParseClipDae(string clipDaePath, string clipName,
+        Dictionary<string, int> boneNameToIndex)
+    {
+        var doc = XDocument.Load(clipDaePath);
+        XNamespace ns = doc.Root?.Name.Namespace ?? "";
+
+        var libAnims = doc.Root?.Element(ns + "library_animations");
+        if (libAnims == null) return null;
+
+        double maxTime = 0;
+        var channels = new List<AnimChannel>();
+
+        foreach (var anim in libAnims.Elements(ns + "animation"))
+            ParseMatrixAnimationElement(anim, ns, boneNameToIndex, channels, ref maxTime);
+
+        // Also try nested animations
+        foreach (var anim in libAnims.Elements(ns + "animation"))
+            foreach (var nested in anim.Elements(ns + "animation"))
+                ParseMatrixAnimationElement(nested, ns, boneNameToIndex, channels, ref maxTime);
+
+        if (channels.Count == 0)
+        {
+            // Fall back to per-component Euler parsing (legacy baked DAEs)
+            return null;
+        }
+
+        return new AnimationClip(clipName, maxTime, 1.0, channels.ToArray());
+    }
+
+    /// <summary>
+    /// Parse a single COLLADA animation element with matrix channel output.
+    /// Target format: "{BoneName}_bone_id/transform"
+    /// Output: N * 16 float values (N 4x4 matrices, one per keyframe).
+    /// Each matrix is decomposed into translation + rotation + scale for interpolation.
+    /// </summary>
+    private static void ParseMatrixAnimationElement(XElement anim, XNamespace ns,
+        Dictionary<string, int> boneNameToIndex,
+        List<AnimChannel> channels, ref double maxTime)
+    {
+        var channel = anim.Element(ns + "channel");
+        if (channel == null) return;
+
+        string target = channel.Attribute("target")?.Value ?? "";
+        // Format: "Waist_bone_id/transform"
+        int slashIdx = target.IndexOf('/');
+        if (slashIdx < 0) return;
+
+        string boneName = target.Substring(0, slashIdx);
+        string property = target.Substring(slashIdx + 1);
+
+        // Only handle matrix transform channels
+        if (property != "transform") return;
+
+        if (!boneNameToIndex.TryGetValue(boneName, out int boneIdx))
+            return;
+
+        // Find INPUT and OUTPUT source references from the sampler
+        var sampler = anim.Element(ns + "sampler");
+        if (sampler == null) return;
+
+        string? inputSourceId = null, outputSourceId = null;
+        foreach (var input in sampler.Elements(ns + "input"))
+        {
+            string semantic = input.Attribute("semantic")?.Value ?? "";
+            string sourceRef = (input.Attribute("source")?.Value ?? "").TrimStart('#');
+            if (semantic == "INPUT") inputSourceId = sourceRef;
+            else if (semantic == "OUTPUT") outputSourceId = sourceRef;
+        }
+        if (inputSourceId == null || outputSourceId == null) return;
+
+        // Read float arrays from source elements
+        double[]? times = null;
+        float[]? matValues = null;
+        foreach (var source in anim.Elements(ns + "source"))
+        {
+            string sourceId = source.Attribute("id")?.Value ?? "";
+            var floatArray = source.Element(ns + "float_array");
+            if (floatArray == null) continue;
+
+            if (sourceId == inputSourceId)
+                times = ParseFloatArrayDouble(floatArray.Value);
+            else if (sourceId == outputSourceId)
+                matValues = ParseFloatArrayFloat(floatArray.Value);
+        }
+
+        if (times == null || matValues == null || times.Length == 0)
+            return;
+
+        int frameCount = times.Length;
+        if (matValues.Length != frameCount * 16)
+            return; // Each frame has 16 floats (4x4 matrix)
+
+        if (times[^1] > maxTime)
+            maxTime = times[^1];
+
+        // Decompose each keyframe matrix into translation, rotation, scale
+        var posKeys = new VecKey[frameCount];
+        var rotKeys = new QuatKey[frameCount];
+        var sclKeys = new VecKey[frameCount];
+
+        for (int f = 0; f < frameCount; f++)
+        {
+            int offset = f * 16;
+
+            // COLLADA stores matrices in row-major order (same as XNA)
+            // But our SPICA exporter writes Matrix3x4 which is row-major transposed...
+            // The DAE matrix data layout: a11 a12 a13 a14  a21 a22 a23 a24  a31 a32 a33 a34  a41 a42 a43 a44
+            // COLLADA convention: row-major (same as reading left-to-right, top-to-bottom)
+            var mat = new XnaMatrix(
+                matValues[offset + 0], matValues[offset + 1], matValues[offset + 2], matValues[offset + 3],
+                matValues[offset + 4], matValues[offset + 5], matValues[offset + 6], matValues[offset + 7],
+                matValues[offset + 8], matValues[offset + 9], matValues[offset + 10], matValues[offset + 11],
+                matValues[offset + 12], matValues[offset + 13], matValues[offset + 14], matValues[offset + 15]);
+
+            // XNA Matrix.Decompose expects XNA row-major format
+            // COLLADA is row-major, but XNA reads M11=row0col0, M12=row0col1...
+            // Need to transpose because COLLADA row-major → XNA row-major requires transpose
+            // (COLLADA: mat[row][col], XNA: M{row}{col} but stored column-major internally)
+            mat = XnaMatrix.Transpose(mat);
+
+            if (mat.Decompose(out var scale, out var rotation, out var translation))
+            {
+                posKeys[f] = new VecKey { Time = times[f], Value = translation };
+                rotKeys[f] = new QuatKey { Time = times[f], Value = rotation };
+                sclKeys[f] = new VecKey { Time = times[f], Value = scale };
+            }
+            else
+            {
+                // Decompose failed — extract translation directly, use identity rotation
+                posKeys[f] = new VecKey { Time = times[f], Value = new Vector3(mat.M41, mat.M42, mat.M43) };
+                rotKeys[f] = new QuatKey { Time = times[f], Value = XnaQuat.Identity };
+                sclKeys[f] = new VecKey { Time = times[f], Value = Vector3.One };
+            }
+        }
+
+        channels.Add(new AnimChannel
+        {
+            BoneIndex = boneIdx,
+            PositionKeys = posKeys,
+            RotationKeys = rotKeys,
+            ScaleKeys = sclKeys,
+        });
+    }
+
     public void Dispose()
     {
         foreach (var mesh in Meshes)
@@ -311,19 +556,25 @@ public class SkeletalModelData : IDisposable
         string directory = Path.GetDirectoryName(daeFilePath) ?? "";
         string folderPrefix = Path.GetFileName(directory) ?? "";
 
-        // Pre-build texture list for fallback
+        // Pre-build texture list for fallback — check both same directory and textures/ subdirectory
         var folderTextures = new List<string>();
+        string texturesSubDir = Path.Combine(directory, "textures");
         if (!string.IsNullOrEmpty(directory))
         {
-            foreach (var file in Directory.EnumerateFiles(directory, $"{folderPrefix}_*.png"))
+            var searchDirs = new[] { directory, texturesSubDir };
+            foreach (var searchDir in searchDirs)
             {
-                string name = Path.GetFileName(file);
-                if (name.Contains("Nor", StringComparison.OrdinalIgnoreCase) ||
-                    name.Contains("Mask", StringComparison.OrdinalIgnoreCase) ||
-                    name.Contains("Dummy", StringComparison.OrdinalIgnoreCase) ||
-                    name.Contains("Inc", StringComparison.OrdinalIgnoreCase))
-                    continue;
-                folderTextures.Add(file);
+                if (!Directory.Exists(searchDir)) continue;
+                foreach (var file in Directory.EnumerateFiles(searchDir, $"{folderPrefix}_*.png"))
+                {
+                    string name = Path.GetFileName(file);
+                    if (name.Contains("Nor", StringComparison.OrdinalIgnoreCase) ||
+                        name.Contains("Mask", StringComparison.OrdinalIgnoreCase) ||
+                        name.Contains("Dummy", StringComparison.OrdinalIgnoreCase) ||
+                        name.Contains("Inc", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    folderTextures.Add(file);
+                }
             }
             folderTextures.Sort(StringComparer.OrdinalIgnoreCase);
         }
@@ -448,7 +699,7 @@ public class SkeletalModelData : IDisposable
                     indices.Add(face.Indices[fi]);
             }
 
-            // Resolve texture
+            // Resolve texture — check both model directory and textures/ subdirectory
             Texture2D? texture = null;
             string? texturePath = null;
             string matName = "";
@@ -459,7 +710,12 @@ public class SkeletalModelData : IDisposable
 
                 // Primary: Assimp resolved the diffuse path via library_images
                 if (material.HasTextureDiffuse && !string.IsNullOrEmpty(material.TextureDiffuse.FilePath))
+                {
                     texturePath = BattleModelLoader.ResolveDiffusePath(directory, material.TextureDiffuse.FilePath);
+                    // Also try textures/ subdirectory
+                    if (texturePath == null && Directory.Exists(texturesSubDir))
+                        texturePath = BattleModelLoader.ResolveDiffusePath(texturesSubDir, material.TextureDiffuse.FilePath);
+                }
 
                 // Fallback: match material name to texture filename
                 if (texturePath == null && !string.IsNullOrEmpty(material.Name))
@@ -467,6 +723,9 @@ public class SkeletalModelData : IDisposable
                     string cleanName = material.Name.Replace("_mat", "");
                     string folderName = Path.GetFileName(directory) ?? "";
                     texturePath = BattleModelLoader.FindTextureForMaterial(directory, folderName, cleanName);
+                    // Also try textures/ subdirectory
+                    if (texturePath == null && Directory.Exists(texturesSubDir))
+                        texturePath = BattleModelLoader.FindTextureForMaterial(texturesSubDir, folderName, cleanName);
                 }
 
                 // Last resort: by mesh index

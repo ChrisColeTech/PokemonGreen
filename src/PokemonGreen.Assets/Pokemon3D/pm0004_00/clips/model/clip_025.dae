@@ -1,0 +1,1322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+	<asset>
+		<created>2026-02-17T06:55:55Z</created>
+		<modified>2026-02-17T06:55:55Z</modified>
+		<up_axis>Y_UP</up_axis>
+	</asset>
+	<library_animations>
+		<animation id="anim_Waist_transform" name="anim_Waist_transform">
+			<source id="anim_Waist_transform_input">
+				<float_array id="anim_Waist_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Waist_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Waist_transform_output">
+				<float_array id="anim_Waist_transform_output_array" count="96">-0.004865830249612957 -0.9975640506552351 -0.06958655427811875 0 0.9975640511762304 1.3472653703772153e-7 -0.06975646063877615 20.363136291503906 0.0695865468093455 -0.06975646808935686 0.9951340350238501 0.299206405878067 0 0 0 1 -0.00545027624650829 -0.9975615857580513 -0.0695785678835003 0 0.9968846983524395 0.00005468250346907233 -0.07887265179128514 20.326783344166643 0.07868413232413667 -0.06979168739689509 0.9944535824716465 0.3280204117298126 0 0 0 1 -0.006857416112954429 -0.9975638002932468 -0.06942218801470597 0 0.9948900281356257 0.00018724627705590802 -0.1009643345698159 20.262173444044038 0.10073136433379522 -0.06975979704190027 0.9924649933151924 0.3568344175815582 0 0 0 1 -0.00840107554694014 -0.9975652892643183 -0.06923088605999468 0 0.9924057573571206 0.0001790603264055779 -0.12300723841237961 20.197563543921433 0.12272014787350567 -0.06973852301559637 0.9899880321062008 0.38564842343330386 0 0 0 1 -0.009618852738445316 -0.9975676044814785 -0.06903877288220442 0 0.9903051952200488 0.00006464090161983904 -0.13890866114729783 20.132953643798828 0.13857524307096514 -0.06970559741253451 0.9878957595299135 0.41446242928504945 0 0 0 1 -0.00963162659166894 -0.9975640243681662 -0.06908870425465624 0 0.9904219612106956 -4.355152727342215e-8 -0.13807367146403238 20.18651365287573 0.1377373243560296 -0.0697568440110847 0.9880093178674253 0.44327643513679504 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Waist_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Waist_transform_interpolation">
+				<Name_array id="anim_Waist_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Waist_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Waist_transform_sampler">
+				<input semantic="INPUT" source="#anim_Waist_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Waist_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Waist_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Waist_transform_sampler" target="Waist_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Spine1_transform" name="anim_Spine1_transform">
+			<source id="anim_Spine1_transform_input">
+				<float_array id="anim_Spine1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Spine1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Spine1_transform_output">
+				<float_array id="anim_Spine1_transform_output_array" count="96">0.9983916711031559 1.0337446379590429e-9 -0.05669277795140912 0 -0.0011872855205227986 0.9997806832795905 -0.02090874683208135 0 0.056680344255663595 0.02094242920473444 0.9981727071173927 0 0 0 0 1 0.9985061425860704 -0.000015514853057669426 -0.05463957336194564 0 -0.0011290061753389904 0.9997806030068858 -0.02091581211055147 0 0.05462791010959646 0.02094625528530529 0.998287055824416 0 0 0 0 1 0.9986163913945421 -0.000031023527087783065 -0.05258613767604155 0 -0.0010707125176642606 0.9997805215000082 -0.02092277237547947 0 0.052575245247619584 0.020950128083436072 0.9983971833496128 0 0 0 0 1 0.9988996180485492 -0.000008411548935482191 -0.0468993922317576 0 -0.0009743485089107747 0.9997804322714314 -0.02093174364769685 0 0.046889270707120026 0.020954407087664363 0.9986802837325661 0 0 0 0 1 0.9991504605668121 0.000014223059671333795 -0.04121112649311794 0 -0.0008779382836695585 0.9997803428359358 -0.020940279444858326 0 0.0412017763391005 0.020958670677389404 0.9989310024971392 0 0 0 0 1 0.9993689108182847 0.00003688053348156707 -0.03552152487860695 0 -0.0007814839995299498 0.9997802531947673 -0.020948379521233716 0 0.03551294654958556 0.020962918728874933 0.9991493315144303 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Spine1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Spine1_transform_interpolation">
+				<Name_array id="anim_Spine1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Spine1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Spine1_transform_sampler">
+				<input semantic="INPUT" source="#anim_Spine1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Spine1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Spine1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Spine1_transform_sampler" target="Spine1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Spine2_transform" name="anim_Spine2_transform">
+			<source id="anim_Spine2_transform_input">
+				<float_array id="anim_Spine2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Spine2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Spine2_transform_output">
+				<float_array id="anim_Spine2_transform_output_array" count="96">0.9966796600159944 -0.0023996388176617854 -0.08138732729329913 4.699999809265137 -0.001796505768406281 0.9986741962800479 -0.05144533264956425 0 0.08140287388923013 0.051420729457535015 0.9953539474501666 0 0 0 0 1 0.9969848538391669 -0.002568872137121394 -0.07755386586907322 4.699999809265137 -0.0014315252520646308 0.9986728675064356 -0.05148256444589864 0 0.07758319373902946 0.051438357306746556 0.9956580454387117 0 0 0 0 1 0.9978525754918658 -0.002524771087750446 -0.06545122699541016 4.699999809265137 -0.0008527879398471725 0.998671341919987 -0.051524980159744285 0 0.06549435347402018 0.051470150171598006 0.9965246175104423 0 0 0 0 1 0.998573384362104 -0.002480376860281701 -0.053338951754273264 4.699999809265137 -0.0002735565787124088 0.9986697765778105 -0.05156163803472818 0 0.05339589132519425 0.051502670616746314 0.9972443801340427 0 0 0 0 1 0.9991471743822206 -0.0024356729556826995 -0.04121882362801535 4.699999809265137 0.00030610661978458823 0.998668171566846 -0.05159253238667418 0 0.04128958976257581 0.051535915598596445 0.9978172273420882 0 0 0 0 1 0.9995585704144676 -0.002404052724565078 -0.029612241412689148 4.699999809265137 0.0008727128518110813 0.9986665303824835 -0.051617821206346066 0 0.029696846352165993 0.05156919258927308 0.9982277874776009 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Spine2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Spine2_transform_interpolation">
+				<Name_array id="anim_Spine2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Spine2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Spine2_transform_sampler">
+				<input semantic="INPUT" source="#anim_Spine2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Spine2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Spine2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Spine2_transform_sampler" target="Spine2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Neck_transform" name="anim_Neck_transform">
+			<source id="anim_Neck_transform_input">
+				<float_array id="anim_Neck_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Neck_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Neck_transform_output">
+				<float_array id="anim_Neck_transform_output_array" count="96">0.9977486568877412 0.0230112571647301 0.06299285453452044 9.009794235229492 -0.023033200097885283 0.999734629224467 -0.00037791886483937165 0 -0.0629848344600458 -0.0010738589834245662 0.9980139064436548 0 0 0 0 1 0.9982525948514549 0.02391184039047051 0.054036846331717646 9.009794235229492 -0.02392334198371057 0.999713701658528 -0.0004340789490814192 0 -0.0540317552987818 -0.0008594215172239778 0.9985388479243 0 0 0 0 1 0.9989906540985622 0.02481374215257622 0.0374426391178868 9.009794235229492 -0.024816639093045618 0.9996919446993398 -0.00038746274378874363 0 -0.03744071911505392 -0.000542128801823408 0.9992987034158054 0 0 0 0 1 0.9994521947148345 0.025711463057907252 0.020838213625990042 9.009794235229492 -0.025710252680374954 0.9996693836509853 -0.00032603369518417627 0 -0.02083970697519039 -0.00020990064552902385 0.9997828076912041 0 0 0 0 1 0.9996370889668085 0.02660475487100851 0.0042281651125157735 9.009794235229492 -0.026603936117055124 0.99964602144657 -0.00024977814841231454 0 -0.004233313719156227 0.0001372016666206747 0.9999910300750992 0 0 0 0 1 0.9995054931678606 0.027497551296266392 0.015252993148260898 9.009794235229492 -0.027492531930205937 0.999621863751584 -0.0005387001728178576 0 -0.015262038374290068 0.0001190903807421494 0.9998835212174181 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Neck_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Neck_transform_interpolation">
+				<Name_array id="anim_Neck_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Neck_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Neck_transform_sampler">
+				<input semantic="INPUT" source="#anim_Neck_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Neck_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Neck_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Neck_transform_sampler" target="Neck_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Head_transform" name="anim_Head_transform">
+			<source id="anim_Head_transform_input">
+				<float_array id="anim_Head_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Head_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Head_transform_output">
+				<float_array id="anim_Head_transform_output_array" count="96">0.9814367241786731 0.01832443742894707 0.19090880395190704 3.5999999046325684 -0.019386705578496706 0.9998052217202553 0.0036978734056009478 0 -0.19080385761364407 -0.007330321536178998 0.9816008120951859 0 0 0 0 1 0.9842838869954496 0.019598706331061626 0.17550248007158747 3.5999999046325684 -0.020447651333918137 0.9997863334580027 0.003030014113803231 0 -0.17540559670676326 -0.006571007590327052 0.984474325974625 0 0 0 0 1 0.988998066737894 0.02090533723405895 0.14644381469983053 3.5999999046325684 -0.02150714952592496 0.9997655003678669 0.0025272106081997924 0 -0.14635664148912936 -0.005648995425645193 0.9892157612688465 0 0 0 0 1 0.9928536178430181 0.022188125952520846 0.1172577528470731 3.5999999046325684 -0.02258486238067953 0.9997428160420403 0.002055666212451178 0 -0.11718198465325622 -0.004689225847228685 0.9930993875910294 0 0 0 0 1 0.9958471914544412 0.023445973918280124 0.08796964010000763 3.5999999046325684 -0.023679862459519297 0.9997182867081935 0.00161596260244035 0 -0.08790697006608628 -0.0036923607973172253 0.9961218455016146 0 0 0 0 1 0.9940828818717324 0.024599913611422393 0.10580202370418892 3.5999999046325684 -0.024804815745419324 0.9996921203432669 0.0006209987270510515 0 -0.10575417289841096 -0.003241723907700481 0.9943870202997821 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Head_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Head_transform_interpolation">
+				<Name_array id="anim_Head_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Head_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Head_transform_sampler">
+				<input semantic="INPUT" source="#anim_Head_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Head_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Head_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Head_transform_sampler" target="Head_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Jaw_transform" name="anim_Jaw_transform">
+			<source id="anim_Jaw_transform_input">
+				<float_array id="anim_Jaw_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Jaw_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Jaw_transform_output">
+				<float_array id="anim_Jaw_transform_output_array" count="96">-0.3987490557068958 0 -0.9170600801326264 5.250240802764893 0 1 0 0 0.9170600801326264 0 -0.3987490557068958 5.210052013397217 0 0 0 1 -0.39190346215576843 0 -0.9200063458206809 5.250240802764893 0 1 0 0 0.9200063458206809 0 -0.39190346215576843 5.210052013397217 0 0 0 1 -0.38441138193122204 0 -0.9231618977415219 5.250240802764893 0 1 0 0 0.9231618977415219 0 -0.38441138193122204 5.210052013397217 0 0 0 1 -0.3768938964297259 0 -0.926256439024323 5.250240802764893 0 1 0 0 0.926256439024323 0 -0.3768938964297259 5.210052013397217 0 0 0 1 -0.36935150247268034 0 -0.9292897651546441 5.250240802764893 0 1 0 0 0.9292897651546441 0 -0.36935150247268034 5.210052013397217 0 0 0 1 -0.39486950086030603 0 -0.9187372188446123 5.250240802764893 0 1 0 0 0.9187372188446123 0 -0.39486950086030603 5.210052013397217 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Jaw_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Jaw_transform_interpolation">
+				<Name_array id="anim_Jaw_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Jaw_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Jaw_transform_sampler">
+				<input semantic="INPUT" source="#anim_Jaw_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Jaw_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Jaw_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Jaw_transform_sampler" target="Jaw_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LArm_transform" name="anim_LArm_transform">
+			<source id="anim_LArm_transform_input">
+				<float_array id="anim_LArm_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LArm_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LArm_transform_output">
+				<float_array id="anim_LArm_transform_output_array" count="96">0.7981056648626199 0.594756288648456 -0.09639660174150327 5.199999809265137 -0.5411225163825212 0.7779089068502291 0.3194435081621314 0 0.2649788104321617 -0.20278730176269966 0.9426895248520375 0.000003999999989900971 0 0 0 1 0.7990711438832 0.5937194651257252 -0.0947760715793667 5.199999809265137 -0.5445336630322795 0.7814903132559818 0.3045586644830767 0 0.25488898924402814 -0.1917552789831098 0.9477665937055745 0.000003999999989900971 0 0 0 1 0.8009040630598718 0.591617695889685 -0.09241852457364154 5.199999809265137 -0.5509052460619763 0.7885033909042667 0.2734333783462922 0 0.23464034528525157 -0.16808005367280587 0.9574408618404401 0.000003999999989900971 0 0 0 1 0.8026201861366883 0.5896663323809362 -0.08996917951344939 5.199999809265137 -0.5567017153410371 0.7946766935209917 0.2420168442709948 0 0.21420559503023012 -0.14416160803403677 0.9660918143876315 0.000003999999989900971 0 0 0 1 0.8031629305083441 0.5902584452301487 -0.08077298367484453 5.199999809265137 -0.561270614736066 0.7951413270143599 0.22962048494775344 0 0.19976136786437876 -0.13908715939413857 0.9699227587806267 0.000003999999989900971 0 0 0 1 0.7986938643455512 0.5966201783339578 -0.07831011340514483 5.199999809265137 -0.5617148349090315 0.7858998663395451 0.2585301613557006 0 0.21578821863088293 -0.16249850119998493 0.9628238062116395 0.000003999999989900971 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LArm_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LArm_transform_interpolation">
+				<Name_array id="anim_LArm_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LArm_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LArm_transform_sampler">
+				<input semantic="INPUT" source="#anim_LArm_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LArm_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LArm_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LArm_transform_sampler" target="LArm_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LForeArm_transform" name="anim_LForeArm_transform">
+			<source id="anim_LForeArm_transform_input">
+				<float_array id="anim_LForeArm_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LForeArm_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LForeArm_transform_output">
+				<float_array id="anim_LForeArm_transform_output_array" count="96">0.9602856806646637 0.12152633463678593 -0.25116281870561863 6.300000190734863 -0.1363496375842012 0.9897522680839922 -0.04241726244408264 0 0.24343415504209862 0.07497864904318512 0.9670150021310933 0 0 0 0 1 0.9593937837600932 0.1249172613897464 -0.25290165181227525 6.300000190734863 -0.1392904184343834 0.9894564054507756 -0.0396762024997942 0 0.24527891677611818 0.07329187894518777 0.9666781022997356 0 0 0 0 1 0.9572859610342821 0.1367459664361387 -0.25476288872227326 6.300000190734863 -0.15065788042706604 0.9879367042625017 -0.03582277817492998 0 0.24679098823071888 0.07267467945847991 0.9663397948411896 0 0 0 0 1 0.955037531991018 0.1485553466616427 -0.25658258215776164 6.300000190734863 -0.1619976589985311 0.9862738005356069 -0.031949160490466956 0 0.2483144598437654 0.07207842503335615 0.965994114721829 0 0 0 0 1 0.9485031765363406 0.15971514396017517 -0.2735558387061992 6.300000190734863 -0.17346473265901702 0.984478903825165 -0.026669729033817827 0 0.2650503926124375 0.07274861313442368 0.9614863122598317 0 0 0 0 1 0.9367685705535347 0.1701634323078905 -0.30579249750163157 6.300000190734863 -0.18490557430087268 0.9825592171508537 -0.019680279072358916 0 0.29711037312007776 0.07497860426214566 0.9518947605105035 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LForeArm_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LForeArm_transform_interpolation">
+				<Name_array id="anim_LForeArm_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LForeArm_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LForeArm_transform_sampler">
+				<input semantic="INPUT" source="#anim_LForeArm_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LForeArm_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LForeArm_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LForeArm_transform_sampler" target="LForeArm_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LHand_transform" name="anim_LHand_transform">
+			<source id="anim_LHand_transform_input">
+				<float_array id="anim_LHand_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LHand_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LHand_transform_output">
+				<float_array id="anim_LHand_transform_output_array" count="96">0.991678616570943 -0.09758290063956089 -0.08397082194852121 5.489999771118164 0.09723493934811824 0.9952273998955061 -0.008233411637843836 0 0.08437350298469556 4.834999839734011e-10 0.9964341985269732 0 0 0 0 1 0.9915357562888985 -0.0975849321938811 -0.08563892228022126 5.489999771118164 0.09719118363425584 0.995227132802499 -0.008765155873649587 0 0.08608552621883954 0.00036761723659247455 0.9962876828673497 0 0 0 0 1 0.9913900248470883 -0.09758762920188374 -0.08730677671547267 5.489999771118164 0.09714656504887598 0.9952266646749286 -0.009296817693260857 0 0.08779728659186604 0.0007352188605233741 0.9961380907887886 0 0 0 0 1 0.9912414226844274 -0.09759099162906325 -0.08897438006195099 5.489999771118164 0.09710108374408992 0.9952259955286508 -0.009828395582665322 0 0.08950877884473471 0.0011028040905925306 0.9959854227511877 0 0 0 0 1 0.9898633687695284 -0.09759237135110148 -0.10318061941231704 5.489999771118164 0.09697746402626799 0.995226104833963 -0.010971405017208507 0 0.10375877138475864 0.0008539971232028945 0.9946021255002621 0 0 0 0 1 0.9867476439338764 -0.09758289577964818 -0.12964052469117135 5.489999771118164 0.09675144847051192 0.9952274003720247 -0.012711363719111968 0 0.13026221405227903 -3.4332770220552034e-10 0.99147957900816 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LHand_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LHand_transform_interpolation">
+				<Name_array id="anim_LHand_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LHand_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LHand_transform_sampler">
+				<input semantic="INPUT" source="#anim_LHand_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LHand_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LHand_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LHand_transform_sampler" target="LHand_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFingerA_transform" name="anim_LFingerA_transform">
+			<source id="anim_LFingerA_transform_input">
+				<float_array id="anim_LFingerA_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerA_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerA_transform_output">
+				<float_array id="anim_LFingerA_transform_output_array" count="96">0.6460730430768391 -0.7398352949792095 -0.18770551220584578 1.8386679887771606 -0.7073634335813817 -0.4879697019346023 -0.5113927481161761 -1.5823899507522583 0.2867518018101913 0.46317308459892437 -0.8385965047993746 1.3961620330810547 0 0 0 1 0.6510269262992018 -0.7351965735828196 -0.18881191547541507 1.8386679887771606 -0.7044891479799171 -0.49262819795791435 -0.5108938235634372 -1.5823899507522583 0.28259331487482886 0.4656215810814825 -0.8386522292459708 1.3961620330810547 0 0 0 1 0.6542358760791493 -0.7320388501616613 -0.18998563183814984 1.8386679887771606 -0.7031750346594994 -0.49630135923442875 -0.5091461788658257 -1.5823899507522583 0.278424656024857 0.46669484963523267 -0.8394495983925354 1.3961620330810547 0 0 0 1 0.6564659434029931 -0.7298236476837655 -0.19081380566819905 1.8386679887771606 -0.7008576473398577 -0.49651569797118733 -0.5121237348858426 -1.5823899507522583 0.27901796235593496 0.4699251056814779 -0.8374481307716883 1.3961620330810547 0 0 0 1 0.658695147184763 -0.7275983062480044 -0.19162830641708176 1.8386679887771606 -0.6985316637846056 -0.49672004242096435 -0.515094859368279 -1.5823899507522583 0.2795965267408633 0.4731489239154537 -0.8354375368823783 1.3961620330810547 0 0 0 1 0.6327289155251312 -0.7505096565622206 -0.19075999283195955 1.8386679887771606 -0.7155559773882495 -0.4724803453318642 -0.5145308217191948 -1.5823899507522583 0.29603000301040183 0.4620579819480891 -0.8359836473494693 1.3961620330810547 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerA_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerA_transform_interpolation">
+				<Name_array id="anim_LFingerA_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFingerA_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFingerA_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFingerA_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFingerA_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFingerA_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFingerA_transform_sampler" target="LFingerA_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFingerB1_transform" name="anim_LFingerB1_transform">
+			<source id="anim_LFingerB1_transform_input">
+				<float_array id="anim_LFingerB1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerB1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerB1_transform_output">
+				<float_array id="anim_LFingerB1_transform_output_array" count="96">0.9436084486945648 -0.22136316457894914 -0.24617360727712032 2.798801898956299 0.23281896926525888 0.9723523061644385 0.0180643363277087 0.8354200124740601 0.23536869609720665 -0.07435954588545585 0.9690573950149751 1.4904530048370361 0 0 0 1 0.9441107848069902 -0.2192716254001075 -0.2461194431684016 2.798801898956299 0.23097304258840132 0.9727676041180814 0.01935567037909477 0.8354200124740601 0.23517287175306947 -0.07512085378084142 0.9690462206307043 1.4904530048370361 0 0 0 1 0.9446090863754087 -0.21717922821418553 -0.24606270901805957 2.798801898956299 0.2291259444900043 0.9731777866047984 0.02064696637641778 0.8354200124740601 0.23497867030558114 -0.07588266265278376 0.9690339756737866 1.4904530048370361 0 0 0 1 0.9427767228483542 -0.22499729983975014 -0.24606557239918617 2.798801898956299 0.23718417369822886 0.971244946461633 0.02066208411143722 0.8354200124740601 0.23434103055676345 -0.07784259141088051 0.9690329263549473 1.4904530048370361 0 0 0 1 0.9408789307068507 -0.232799773245837 -0.2460713378852161 2.798801898956299 0.24522616541686526 0.9692453700175278 0.02067705236550967 0.8354200124740601 0.2336898918371814 -0.07979773352841964 0.9690311430376496 1.4904530048370361 0 0 0 1 0.9334733586060795 -0.26081801001355287 -0.24617362658346645 2.798801898956299 0.273471510994317 0.9617104620193172 0.018064327196901625 0.8354200124740601 0.2320362502868268 -0.08418404180818223 0.9690573902807136 1.4904530048370361 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerB1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerB1_transform_interpolation">
+				<Name_array id="anim_LFingerB1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFingerB1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFingerB1_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFingerB1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFingerB1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFingerB1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFingerB1_transform_sampler" target="LFingerB1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFingerB2_transform" name="anim_LFingerB2_transform">
+			<source id="anim_LFingerB2_transform_input">
+				<float_array id="anim_LFingerB2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerB2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerB2_transform_output">
+				<float_array id="anim_LFingerB2_transform_output_array" count="96">0.8854854077472462 0.46085062814707867 -0.059433081723364686 1.9775389432907104 -0.46166672606088055 0.8870534561390396 -1.128604013821144e-7 0 0.052720268539917764 0.027438376195173062 0.9982322920026436 0 0 0 0 1 0.8845211117209011 0.46270218094907073 -0.05940618372690263 1.9775389432907104 -0.4635044448719537 0.8860945398508595 0.00030988777904026633 0 0.0527828807849968 0.027260927927473873 0.9982338450005439 0 0 0 0 1 0.8835529785065764 0.46455172567924874 -0.05937868591160721 1.9775389432907104 -0.4653401409401845 0.8851317241457468 0.0006197907282778602 0 0.05284588349083112 0.027083668126929583 0.9982353367412234 0 0 0 0 1 0.8873449917918517 0.4572668566238868 -0.0593791830124705 1.9775389432907104 -0.4580420511006711 0.8889303066972283 0.0006239059721234713 0 0.05306924688940802 0.026644542940001313 0.9982353046081417 0 0 0 0 1 0.8910769014934415 0.44995102732369724 -0.059380372474386905 1.9775389432907104 -0.45071295579019705 0.892668716191895 0.0006281840317852502 0 0.05328965291415762 0.02620374291324292 0.9982352311703016 0 0 0 0 1 0.9039813670702346 0.42342106695863346 -0.05943305515823819 1.9775389432907104 -0.42417088191604313 0.9055821679640983 -9.97387869985239e-8 0 0.053821472707423566 0.025209861583439755 0.9982322935842879 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerB2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerB2_transform_interpolation">
+				<Name_array id="anim_LFingerB2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFingerB2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFingerB2_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFingerB2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFingerB2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFingerB2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFingerB2_transform_sampler" target="LFingerB2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFingerC1_transform" name="anim_LFingerC1_transform">
+			<source id="anim_LFingerC1_transform_input">
+				<float_array id="anim_LFingerC1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerC1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerC1_transform_output">
+				<float_array id="anim_LFingerC1_transform_output_array" count="96">0.9707121070133475 -0.2334781374359791 0.05662123839279143 3.2548370361328125 0.23281896078470624 0.9723523091765465 0.01806428349443238 0.8402360081672668 -0.05927340716406204 -0.004352720811614083 0.9982322961238529 -0.133884996175766 0 0 0 1 0.971185943488233 -0.2314799325192081 0.05670012356047982 3.2548370361328125 0.23083483557048182 0.9728307659896109 0.017764555474747368 0.8402360081672668 -0.05927176273757542 -0.004164322870482222 0.9982331974829384 -0.133884996175766 0 0 0 1 0.9716556992264906 -0.2294807425149564 0.05677843759266299 3.2548370361328125 0.22884974259677746 0.9733050811521423 0.017464659080852804 0.8402360081672668 -0.05927054474246338 -0.003975904702830192 0.9982340380430461 -0.133884996175766 0 0 0 1 0.969723284060974 -0.23751965783263412 0.056755303655851956 3.2548370361328125 0.23690302141756858 0.9713764964415973 0.017454529614821853 0.8402360081672668 -0.05927656192144252 -0.0034805608622816763 0.9982355307756068 -0.133884996175766 0 0 0 1 0.9677243190245246 -0.2455423026968936 0.05673288248297579 3.2548370361328125 0.24494004202434844 0.969381279760147 0.017444490926651922 0.8402360081672668 -0.05927915469733428 -0.002985303483181219 0.9982369807723429 -0.133884996175766 0 0 0 1 0.9600514755607579 -0.27406094898594696 0.05649566810414456 3.2548370361328125 0.27347363254712204 0.9617105297570648 0.018028567770830273 0.8402360081672668 -0.059273405293547375 -0.0018582775110157386 0.9982400564140866 -0.133884996175766 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerC1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerC1_transform_interpolation">
+				<Name_array id="anim_LFingerC1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFingerC1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFingerC1_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFingerC1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFingerC1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFingerC1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFingerC1_transform_sampler" target="LFingerC1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFingerC2_transform" name="anim_LFingerC2_transform">
+			<source id="anim_LFingerC2_transform_input">
+				<float_array id="anim_LFingerC2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerC2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerC2_transform_output">
+				<float_array id="anim_LFingerC2_transform_output_array" count="96">0.8854853952451609 0.46085065217710475 -0.059433081658772736 1.9775389432907104 -0.46166675008913105 0.887053443633543 -1.1205473599874838e-7 0 0.05272026811066976 0.027438376880019745 0.9982322920064894 0 0 0 0 1 0.8845210985439704 0.46270220614795565 -0.05940618365441798 1.9775389432907104 -0.4635044700689983 0.8860945266703196 0.00030988862407425183 0 0.052782880336570887 0.027260928647370154 0.9982338450045952 0 0 0 0 1 0.8835529646498831 0.4645517520442807 -0.05937868583078868 1.9775389432907104 -0.46534016730331396 0.8851317102852437 0.0006197916125983746 0 0.05284588302343108 0.027083668881973694 0.9982353367454818 0 0 0 0 1 0.88734498059241 0.45726687836535307 -0.05937918294706534 1.9775389432907104 -0.4580420728406277 0.888930295494699 0.000623906698261352 0 0.053069246511673794 0.026644543563596464 0.9982353046115785 0 0 0 0 1 0.8910768928740933 0.4499510443999898 -0.059380372423976334 1.9775389432907104 -0.45071297286534917 0.8926687075701645 0.0006281845997415762 0 0.0532896526234757 0.026203743403772885 0.9982352311729428 0 0 0 0 1 0.9039813670702346 0.42342106695863346 -0.05943305515823819 1.9775389432907104 -0.42417088191604313 0.9055821679640983 -9.97387869985239e-8 0 0.053821472707423566 0.025209861583439755 0.9982322935842879 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerC2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerC2_transform_interpolation">
+				<Name_array id="anim_LFingerC2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFingerC2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFingerC2_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFingerC2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFingerC2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFingerC2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFingerC2_transform_sampler" target="LFingerC2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFingerD1_transform" name="anim_LFingerD1_transform">
+			<source id="anim_LFingerD1_transform_input">
+				<float_array id="anim_LFingerD1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerD1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerD1_transform_output">
+				<float_array id="anim_LFingerD1_transform_output_array" count="96">0.9249517305935392 -0.2271312528243822 0.3047551313143774 3.124994993209839 0.23281908484787847 0.9723522798985451 0.01806426048023667 0.8388649821281433 -0.3004323048585375 0.05424424178222101 0.9522594144616574 -2.2201900482177734 0 0 0 1 0.9254302292141968 -0.22510378433515685 0.3048067865624882 3.124994993209839 0.23094002521508608 0.9728146265840887 0.017274462588325185 0.8388649821281433 -0.30040904715107114 0.05440577710180455 0.9522575364930089 -2.2201900482177734 0 0 0 1 0.9259047421824892 -0.22307534589819583 0.30485701313300717 3.124994993209839 0.22905998081064682 0.9732727188791632 0.016484534466807307 0.8388649821281433 -0.30038630726949644 0.05456743294275013 0.952255460297831 -2.2201900482177734 0 0 0 1 0.9240240723557438 -0.23086897363249753 0.30476061215482597 3.124994993209839 0.23699951647495882 0.9713562821453106 0.01726853576524273 0.8388649821281433 -0.3000179042952984 0.0562715749798858 0.9522724226562167 -2.2201900482177734 0 0 0 1 0.9220787648393878 -0.238646764992408 0.3046612430075862 3.124994993209839 0.24492301505522934 0.9693744577469968 0.018052073675117547 0.8388649821281433 -0.2996388962209762 0.057973116410749884 0.9522896878813194 -2.2201900482177734 0 0 0 1 0.914590762378268 -0.2657970171260569 0.3047551198244735 3.124994993209839 0.2734715599158342 0.9617104475152811 0.01806435875302379 0.8388649821281433 -0.2978876353418162 0.06682036236693319 0.9522594162745848 -2.2201900482177734 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerD1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerD1_transform_interpolation">
+				<Name_array id="anim_LFingerD1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFingerD1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFingerD1_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFingerD1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFingerD1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFingerD1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFingerD1_transform_sampler" target="LFingerD1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFingerD2_transform" name="anim_LFingerD2_transform">
+			<source id="anim_LFingerD2_transform_input">
+				<float_array id="anim_LFingerD2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerD2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerD2_transform_output">
+				<float_array id="anim_LFingerD2_transform_output_array" count="96">0.8854853940004271 0.4608506545695843 -0.05943308165234183 1.9775389432907104 -0.46166675248143385 0.8870534423884696 -1.1197452226899274e-7 0 0.05272026806793294 0.027438376948204515 0.9982322920068722 0 0 0 0 1 0.884521097836485 0.4627022072099844 -0.05940618591651944 1.9775389432907104 -0.46350447135391976 0.8860945259992464 0.0003098856148314455 0 0.052782880909086526 0.027260932434154565 0.9982338448709088 0 0 0 0 1 0.8835529644845521 0.4645517517788057 -0.05937869036786526 1.9775389432907104 -0.465340167483264 0.8851317101949054 0.0006197855191755215 0 0.052845884203102454 0.02708367638790716 0.9982353364793832 0 0 0 0 1 0.8873449779038334 0.4572668827053349 -0.059379189703052684 1.9775389432907104 -0.4580420778481692 0.8889302929207723 0.0006238976853235132 0 0.05306924824582769 0.02664455495472922 0.9982353042153373 0 0 0 0 1 0.8910768877399363 0.4499510533862689 -0.0593803813754676 1.9775389432907104 -0.4507129827411683 0.8926687025922244 0.0006281726468816556 0 0.053289654946042986 0.02620375867889844 0.9982352306479819 0 0 0 0 1 0.9039813540217362 0.4234210932802921 -0.0594330661025549 1.9775389432907104 -0.42417090935012114 0.9055821551140891 -1.143710620151589e-7 0 0.05382147565906967 0.025209881083494076 0.9982322929326802 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFingerD2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFingerD2_transform_interpolation">
+				<Name_array id="anim_LFingerD2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFingerD2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFingerD2_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFingerD2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFingerD2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFingerD2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFingerD2_transform_sampler" target="LFingerD2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RArm_transform" name="anim_RArm_transform">
+			<source id="anim_RArm_transform_input">
+				<float_array id="anim_RArm_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RArm_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RArm_transform_output">
+				<float_array id="anim_RArm_transform_output_array" count="96">0.8082027800135955 -0.5707432598626395 -0.14512200970102168 5.199999809265137 0.5178002477120559 0.8060895670066565 -0.28653536157402026 0 0.2805194642937088 0.15643446322466356 0.9470148303315963 0 0 0 0 1 0.8115535163968638 -0.5654627885832251 -0.14708067429668725 5.199999809265137 0.515419812257333 0.8114142719068929 -0.2755889991970335 0 0.27517868223483605 0.1478469278459645 0.9499568299507137 0 0 0 0 1 0.8187679693009172 -0.5535359506457805 -0.1523711383088156 5.199999809265137 0.5080910632863848 0.822186585147979 -0.2566177909093911 0 0.26732467872488547 0.13269201387188662 0.9544267104389209 0 0 0 0 1 0.8253842129761904 -0.5415687322084372 -0.15951241100247016 5.199999809265137 0.5002411472687888 0.8325170503580057 -0.23806334334040552 0 0.26172446494143564 0.11669905379801498 0.958061394323854 0 0 0 0 1 0.8318833136177675 -0.5294138015464367 -0.16640666830530987 5.199999809265137 0.4922213187784696 0.8423836690770529 -0.21933519419433484 0 0.25629733877726374 0.10055237841260883 0.9613536775460216 0 0 0 0 1 0.8302381283459846 -0.5305854093594005 -0.17083258944204383 5.199999809265137 0.4879300054556564 0.8399556044503014 -0.2374845096602556 0 0.26949760669920525 0.11381434851303421 0.9562517106159623 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RArm_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RArm_transform_interpolation">
+				<Name_array id="anim_RArm_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RArm_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RArm_transform_sampler">
+				<input semantic="INPUT" source="#anim_RArm_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RArm_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RArm_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RArm_transform_sampler" target="RArm_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RForeArm_transform" name="anim_RForeArm_transform">
+			<source id="anim_RForeArm_transform_input">
+				<float_array id="anim_RForeArm_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RForeArm_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RForeArm_transform_output">
+				<float_array id="anim_RForeArm_transform_output_array" count="96">0.9423664743673985 -0.13878139660492483 -0.30444236227034127 6.299950122833252 0.15495679471923662 0.987480596328125 0.029503620892885135 0 0.2965363717298428 -0.07497863583606522 0.9520737284525097 0 0 0 0 1 0.9411603011857324 -0.14174618454251936 -0.3067984788743576 6.299950122833252 0.1574878285499861 0.9871506021001242 0.02704205302806024 0 0.2990231953053003 -0.07376793301293107 0.9513902567970769 0 0 0 0 1 0.9386968649077175 -0.1524386697039223 -0.3092097149044977 6.299950122833252 0.16773393840371845 0.9855561618124562 0.0233319056460711 0 0.30118685515805615 -0.07376654995591198 0.9507076177182984 0 0 0 0 1 0.9361144228506337 -0.1631114177327962 -0.3115837812470701 6.299950122833252 0.17795086438178087 0.9838442166491825 0.019597123047363857 0 0.30335338665787437 -0.07379175273127572 0.9500165788195722 0 0 0 0 1 0.9281700247732532 -0.17306875279041767 -0.32946564603913997 6.299950122833252 0.18817834478268197 0.9820311506362924 0.014273392547310266 0 0.321075249228695 -0.07524643504863768 0.9440596688478978 0 0 0 0 1 0.9140298472324295 -0.1828896136836004 -0.36207848261796094 6.299950122833252 0.19762687927956235 0.9802701662261954 0.00374403433324947 0 0.35424998935001106 -0.07497859970371984 0.9321400938871723 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RForeArm_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RForeArm_transform_interpolation">
+				<Name_array id="anim_RForeArm_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RForeArm_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RForeArm_transform_sampler">
+				<input semantic="INPUT" source="#anim_RForeArm_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RForeArm_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RForeArm_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RForeArm_transform_sampler" target="RForeArm_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RHand_transform" name="anim_RHand_transform">
+			<source id="anim_RHand_transform_input">
+				<float_array id="anim_RHand_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RHand_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RHand_transform_output">
+				<float_array id="anim_RHand_transform_output_array" count="96">0.9865246412940092 0.07201969232046773 -0.14690914211781284 5.489999771118164 -0.071234181818082 0.9974032103006613 0.01060789435483249 0 0.14729162725842568 3.3670728592435917e-9 0.9890931081245916 0 0 0 0 1 0.9872708452958 0.07202443244110993 -0.14180535659999774 5.489999771118164 -0.07126303664167075 0.9974028461960578 0.010447105274236798 0 0.1421895131067141 -0.00020864213161915154 0.9898394308325651 0 0 0 0 1 0.9879216682596281 0.07202810279333363 -0.13719595398956308 5.489999771118164 -0.07128837410368022 0.9974025230903057 0.010304108440123326 0 0.1375817760488906 -0.0003991755065754785 0.9904903308756466 0 0 0 0 1 0.9885510158972188 0.07203114626039755 -0.13258356963436224 5.489999771118164 -0.07131330307040137 0.997402208834936 0.010161034218015078 0 0.13297105615044819 -0.0005897284152942698 0.9911197457656822 0 0 0 0 1 0.9891588745480753 0.07203356275520251 -0.12796830365202683 5.489999771118164 -0.0713378232842806 0.9974019034326002 0.010017883912629802 0 0.12835745351106725 -0.0007802985444527177 0.9917276618418667 0 0 0 0 1 0.9860571769108692 0.072019686985735 -0.15001469444372242 5.489999771118164 -0.07120042158876648 0.9974032106858673 0.010832141021292312 0 0.1504052652939669 -9.064529014543576e-10 0.9886244262468187 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RHand_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RHand_transform_interpolation">
+				<Name_array id="anim_RHand_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RHand_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RHand_transform_sampler">
+				<input semantic="INPUT" source="#anim_RHand_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RHand_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RHand_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RHand_transform_sampler" target="RHand_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFingerA_transform" name="anim_RFingerA_transform">
+			<source id="anim_RFingerA_transform_input">
+				<float_array id="anim_RFingerA_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerA_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerA_transform_output">
+				<float_array id="anim_RFingerA_transform_output_array" count="96">0.6417671537388621 0.7438039737078587 -0.18679017393406644 1.8387000560760498 0.7101857918507953 -0.48448634376914335 0.5107926426197487 1.5823999643325806 0.289432308899989 -0.46046566799014066 -0.8391664359155546 1.3961600065231323 0 0 0 1 0.637643318360815 0.747860856290509 -0.18470283749373034 1.8387000560760498 0.7130864075778759 -0.4823377021410633 0.5087810102794319 1.5823999643325806 0.29140825979626606 -0.45612989457138925 -0.8408488243440713 1.3961600065231323 0 0 0 1 0.6334917999349327 0.7518919686913839 -0.1826105331918025 1.8387000560760498 0.7159720150479565 -0.4801423447871769 0.506801146812476 1.5823999643325806 0.29338066242233496 -0.4517984021216401 -0.8424998461465529 1.3961600065231323 0 0 0 1 0.6241550934668396 0.7589209642215177 -0.18565933686319844 1.8387000560760498 0.721500088711892 -0.468696125240186 0.5096680921674103 1.5823999643325806 0.29977998813818885 -0.4520651637208045 -0.8401006168679734 1.3961600065231323 0 0 0 1 0.6147898769954526 0.7657549183157123 -0.18881952287624668 1.8387000560760498 0.7268118978225157 -0.45712141769691006 0.5126250819716114 1.5823999643325806 0.30623172978571256 -0.45239298685773754 -0.8375934056058385 1.3961600065231323 0 0 0 1 0.5957624891667144 0.7807525756425254 -0.18839445886077322 1.8387000560760498 0.7378769021636401 -0.4394317167173494 0.5122864858614113 1.5823999643325806 0.31718249282592936 -0.4442129916722459 -0.8378962252417201 1.3961600065231323 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerA_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerA_transform_interpolation">
+				<Name_array id="anim_RFingerA_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFingerA_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFingerA_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFingerA_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFingerA_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFingerA_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFingerA_transform_sampler" target="RFingerA_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFingerB1_transform" name="anim_RFingerB1_transform">
+			<source id="anim_RFingerB1_transform_input">
+				<float_array id="anim_RFingerB1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerB1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerB1_transform_output">
+				<float_array id="anim_RFingerB1_transform_output_array" count="96">0.9534477344251507 0.17417222220230705 -0.24617362720782554 2.7988998889923096 -0.1841846616369518 0.982725645200384 -0.018064237685841117 -0.8355000019073486 0.23877484820899553 0.06256471272689709 0.9690573917906885 1.4904509782791138 0 0 0 1 0.9527955766526515 0.1778082173765185 -0.2460992217470955 2.7988998889923096 -0.1882443879923967 0.9819315072202663 -0.01935369518991075 -0.8355000019073486 0.23821133369449352 0.06476691255201777 0.9690513957154027 1.4904509782791138 0 0 0 1 0.9496176167770286 0.19405435575201566 -0.246108286980318 2.7988998889923096 -0.20490856006570626 0.9785960670676512 -0.01903206587640762 -0.8355000019073486 0.23714734642941981 0.06850287974527217 0.96905546360778 1.4904509782791138 0 0 0 1 0.9461610715055204 0.21024353616315541 -0.2461237133417613 2.7988998889923096 -0.22151383102063363 0.9749777201005673 -0.018710103528897497 -0.8355000019073486 0.23603145856874186 0.07222257825023864 0.9690578154871877 1.4904509782791138 0 0 0 1 0.942426955329207 0.22637100357711598 -0.2461454907334488 2.7988998889923096 -0.2380553871217006 0.9710775092896289 -0.018387594029344992 -0.8355000019073486 0.2348639319505195 0.07592522434171722 0.9690584573581729 1.4904509782791138 0 0 0 1 0.9384163637189108 0.24243202097129715 -0.24617360441840538 2.7988998889923096 -0.2545284330984456 0.9668965595963995 -0.01806432354383444 -0.8355000019073486 0.23364504071139 0.0796100386158603 0.9690573959794921 1.4904509782791138 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerB1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerB1_transform_interpolation">
+				<Name_array id="anim_RFingerB1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFingerB1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFingerB1_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFingerB1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFingerB1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFingerB1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFingerB1_transform_sampler" target="RFingerB1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFingerB2_transform" name="anim_RFingerB2_transform">
+			<source id="anim_RFingerB2_transform_input">
+				<float_array id="anim_RFingerB2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerB2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerB2_transform_output">
+				<float_array id="anim_RFingerB2_transform_output_array" count="96">0.9065766053463143 -0.4178355769075943 -0.05943306578875792 1.9774919748306274 0.41857550031546376 0.9081820029793874 8.4214760817658e-8 0 0.05397600554331671 -0.0248773015949432 0.9982322929513662 0.000012000000424450263 0 0 0 1 0.9082245708458064 -0.41424512663945984 -0.0594062620218497 1.9774919748306274 0.41496123331941864 0.9098390401080633 -0.0003097374129841495 0 0.05417844362823442 -0.02436998462650087 0.9982338403877753 0.000012000000424450263 0 0 0 1 0.9151521429614655 -0.3987065688610941 -0.0594106655412218 1.9774919748306274 0.3993994266302445 0.916776987232842 -0.00023170607572188529 0 0.054558713698814675 -0.023516539441151132 0.9982335994807245 0.000012000000424450263 0 0 0 1 0.9218138005849641 -0.38305219764707293 -0.059416587994027034 1.9774919748306274 0.38372166906354893 0.9234487841480339 -0.00015409932571223799 0 0.054927204026678944 -0.022657381430026893 0.9982332619806584 0.000012000000424450263 0 0 0 1 0.9282076086136333 -0.36728656198375365 -0.05942404141350874 1.9774919748306274 0.36793251279258743 0.9298524937438165 -0.00007686701652914914 0 0.05528382531891786 -0.02179268832796926 0.9982328272470042 0.000012000000424450263 0 0 0 1 0.9343317097470868 -0.3514142431745997 -0.05943303673134129 1.9774919748306274 0.3520365423376768 0.9359862567681918 4.125304273183694e-8 0 0.05562849108162779 -0.020922639295555476 0.998232294681398 0.000012000000424450263 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerB2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerB2_transform_interpolation">
+				<Name_array id="anim_RFingerB2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFingerB2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFingerB2_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFingerB2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFingerB2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFingerB2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFingerB2_transform_sampler" target="RFingerB2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFingerC1_transform" name="anim_RFingerC1_transform">
+			<source id="anim_RFingerC1_transform_input">
+				<float_array id="anim_RFingerC1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerC1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerC1_transform_output">
+				<float_array id="anim_RFingerC1_transform_output_array" count="96">0.9811202492505808 0.1849245613758979 0.05662122491089242 3.2548999786376953 -0.1841846500369908 0.9827256472898578 -0.018064242289151784 -0.8403000235557556 -0.05898365198281071 0.007294433402377016 0.9982322976342275 -0.13389000296592712 0 0 0 1 0.9803748564484163 0.1888065064266665 0.05672075435591779 3.2548999786376953 -0.1880897079994572 0.9819910966486782 -0.01776929507338949 -0.8403000235557556 -0.05905423429717925 0.006751979982450252 0.9982319410727601 -0.13389000296592712 0 0 0 1 0.9770163674665929 0.20548682192862153 0.05669377140443683 3.2548999786376953 -0.2047935186226427 0.9786425685353308 -0.0178420228877687 -0.8403000235557556 -0.05914923864717827 0.005821431460161203 0.9982321766519119 -0.13389000296592712 0 0 0 1 0.9733740099954588 0.22210752193384123 0.056668204186905505 3.2548999786376953 -0.22143780337606375 0.9750099166235863 -0.017915404590770723 -0.8403000235557556 -0.059231207157581345 0.004889906550794943 0.9982323140995688 -0.13389000296592712 0 0 0 1 0.9694488409789136 0.23866377700850538 0.05664403118313125 3.2548999786376953 -0.23801772927850162 0.9710941967288172 -0.01798948661632882 -0.8403000235557556 -0.05930012878356191 0.003957603270616118 0.9982323537646961 -0.13389000296592712 0 0 0 1 0.9652419995085061 0.2551507764324223 0.05662122985906572 3.2548999786376953 -0.25452848204141526 0.9668965468737031 -0.01806431491648366 -0.8403000235557556 -0.059355995607133456 0.0030247197623919668 0.9982322960392761 -0.13389000296592712 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerC1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerC1_transform_interpolation">
+				<Name_array id="anim_RFingerC1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFingerC1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFingerC1_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFingerC1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFingerC1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFingerC1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFingerC1_transform_sampler" target="RFingerC1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFingerC2_transform" name="anim_RFingerC2_transform">
+			<source id="anim_RFingerC2_transform_input">
+				<float_array id="anim_RFingerC2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerC2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerC2_transform_output">
+				<float_array id="anim_RFingerC2_transform_output_array" count="96">0.9065766053463143 -0.4178355769075943 -0.05943306578875792 1.977491021156311 0.41857550031546376 0.9081820029793874 8.4214760817658e-8 0 0.05397600554331671 -0.0248773015949432 0.9982322929513662 0 0 0 0 1 0.9082245708458064 -0.41424512663945984 -0.0594062620218497 1.977491021156311 0.41496123331941864 0.9098390401080633 -0.0003097374129841495 0 0.05417844362823442 -0.02436998462650087 0.9982338403877753 0 0 0 0 1 0.9151521429614655 -0.3987065688610941 -0.0594106655412218 1.977491021156311 0.3993994266302445 0.916776987232842 -0.00023170607572188529 0 0.054558713698814675 -0.023516539441151132 0.9982335994807245 0 0 0 0 1 0.9218138005849641 -0.38305219764707293 -0.059416587994027034 1.977491021156311 0.38372166906354893 0.9234487841480339 -0.00015409932571223799 0 0.054927204026678944 -0.022657381430026893 0.9982332619806584 0 0 0 0 1 0.9282076086136333 -0.36728656198375365 -0.05942404141350874 1.977491021156311 0.36793251279258743 0.9298524937438165 -0.00007686701652914914 0 0.05528382531891786 -0.02179268832796926 0.9982328272470042 0 0 0 0 1 0.9343317097470868 -0.3514142431745997 -0.05943303673134129 1.977491021156311 0.3520365423376768 0.9359862567681918 4.125304273183694e-8 0 0.05562849108162779 -0.020922639295555476 0.998232294681398 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerC2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerC2_transform_interpolation">
+				<Name_array id="anim_RFingerC2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFingerC2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFingerC2_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFingerC2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFingerC2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFingerC2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFingerC2_transform_sampler" target="RFingerC2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFingerD1_transform" name="anim_RFingerD1_transform">
+			<source id="anim_RFingerD1_transform_input">
+				<float_array id="anim_RFingerD1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerD1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerD1_transform_output">
+				<float_array id="anim_RFingerD1_transform_output_array" count="96">0.9351009273530724 0.18086066496538541 0.30475510747435014 3.125 -0.18418465457149805 0.9827256462908626 -0.018064250401951868 -0.8389000296592712 -0.30275777229297024 -0.039239316896259646 0.9522594222824539 -2.2201900482177734 0 0 0 1 0.9343850751913846 0.18432453780282876 0.3048753778568616 3.125 -0.18833666274185357 0.9819664020474808 -0.0164707837453668 -0.8389000296592712 -0.3024133474680837 -0.04202915670934732 0.9522498187237681 -2.2201900482177734 0 0 0 1 0.9311089835307449 0.20028074167894963 0.3048338650820687 3.125 -0.20497861025119266 0.9786211137346503 -0.01686668587014946 -0.8389000296592712 -0.30169492890639166 -0.04677969928593477 0.9522561785606249 -2.2201900482177734 0 0 0 1 0.9275579395553453 0.21617868122919304 0.30480001074450325 3.125 -0.22156109872877922 0.9749936572277614 -0.0172640637084864 -0.8389000296592712 -0.30091019972400157 -0.0515184059113 0.9522598939125915 -2.2201900482177734 0 0 0 1 0.9237329784957187 0.23201365349076822 0.3047737669703447 3.125 -0.23807932629482162 0.9710850871496128 -0.017663179403287925 -0.8389000296592712 -0.3000593588449327 -0.05624427179273125 0.9522609742397686 -2.2201900482177734 0 0 0 1 0.9196352157462192 0.2477809738802136 0.3047550802568807 3.125 -0.2545285097283779 0.9668965399766137 -0.01806429397191151 -0.8389000296592712 -0.29914262099349187 -0.06095629552577408 0.9522594301664429 -2.2201900482177734 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerD1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerD1_transform_interpolation">
+				<Name_array id="anim_RFingerD1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFingerD1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFingerD1_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFingerD1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFingerD1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFingerD1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFingerD1_transform_sampler" target="RFingerD1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFingerD2_transform" name="anim_RFingerD2_transform">
+			<source id="anim_RFingerD2_transform_input">
+				<float_array id="anim_RFingerD2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerD2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerD2_transform_output">
+				<float_array id="anim_RFingerD2_transform_output_array" count="96">0.9065766053463143 -0.4178355769075943 -0.05943306578875792 1.9776129722595215 0.41857550031546376 0.9081820029793874 8.4214760817658e-8 0.000024000000848900527 0.05397600554331671 -0.0248773015949432 0.9982322929513662 0.000018999999156221747 0 0 0 1 0.9082245708458064 -0.41424512663945984 -0.0594062620218497 1.9776129722595215 0.41496123331941864 0.9098390401080633 -0.0003097374129841495 0.000024000000848900527 0.05417844362823442 -0.02436998462650087 0.9982338403877753 0.000018999999156221747 0 0 0 1 0.9151521429614655 -0.3987065688610941 -0.0594106655412218 1.9776129722595215 0.3993994266302445 0.916776987232842 -0.00023170607572188529 0.000024000000848900527 0.054558713698814675 -0.023516539441151132 0.9982335994807245 0.000018999999156221747 0 0 0 1 0.9218138005849641 -0.38305219764707293 -0.059416587994027034 1.9776129722595215 0.38372166906354893 0.9234487841480339 -0.00015409932571223799 0.000024000000848900527 0.054927204026678944 -0.022657381430026893 0.9982332619806584 0.000018999999156221747 0 0 0 1 0.9282076086136333 -0.36728656198375365 -0.05942404141350874 1.9776129722595215 0.36793251279258743 0.9298524937438165 -0.00007686701652914914 0.000024000000848900527 0.05528382531891786 -0.02179268832796926 0.9982328272470042 0.000018999999156221747 0 0 0 1 0.9343317097470868 -0.3514142431745997 -0.05943303673134129 1.9776129722595215 0.3520365423376768 0.9359862567681918 4.125304273183694e-8 0.000024000000848900527 0.05562849108162779 -0.020922639295555476 0.998232294681398 0.000018999999156221747 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFingerD2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFingerD2_transform_interpolation">
+				<Name_array id="anim_RFingerD2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFingerD2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFingerD2_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFingerD2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFingerD2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFingerD2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFingerD2_transform_sampler" target="RFingerD2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LThigh_transform" name="anim_LThigh_transform">
+			<source id="anim_LThigh_transform_input">
+				<float_array id="anim_LThigh_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LThigh_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LThigh_transform_output">
+				<float_array id="anim_LThigh_transform_output_array" count="96">0.7873623184290235 -0.12109559108694731 -0.6044803035148258 5.958286762237549 0.21445244588258397 0.9730814000641602 0.08439631096292788 9.496793746948242 0.5779885188938017 -0.19608275464322883 0.7921368728688704 -1.107069969177246 0 0 0 1 0.7783535964141877 -0.11796696567040166 -0.6166437171978795 5.958286762237549 0.2140197252756793 0.973214052879425 0.0839640665459129 9.496793746948242 0.5902213450410133 -0.1973276521132353 0.7827519157239127 -1.107069969177246 0 0 0 1 0.7565631508581396 -0.11268236924207015 -0.6441388688983127 5.958286762237549 0.21418126832072354 0.9734063210100571 0.08128049285155639 9.496793746948242 0.6178499680862095 -0.19945630569039288 0.7605778060502492 -1.107069969177246 0 0 0 1 0.7338003504843447 -0.10735491125801393 -0.6708293141014613 5.958286762237549 0.21429664894073508 0.973600684738135 0.07860440782937013 9.496793746948242 0.6446813103245853 -0.20143641603796114 0.7374343214225638 -1.107069969177246 0 0 0 1 0.7193847763630012 -0.10346933766417629 -0.686862169361868 5.958286762237549 0.2140238092893533 0.9737515187143507 0.07747121309731804 9.496793746948242 0.6608171854563327 -0.2027364692521605 0.7226469203149893 -1.107069969177246 0 0 0 1 0.7255360717103632 -0.10290530214045161 -0.6804468439477673 5.958286762237549 0.21295148929942576 0.9737991274874528 0.07979299787470273 9.496793746948242 0.654407420382938 -0.20279486703577615 0.7284402309398422 -1.107069969177246 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LThigh_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LThigh_transform_interpolation">
+				<Name_array id="anim_LThigh_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LThigh_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LThigh_transform_sampler">
+				<input semantic="INPUT" source="#anim_LThigh_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LThigh_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LThigh_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LThigh_transform_sampler" target="LThigh_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LLeg_transform" name="anim_LLeg_transform">
+			<source id="anim_LLeg_transform_input">
+				<float_array id="anim_LLeg_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LLeg_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LLeg_transform_output">
+				<float_array id="anim_LLeg_transform_output_array" count="96">0.2961967497483394 0 0.9551269472894792 6.982740879058838 0 1 0 0 -0.9551269472894792 0 0.2961967497483394 0 0 0 0 1 0.29047394364883805 0 0.9568829019587985 6.982740879058838 0 1 0 0 -0.9568829019587985 0 0.29047394364883805 0 0 0 0 1 0.28284050348355894 0 0.9591669560557051 6.982740879058838 0 1 0 0 -0.9591669560557051 0 0.28284050348355894 0 0 0 0 1 0.2751891068178651 0 0.9613901161801001 6.982740879058838 0 1 0 0 -0.9613901161801001 0 0.2751891068178651 0 0 0 0 1 0.26752023941071157 0 0.9635522411917453 6.982740879058838 0 1 0 0 -0.9635522411917453 0 0.26752023941071157 0 0 0 0 1 0.27979564645823074 0 0.9600595795173447 6.982740879058838 0 1 0 0 -0.9600595795173447 0 0.27979564645823074 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LLeg_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LLeg_transform_interpolation">
+				<Name_array id="anim_LLeg_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LLeg_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LLeg_transform_sampler">
+				<input semantic="INPUT" source="#anim_LLeg_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LLeg_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LLeg_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LLeg_transform_sampler" target="LLeg_bone_id/transform"/>
+		</animation>
+		<animation id="anim_LFoot_transform" name="anim_LFoot_transform">
+			<source id="anim_LFoot_transform_input">
+				<float_array id="anim_LFoot_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_LFoot_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFoot_transform_output">
+				<float_array id="anim_LFoot_transform_output_array" count="96">-0.5962639891626962 0.23453459505158689 -0.7677647940299015 6.535354137420654 0.2079325090647597 0.9688548873091798 0.13447780118350441 0 0.7753923696437968 -0.07945898980672159 -0.6264606468383098 0 0 0 0 1 -0.5945922782706534 0.2337632380984834 -0.7692949831726617 6.535354137420654 0.20815778059618348 0.9689360509380245 0.13354125793138663 0 0.7766146798755384 -0.08073213552444741 -0.6247815308533675 0 0 0 0 1 -0.5929161974839574 0.23298988576957283 -0.770821701750961 6.535354137420654 0.2083836969615623 0.969015720812618 0.13260757014075086 0 0.7778345695594905 -0.0820014996636269 -0.6230964102377092 0 0 0 0 1 -0.5912357497193983 0.23221454781710685 -0.7723449307374511 6.535354137420654 0.20861025229195643 0.969093905792235 0.13167674204291732 0 0.7790520206587156 -0.08326707355520127 -0.6214052973455613 0 0 0 0 1 -0.5895509379559352 0.2314372340315559 -0.7738646511238901 6.535354137420654 0.20883744069268587 0.9691706147328994 0.1307487778267269 0 0.7802670151430254 -0.08452884857891241 -0.6197082045912554 0 0 0 0 1 -0.586131616408879 0.23030529228309238 -0.7767941816158991 6.535354137420654 0.20868603202187014 0.9693147190219243 0.12991965027052216 0 0.7828792169197506 -0.08595608084276049 -0.6162075006694345 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_LFoot_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_LFoot_transform_interpolation">
+				<Name_array id="anim_LFoot_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_LFoot_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_LFoot_transform_sampler">
+				<input semantic="INPUT" source="#anim_LFoot_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_LFoot_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_LFoot_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_LFoot_transform_sampler" target="LFoot_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RThigh_transform" name="anim_RThigh_transform">
+			<source id="anim_RThigh_transform_input">
+				<float_array id="anim_RThigh_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RThigh_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RThigh_transform_output">
+				<float_array id="anim_RThigh_transform_output_array" count="96">0.8622803333119559 0.1290414966329414 -0.4897151405972179 5.958237171173096 -0.18783806823762123 0.9795104309773596 -0.07263728882128034 -9.496789932250977 0.4703078639616619 0.15462085161218692 0.8688514863557184 -1.1070669889450073 0 0 0 1 0.8547789768568741 0.12692989301823343 -0.5032312619282466 5.958237171173096 -0.18744934549378317 0.9796836848711086 -0.07129249940434679 -9.496789932250977 0.48395830770580645 0.1552697003788772 0.8612059431673622 -1.1070669889450073 0 0 0 1 0.8364472987389908 0.1230855341331251 -0.534046690579961 5.958237171173096 -0.18758500453417914 0.9798944958911957 -0.0679605988500066 -9.496789932250977 0.5149444460387522 0.15702461020267758 0.84271910461585 -1.1070669889450073 0 0 0 1 0.8170052943393579 0.11920946042023922 -0.5641732478306417 5.958237171173096 -0.18764408073460326 0.9801078447750307 -0.0646398605792898 -9.496789932250977 0.5452449431097229 0.15867487878287398 0.8231222478201615 -1.1070669889450073 0 0 0 1 0.8044230903213868 0.11648659386807059 -0.5825241327248213 5.958237171173096 -0.18733368474256668 0.9802954166134206 -0.06266567423632143 -9.496789932250977 0.563746026432615 0.15953610756106373 0.8103941313124756 -1.1070669889450073 0 0 0 1 0.8094626277240525 0.11643317607876519 -0.5755115722783367 5.958237171173096 -0.1863258625716408 0.9804196493867949 -0.06371800399579469 -9.496789932250977 0.5568239643325402 0.15881003307248995 0.8153075776297609 -1.1070669889450073 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RThigh_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RThigh_transform_interpolation">
+				<Name_array id="anim_RThigh_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RThigh_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RThigh_transform_sampler">
+				<input semantic="INPUT" source="#anim_RThigh_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RThigh_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RThigh_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RThigh_transform_sampler" target="RThigh_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RLeg_transform" name="anim_RLeg_transform">
+			<source id="anim_RLeg_transform_input">
+				<float_array id="anim_RLeg_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RLeg_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RLeg_transform_output">
+				<float_array id="anim_RLeg_transform_output_array" count="96">0.3263796784054893 0 0.945238755830467 6.98278284072876 0 1 0 0 -0.945238755830467 0 0.3263796784054893 0 0 0 0 1 0.31960399338864187 0 0.9475512056928812 6.98278284072876 0 1 0 0 -0.9475512056928812 0 0.31960399338864187 0 0 0 0 1 0.30988496421756484 0 0.9507740577823307 6.98278284072876 0 1 0 0 -0.9507740577823307 0 0.30988496421756484 0 0 0 0 1 0.3001334447534423 0 0.953897224726245 6.98278284072876 0 1 0 0 -0.953897224726245 0 0.3001334447534423 0 0 0 0 1 0.29035045740704524 0 0.9569203790721147 6.98278284072876 0 1 0 0 -0.9569203790721147 0 0.29035045740704524 0 0 0 0 1 0.3033223268354789 0 0.9528880133799096 6.98278284072876 0 1 0 0 -0.9528880133799096 0 0.3033223268354789 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RLeg_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RLeg_transform_interpolation">
+				<Name_array id="anim_RLeg_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RLeg_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RLeg_transform_sampler">
+				<input semantic="INPUT" source="#anim_RLeg_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RLeg_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RLeg_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RLeg_transform_sampler" target="RLeg_bone_id/transform"/>
+		</animation>
+		<animation id="anim_RFoot_transform" name="anim_RFoot_transform">
+			<source id="anim_RFoot_transform_input">
+				<float_array id="anim_RFoot_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_RFoot_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFoot_transform_output">
+				<float_array id="anim_RFoot_transform_output_array" count="96">-0.692273646932531 -0.19085651184617522 -0.6959389266657271 6.535356044769287 -0.1303724534255881 0.9816005211612886 -0.13951143409656228 0 0.7097606787858329 -0.005848823967033345 -0.7044186043168341 0.000004999999873689376 0 0 0 1 -0.6915944838532428 -0.19120822811540794 -0.6965173963403445 6.535356044769287 -0.13132931713287455 0.981538272849169 -0.13905117544876489 0 0.7102462110882249 -0.0046938718811301156 -0.7039377012219079 0.000004999999873689376 0 0 0 1 -0.6909133889203367 -0.1915585530609229 -0.697096843888869 6.535356044769287 -0.13228551296876 0.9814748057457939 -0.13859202265948792 0 0.7107314767682719 -0.0035392704702482125 -0.7034545056329733 0.000004999999873689376 0 0 0 1 -0.6902303624588215 -0.19190748335311442 -0.697677263907202 6.535356044769287 -0.13324103850456315 0.9814101229849264 -0.1381339790237625 0 0.7112164736549562 -0.0023850232254330334 -0.7029690172874083 0.000004999999873689376 0 0 0 1 -0.6895454047988736 -0.1922550156751814 -0.6982586509800603 6.535356044769287 -0.1341958913105505 0.9813442277089605 -0.13767704782450463 0 0.7117011995747407 -0.0012311336400901013 -0.7024812359300681 0.000004999999873689376 0 0 0 1 -0.6853766527544867 -0.19215956091926856 -0.702377068963937 6.535356044769287 -0.13449720674648313 0.9813636125757866 -0.13724416668694966 0 0.7156600765981367 0.00040380628445113587 -0.6984486321155159 0.000004999999873689376 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_RFoot_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_RFoot_transform_interpolation">
+				<Name_array id="anim_RFoot_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_RFoot_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_RFoot_transform_sampler">
+				<input semantic="INPUT" source="#anim_RFoot_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_RFoot_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_RFoot_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_RFoot_transform_sampler" target="RFoot_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Tail1_transform" name="anim_Tail1_transform">
+			<source id="anim_Tail1_transform_input">
+				<float_array id="anim_Tail1_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail1_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail1_transform_output">
+				<float_array id="anim_Tail1_transform_output_array" count="96">0.3680866207123442 -0.021635524816905744 -0.9295397483262694 9.893633842468262 -0.02419703254184088 -0.9996135403443058 0.01368479362259231 0 -0.9294765964072126 0.017454914099499473 -0.36846788558169297 -8.004105567932129 0 0 0 1 0.37621030817027445 -0.018508679545924955 -0.9263494118354552 9.893633842468262 -0.01884686506730632 -0.9997464615006479 0.012321054908922817 0 -0.9263425930526794 0.012823474505772665 -0.3764637549592764 -8.004105567932129 0 0 0 1 0.39557806100197646 -0.010709974644908877 -0.918369911363075 9.893633842468262 -0.007440116736786601 -0.9999365645547653 0.008456448980352211 0 -0.9184022225130228 0.00348759365748377 -0.395632650793158 -8.004105567932129 0 0 0 1 0.41464205867014015 -0.002981374116911479 -0.9099797110871006 9.893633842468262 0.0042665359397057925 -0.9999772721705718 0.0052203269416895215 0 -0.9099745929710694 -0.006047028251789548 -0.4146199146163374 -8.004105567932129 0 0 0 1 0.42776816699485787 0.0031595677347435675 -0.9038829639049456 9.893633842468262 0.008837719434189005 -0.9999607105375363 0.0006870927659363719 0 -0.9038452799130293 -0.008282180449375122 -0.42777928358669093 -8.004105567932129 0 0 0 1 0.4258186309605224 0.00395943750187799 -0.9047998764265917 9.893633842468262 -0.0005295338809344727 -0.9999891635027489 -0.004625199557054363 0 -0.9048083847537973 0.002448618333337308 -0.42581191992179224 -8.004105567932129 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail1_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail1_transform_interpolation">
+				<Name_array id="anim_Tail1_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Tail1_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Tail1_transform_sampler">
+				<input semantic="INPUT" source="#anim_Tail1_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Tail1_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Tail1_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Tail1_transform_sampler" target="Tail1_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Tail2_transform" name="anim_Tail2_transform">
+			<source id="anim_Tail2_transform_input">
+				<float_array id="anim_Tail2_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail2_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail2_transform_output">
+				<float_array id="anim_Tail2_transform_output_array" count="96">0.9533305045750727 -0.03537384399342729 -0.29984936252686256 7.32045316696167 0.030814409309302047 0.9993265592150132 -0.019922354941159653 0 0.30035216201245496 0.009752907700343394 0.9537785170393768 0 0 0 0 1 0.9562421802353974 -0.03000341295686549 -0.291033826126094 7.32045316696167 0.02626102948451682 0.9995146575008549 -0.01675731993374785 0 0.29139535183160875 0.00838120825946003 0.9565659957781504 0 0 0 0 1 0.9620955294448121 -0.021102695547106025 -0.2718949585096289 7.32045316696167 0.018245085220482217 0.999748584432553 -0.01303398597528365 0 0.2721016521221509 0.007579192948639124 0.9622386641299773 0 0 0 0 1 0.967489248966174 -0.012211460489695403 -0.25261716760263375 7.32045316696167 0.010148118453923109 0.9999036701003715 -0.009469224448312342 0 0.2527084660764528 0.006597783909463767 0.9675199741714743 0 0 0 0 1 0.972420747804994 -0.0033339958900611226 -0.2332097204444559 7.32045316696167 0.001973973786144599 0.9999796599650542 -0.00606490590744863 0 0.23322519732196137 0.005437290463056657 0.9724075499534918 0 0 0 0 1 0.9717429221398565 -0.011450754825275442 -0.23576380868365765 7.32045316696167 0.011585103256427247 0.9999325579831038 -0.0008153943247515333 0 0.23575724517738755 -0.0019389944038984226 0.9718100440142975 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail2_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail2_transform_interpolation">
+				<Name_array id="anim_Tail2_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Tail2_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Tail2_transform_sampler">
+				<input semantic="INPUT" source="#anim_Tail2_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Tail2_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Tail2_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Tail2_transform_sampler" target="Tail2_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Tail3_transform" name="anim_Tail3_transform">
+			<source id="anim_Tail3_transform_input">
+				<float_array id="anim_Tail3_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail3_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail3_transform_output">
+				<float_array id="anim_Tail3_transform_output_array" count="96">0.947412840100626 -0.03805517571144991 -0.3177431573048212 7.465860843658447 0.03172490062263732 0.9991820482273808 -0.02507519054005309 0 0.31843749950806594 0.013676187396597579 0.9478451987562861 0 0 0 0 1 0.9506281110878768 -0.03339987538489004 -0.3085298085011709 7.465860843658447 0.027954424989691636 0.9993658761762446 -0.02205437956466983 0 0.30907077592841264 0.012340739797947252 0.9509589694662164 0 0 0 0 1 0.9572850306677821 -0.026171696624414233 -0.28795904631593544 7.465860843658447 0.021745511005274002 0.9995912571864941 -0.018559399436501325 0 0.2883270760967533 0.011504818648015409 0.9574628642079929 0 0 0 0 1 0.9634463202896016 -0.01895650703324564 -0.2672299361252868 7.465860843658447 0.015455848352365497 0.9997650518399568 -0.015197298153200436 0 0.2674552386328132 0.010511515616080169 0.9635129492473455 0 0 0 0 1 0.9691087695000268 -0.011758077424723295 -0.24635328391035932 7.465860843658447 0.00908866554420095 0.9998870514898296 -0.011969980016709772 0 0.24646620262577495 0.009361190001756682 0.9691061753414749 0 0 0 0 1 0.9687785782700167 -0.020027026060723246 -0.24711734967882817 7.465860843658447 0.01896883383728751 0.999797877898695 -0.006662333834290225 0 0.24720082853416672 0.001766798355575347 0.9689626560376784 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail3_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail3_transform_interpolation">
+				<Name_array id="anim_Tail3_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Tail3_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Tail3_transform_sampler">
+				<input semantic="INPUT" source="#anim_Tail3_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Tail3_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Tail3_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Tail3_transform_sampler" target="Tail3_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Tail4_transform" name="anim_Tail4_transform">
+			<source id="anim_Tail4_transform_input">
+				<float_array id="anim_Tail4_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail4_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail4_transform_output">
+				<float_array id="anim_Tail4_transform_output_array" count="96">0.9522361197768564 -0.035142221252265834 -0.3033338037175763 7.936951160430908 0.02753927957420023 0.9991910078930076 -0.029307299880567163 0 0.30411833268129423 0.019553875094524095 0.9524335597278886 -0.0007996869971975684 0 0 0 1 0.9553151826811928 -0.031262423523585825 -0.2939312208905875 7.936951160430908 0.024598631344000057 0.9993502983978698 -0.026341762053638647 0 0.29456376062713713 0.017934379485236907 0.9554635257076421 -0.0007996869971975684 0 0 0 1 0.9648266211706433 -0.02588883624127038 -0.2616091726956693 7.936951160430908 0.02058859514213961 0.9995238744094889 -0.022981171326054203 0 0.2620795696549292 0.01678668053895933 0.9649002572939702 -0.0007996869971975684 0 0 0 1 0.9732160949310907 -0.020553622755341203 -0.22897157281791417 7.936951160430908 0.016463910383474858 0.9996692377957254 -0.019757395066109476 0 0.22930192372058975 0.015458447417012439 0.9732325848333955 -0.0007996869971975684 0 0 0 1 0.9804737979110851 -0.01526298016865054 -0.19605655573375744 7.936951160430908 0.012229396923387724 0.9997861812810654 -0.01667433867698396 0 0.1962691352727239 0.013951098730777755 0.9804508113023831 -0.0007996869971975684 0 0 0 1 0.9869589625898302 -0.023912751109410667 -0.15918601225605725 7.936951160430908 0.02263007247097289 0.9996952256614944 -0.009865881084445634 0 0.15937341680331993 0.006134828766419339 0.9871993101154609 -0.0007996869971975684 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail4_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail4_transform_interpolation">
+				<Name_array id="anim_Tail4_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Tail4_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Tail4_transform_sampler">
+				<input semantic="INPUT" source="#anim_Tail4_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Tail4_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Tail4_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Tail4_transform_sampler" target="Tail4_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Tail5_transform" name="anim_Tail5_transform">
+			<source id="anim_Tail5_transform_input">
+				<float_array id="anim_Tail5_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail5_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail5_transform_output">
+				<float_array id="anim_Tail5_transform_output_array" count="96">0.9006049324440428 -0.030569147661150844 -0.4335623171687454 7.555974006652832 0.01960572807538555 0.9993654691831309 -0.02973675219345135 0 0.43419623568623333 0.018280760806144006 0.9006328012571236 -0.000678776006679982 0 0 0 1 0.9066174407991784 -0.02731430700271758 -0.4210685747852831 7.555974006652832 0.017295113527354605 0.9994695319912906 -0.027595899499496944 0 0.42159897424783205 0.017736494977072373 0.9066089132912295 -0.000678776006679982 0 0 0 1 0.9124570031635635 -0.02355306216494079 -0.40849415006879 7.555974006652832 0.014440979735266804 0.999573648861969 -0.02537673353792139 0 0.4089176879055909 0.01725612249097361 0.9124081053752877 -0.000678776006679982 0 0 0 1 0.9181090481762445 -0.019795719190387286 -0.3958331784459784 7.555974006652832 0.011553446286260267 0.9996641752650952 -0.023196003329612844 0 0.3961594294420126 0.01672322317294856 0.9180294332268911 -0.000678776006679982 0 0 0 1 0.923572407075626 -0.016043056120631574 -0.38308827864977063 7.555974006652832 0.008633087097291634 0.9997410615074728 -0.02105420962853005 0 0.3833268562150383 0.01613785259016133 0.9234717597295944 -0.000678776006679982 0 0 0 1 0.9424211491249995 -0.023687555832293133 -0.33358848508395395 7.555974006652832 0.019927266256002166 0.9996935068456709 -0.01469001123780718 0 0.33383421295828525 0.007196670709189042 0.9426043317263219 -0.000678776006679982 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail5_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail5_transform_interpolation">
+				<Name_array id="anim_Tail5_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Tail5_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Tail5_transform_sampler">
+				<input semantic="INPUT" source="#anim_Tail5_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Tail5_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Tail5_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Tail5_transform_sampler" target="Tail5_bone_id/transform"/>
+		</animation>
+		<animation id="anim_Tail6_transform" name="anim_Tail6_transform">
+			<source id="anim_Tail6_transform_input">
+				<float_array id="anim_Tail6_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail6_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail6_transform_output">
+				<float_array id="anim_Tail6_transform_output_array" count="96">0.9738611397449518 -0.023589582178249476 -0.22591594035684848 6.879981994628906 0.01931289416097348 0.9995903484975898 -0.02112219944972561 0 0.2263216574121676 0.01620699858464136 0.9739177791698265 -0.00039282700163312256 0 0 0 1 0.9754909102546427 -0.02040381863488893 -0.21909168901554243 6.879981994628906 0.01681255827513088 0.9996922054759894 -0.01824368917729235 0 0.21939649471861195 0.014113061172789033 0.9755336998840785 -0.00039282700163312256 0 0 0 1 0.9817695891840041 -0.016993628852478442 -0.18931373519080932 6.879981994628906 0.014372493571114548 0.9997810222110604 -0.015209834159371566 0 0.1895307499642734 0.012211642192249468 0.9817988442715486 -0.00039282700163312256 0 0 0 1 0.9871279084186834 -0.013642252447283867 -0.15934987094164846 6.879981994628906 0.011840456941467098 0.999854845336611 -0.012251197342261985 0 0.15949387449169547 0.010206723522578679 0.9871461527021016 -0.00039282700163312256 0 0 0 1 0.991560812563831 -0.010352864245464112 -0.12922837610087887 6.879981994628906 0.009218822992032806 0.9999135989401772 -0.009370590010460478 0 0.12931422307850274 0.008100176320152863 0.9915705818816861 -0.00039282700163312256 0 0 0 1 0.9948732326509562 -0.02077318751445138 -0.09897335820879262 6.879981994628906 0.02058271631954051 0.9997838152223139 -0.002945268820250899 0 0.09901314429683493 0.0008930285570252355 0.9950857248279922 -0.00039282700163312256 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_Tail6_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_Tail6_transform_interpolation">
+				<Name_array id="anim_Tail6_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_Tail6_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_Tail6_transform_sampler">
+				<input semantic="INPUT" source="#anim_Tail6_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_Tail6_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_Tail6_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_Tail6_transform_sampler" target="Tail6_bone_id/transform"/>
+		</animation>
+		<animation id="anim_TailA01_transform" name="anim_TailA01_transform">
+			<source id="anim_TailA01_transform_input">
+				<float_array id="anim_TailA01_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_TailA01_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_TailA01_transform_output">
+				<float_array id="anim_TailA01_transform_output_array" count="96">0.8368938230396834 -0.025301312967111165 -0.07452789283273231 6 0.02783834687602678 0.7994102446607211 0.019355637013398517 0 0.06201722909410038 -0.017410438452628726 0.99703106897715 0 0 0 0 1 0.8442021836696285 -0.007444756034930845 -0.11467396340725608 6 0.010183174591054129 0.8154535330771057 0.02344003704256341 0 0.098815142826555 -0.020432358228573592 0.9772724459684734 0 0 0 0 1 0.843775379930228 0.011090006736003116 -0.1890465521606267 6 -0.007794284292843028 0.831236668610542 0.022078892084377306 0 0.16815539207531677 -0.017118569329160668 0.9496270893536752 0 0 0 0 1 0.837224680562401 0.029931147807649678 -0.25976975142100867 6 -0.026174351577508213 0.8466137648820338 0.02237295599187068 0 0.23796509247497594 -0.012184683474321736 0.916400142983659 0 0 0 0 1 0.8333384300343711 0.04216809652252705 -0.3010205680151585 6 -0.03832977939848838 0.861911011738046 0.022356521787068102 0 0.28375104025177555 -0.0074129645858104385 0.8870766707416414 0 0 0 0 1 0.845884736482577 0.057130757510008005 -0.2847872816822086 6 -0.048839249469993434 0.8766327710276828 0.038403370878323725 0 0.2773535059446396 -0.019873371150789382 0.8753190470886554 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_TailA01_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_TailA01_transform_interpolation">
+				<Name_array id="anim_TailA01_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_TailA01_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_TailA01_transform_sampler">
+				<input semantic="INPUT" source="#anim_TailA01_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_TailA01_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_TailA01_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_TailA01_transform_sampler" target="TailA01_bone_id/transform"/>
+		</animation>
+		<animation id="anim_TailA02_transform" name="anim_TailA02_transform">
+			<source id="anim_TailA02_transform_input">
+				<float_array id="anim_TailA02_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_TailA02_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_TailA02_transform_output">
+				<float_array id="anim_TailA02_transform_output_array" count="96">0.8365028220713351 0.0343663802663099 0.1600362347730588 7.781930923461914 0.008377443462102554 0.9083581631046755 -0.21064714746219793 0 -0.16076216440741925 0.22615578339536035 0.8217485621692707 0 0 0 0 1 0.8452843547941045 0.04708592894390317 0.12672953353121047 7.781930923461914 -0.014337762065270957 0.9006266308264264 -0.20019697225451738 0 -0.13024731274475404 0.20643826086058956 0.8444924215381954 0 0 0 0 1 0.8539615114810899 0.09712062824225204 -0.01218901839941737 7.781930923461914 -0.09174093516078774 0.8882470488177395 -0.18563921518126678 0 -0.007600032505875071 0.19061281333697175 0.8712808296922427 0 0 0 0 1 0.8381393322169107 0.1477580825051535 -0.15334178245915478 7.781930923461914 -0.16595253091381854 0.8719916814315702 -0.15308639650867825 0 0.11738990120810949 0.1777611673073219 0.8784120536856862 0 0 0 0 1 0.8051863377180556 0.19207838945517056 -0.2739253639185715 7.781930923461914 -0.22718193235857936 0.8520160532136529 -0.11578601739125831 0 0.22351767739050002 0.1740522667540485 0.8690877235237701 0 0 0 0 1 0.7958798448338746 0.20607624401564298 -0.3052744338508135 7.781930923461914 -0.249893157435599 0.8349358557231188 -0.11503406825515412 0 0.2452530390462792 0.18198685041902402 0.8734470461569666 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_TailA02_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_TailA02_transform_interpolation">
+				<Name_array id="anim_TailA02_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_TailA02_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_TailA02_transform_sampler">
+				<input semantic="INPUT" source="#anim_TailA02_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_TailA02_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_TailA02_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_TailA02_transform_sampler" target="TailA02_bone_id/transform"/>
+		</animation>
+		<animation id="anim_TailA03_transform" name="anim_TailA03_transform">
+			<source id="anim_TailA03_transform_input">
+				<float_array id="anim_TailA03_transform_input_array" count="6">0 0.03333333333333333 0.06666666666666667 0.1 0.13333333333333333 0.16666666666666666</float_array>
+				<technique_common>
+					<accessor source="#anim_TailA03_transform_input_array" count="6" stride="1">
+						<param name="TIME" type="float"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_TailA03_transform_output">
+				<float_array id="anim_TailA03_transform_output_array" count="96">0.9845486507628783 0.09868973594057742 -0.06893855742813045 7.781930923461914 -0.1178593978969131 0.9389701546524883 -0.19874678902604423 0 0.05570229361763438 0.24238877484569227 0.797977676071472 0 0 0 0 1 0.978878095808209 0.09834849275454444 -0.0933808010657764 7.781930923461914 -0.12733136248286192 0.9246677464656776 -0.2248866844463363 0 0.07878149113005646 0.2725007914970265 0.7968025471094168 0 0 0 0 1 0.9439584014035788 0.10756270275579513 -0.228128169265718 7.781930923461914 -0.18050306066563804 0.9150306083315154 -0.21300915064138967 0 0.22647817872401702 0.2809591141233542 0.7810672945679006 0 0 0 0 1 0.8841772100647954 0.11489717907315206 -0.35925656966761327 7.781930923461914 -0.23054828221061732 0.9046144067424216 -0.19450288088360046 0 0.36651733172351647 0.2918493098190476 0.7443145051574791 0 0 0 0 1 0.808942155880871 0.126089715744409 -0.4720016213835256 7.781930923461914 -0.2716929721793011 0.8969383947073842 -0.16060467453494828 0 0.4851747131064747 0.29204442853969725 0.6970413722628392 0 0 0 0 1 0.780118421900803 0.1494994878496412 -0.5041382092422536 7.781930923461914 -0.3013079251382339 0.8859969220607207 -0.14443697943518075 0 0.508514021177904 0.29562722652271506 0.6878227208306402 0 0 0 0 1</float_array>
+				<technique_common>
+					<accessor source="#anim_TailA03_transform_output_array" count="6" stride="16">
+						<param name="TRANSFORM" type="float4x4"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<source id="anim_TailA03_transform_interpolation">
+				<Name_array id="anim_TailA03_transform_interpolation_array" count="6">LINEAR LINEAR LINEAR LINEAR LINEAR LINEAR</Name_array>
+				<technique_common>
+					<accessor source="#anim_TailA03_transform_interpolation_array" count="6" stride="1">
+						<param name="INTERPOLATION" type="Name"/>
+					</accessor>
+				</technique_common>
+			</source>
+			<sampler id="anim_TailA03_transform_sampler">
+				<input semantic="INPUT" source="#anim_TailA03_transform_input"/>
+				<input semantic="OUTPUT" source="#anim_TailA03_transform_output"/>
+				<input semantic="INTERPOLATION" source="#anim_TailA03_transform_interpolation"/>
+			</sampler>
+			<channel source="#anim_TailA03_transform_sampler" target="TailA03_bone_id/transform"/>
+		</animation>
+	</library_animations>
+</COLLADA>

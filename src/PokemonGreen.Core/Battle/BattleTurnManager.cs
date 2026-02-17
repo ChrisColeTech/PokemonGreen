@@ -29,6 +29,13 @@ public class BattleTurnManager
 
     public TurnPhase Phase { get; private set; } = TurnPhase.Idle;
 
+    // Animation callbacks — wired by Game1 to trigger clip switches
+    public Action? OnAllyAttack { get; set; }
+    public Action? OnFoeAttack { get; set; }
+    public Action? OnAllyFaint { get; set; }
+    public Action? OnFoeFaint { get; set; }
+    public Action? OnReturnToIdle { get; set; }
+
     private int _playerMoveIndex;
     private readonly Random _rng = new();
 
@@ -54,6 +61,7 @@ public class BattleTurnManager
         _playerMoveIndex = moveIndex;
         _hideMenu();
         Phase = TurnPhase.PlayerAttack;
+        OnAllyAttack?.Invoke();
         ExecutePlayerAttack();
     }
 
@@ -80,11 +88,13 @@ public class BattleTurnManager
     {
         if (_foe.IsFainted)
         {
+            OnFoeFaint?.Invoke();
             _showMessage($"Wild {_foe.Nickname} fainted!", () => AwardEXP());
             return;
         }
 
         Phase = TurnPhase.FoeAttack;
+        OnFoeAttack?.Invoke();
         ExecuteFoeAttack();
     }
 
@@ -171,6 +181,7 @@ public class BattleTurnManager
         if (_ally.IsFainted)
         {
             Phase = TurnPhase.BattleOver;
+            OnAllyFaint?.Invoke();
             _showMessage($"{_ally.Nickname} fainted!", () =>
             {
                 _showMessage("You blacked out!", () => _exitBattle());
@@ -179,6 +190,7 @@ public class BattleTurnManager
         }
 
         Phase = TurnPhase.Idle;
+        OnReturnToIdle?.Invoke();
         _returnToMainMenu();
     }
 

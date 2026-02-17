@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PokemonGreen.Core.Rendering;
+using PokemonGreen.Core.Rendering.Skeletal;
 using PokemonGreen.Core.Systems;
 
 namespace PokemonGreen._3D;
@@ -12,8 +14,11 @@ public class Game1 : Game
     private GraphicsDeviceManager _graphics;
     private BasicEffect _effect;
     private BasicEffect _gridEffect;
-    private DaeModel _model;
+    private SkinnedDaeModel _model;
     private Texture2D _texture;
+    private SplitModelAnimationSet? _animationSet;
+    private SkeletalAnimator? _animator;
+    private string _activeClip = string.Empty;
     private VertexPositionColor[] _gridVertices;
 
     private readonly Camera3D _camera = new(nearPlane: 0.1f, farPlane: 1000f);
@@ -70,20 +75,30 @@ public class Game1 : Game
 
     protected override void LoadContent()
     {
-        var dir = "D:/Projects/PokemonGreen/src/PokemonGreen.Tests/exports-field-models/0/0002_tr0001_00_fi";
-        var dae = Path.Combine(dir, "tr0001_00_fi.dae");
-        var tex = Path.Combine(dir, "tr0001_00_BodyA.tga.png");
+        var dir = "D:/Projects/PokemonGreen/src/PokemonGreen.Tests/exports-split-verify-20260217/4/0000_model";
 
-        if (File.Exists(dae))
+        if (Directory.Exists(dir))
         {
-            _model = new DaeModel();
-            _model.Load(GraphicsDevice, dae);
-        }
+            _animationSet = SplitModelAnimationSetLoader.Load(dir, "model");
+            _animator = new SkeletalAnimator(_animationSet.Skeleton);
 
-        if (File.Exists(tex))
-        {
-            using var stream = File.OpenRead(tex);
-            _texture = Texture2D.FromStream(GraphicsDevice, stream);
+            _model = new SkinnedDaeModel();
+            _model.Load(GraphicsDevice, _animationSet.ModelPath, _animationSet.Skeleton);
+
+            var firstClip = _animationSet.Clips.OrderBy(k => k.Key).FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(firstClip.Key))
+            {
+                _activeClip = firstClip.Key;
+                _animator.Play(firstClip.Value, loop: true, resetTime: true);
+                _model.UpdatePose(GraphicsDevice, _animator.SkinPose);
+            }
+
+            string? texturePath = Directory.GetFiles(dir, "*.png").OrderBy(x => x).FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(texturePath) && File.Exists(texturePath))
+            {
+                using var stream = File.OpenRead(texturePath);
+                _texture = Texture2D.FromStream(GraphicsDevice, stream);
+            }
         }
     }
 
@@ -107,12 +122,26 @@ public class Game1 : Game
         var moveInputZ = input.MoveZ;
 
         var move = cameraForward * moveInputZ + cameraRight * moveInputX;
+        bool isMoving = move.LengthSquared() > 0.0001f;
 
-        if (move.LengthSquared() > 0)
+        if (isMoving)
         {
             var moveDir = Vector3.Normalize(move);
             _playerPosition += moveDir * speed;
             _playerTargetYaw = MathF.Atan2(moveDir.X, moveDir.Z);
+        }
+
+        if (_animationSet is not null && _animator is not null)
+        {
+            string targetClip = ResolveMovementClip(_animationSet, isMoving, input.IsRunning);
+            if (!string.Equals(targetClip, _activeClip, StringComparison.Ordinal) && _animationSet.Clips.TryGetValue(targetClip, out SkeletalAnimationClip? clip))
+            {
+                _activeClip = targetClip;
+                _animator.Play(clip, loop: true, resetTime: false);
+            }
+
+            _animator.Update(dt);
+            _model?.UpdatePose(GraphicsDevice, _animator.SkinPose);
         }
 
         var isGrounded = _playerPosition.Y <= 0.001f;
@@ -237,5 +266,15 @@ public class Game1 : Game
             return target;
 
         return current + MathF.Sign(delta) * maxDelta;
+    }
+
+    private static string ResolveMovementClip(SplitModelAnimationSet set, bool isMoving, bool isRunning)
+    {
+        string[] ordered = set.Clips.Keys.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        if (ordered.Length == 0) return string.Empty;
+        if (!isMoving) return ordered[0];
+        if (isRunning && ordered.Length > 2) return ordered[2];
+        if (ordered.Length > 1) return ordered[1];
+        return ordered[0];
     }
 }

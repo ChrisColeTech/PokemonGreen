@@ -34,33 +34,41 @@ function isTexture(file: string): boolean {
   return TEXTURE_EXTS.includes(path.extname(file).toLowerCase())
 }
 
-function generateManifestForFolder(
+function generateManifestsForFolder(
   folderPath: string,
   assetsDir: string,
   formats?: string[],
-): Manifest | null {
+): Manifest[] {
   const entries = fs.readdirSync(folderPath)
   const files = entries.filter(e => fs.statSync(path.join(folderPath, e)).isFile())
 
-  const modelFile = files.find(f => isModel(f, formats))
-  if (!modelFile) return null
+  const modelFiles = files.filter(f => isModel(f, formats)).sort()
+  if (modelFiles.length === 0) return []
 
   const textureFiles = files.filter(f => isTexture(f))
-  const ext = path.extname(modelFile).toLowerCase().slice(1)
   const mtlFile = files.find(f => path.extname(f).toLowerCase() === '.mtl')
+  const manifests: Manifest[] = []
 
-  const manifest: Manifest = {
-    name: path.basename(folderPath),
-    dir: folderPath.replace(/\\/g, '/'),
-    assetsPath: path.relative(assetsDir, folderPath).replace(/\\/g, '/'),
-    modelFile,
-    modelFormat: ext,
-    textures: textureFiles,
+  // One manifest per model file
+  for (const modelFile of modelFiles) {
+    const ext = path.extname(modelFile).toLowerCase().slice(1)
+    const baseName = modelFile.replace(/\.[^.]+$/, '')
+
+    const manifest: Manifest = {
+      name: baseName,
+      dir: folderPath.replace(/\\/g, '/'),
+      assetsPath: path.relative(assetsDir, folderPath).replace(/\\/g, '/'),
+      modelFile,
+      modelFormat: ext,
+      textures: textureFiles,
+    }
+    if (mtlFile) {
+      manifest.mtlFile = mtlFile
+    }
+    manifests.push(manifest)
   }
-  if (mtlFile) {
-    manifest.mtlFile = mtlFile
-  }
-  return manifest
+
+  return manifests
 }
 
 function scanAndGenerate(
@@ -74,12 +82,16 @@ function scanAndGenerate(
   const entries = fs.readdirSync(folderPath)
   const dirs = entries.filter(e => fs.statSync(path.join(folderPath, e)).isDirectory())
 
-  const manifest = generateManifestForFolder(folderPath, assetsDir, formats)
-  if (manifest) {
+  const manifests = generateManifestsForFolder(folderPath, assetsDir, formats)
+  for (const manifest of manifests) {
     // Compute output path — mirror folder structure under outputDir
     const rel = path.relative(assetsDir, folderPath)
     const outFolder = outputDir === assetsDir ? folderPath : path.join(outputDir, rel)
-    const outPath = path.join(outFolder, 'manifest.json')
+    // Use model-specific manifest filename so multiple models in one folder don't collide
+    const manifestFileName = manifests.length === 1
+      ? 'manifest.json'
+      : `manifest.${manifest.name}.json`
+    const outPath = path.join(outFolder, manifestFileName)
 
     if (!overwrite && fs.existsSync(outPath)) {
       // skip
@@ -87,7 +99,6 @@ function scanAndGenerate(
       if (outFolder !== folderPath) {
         fs.mkdirSync(outFolder, { recursive: true })
       }
-      // Update dir in manifest to point to the output location
       if (outputDir !== assetsDir) {
         manifest.dir = outFolder.replace(/\\/g, '/')
         manifest.assetsPath = path.relative(outputDir, outFolder).replace(/\\/g, '/')
@@ -108,10 +119,11 @@ function collectManifests(folderPath: string): Manifest[] {
   let entries: string[]
   try { entries = fs.readdirSync(folderPath) } catch { return manifests }
 
-  const manifestFile = entries.find(e => e === 'manifest.json')
-  if (manifestFile) {
+  // Match manifest.json and manifest.*.json
+  const manifestFiles = entries.filter(e => e === 'manifest.json' || (e.startsWith('manifest.') && e.endsWith('.json')))
+  for (const mf of manifestFiles) {
     try {
-      const content = fs.readFileSync(path.join(folderPath, 'manifest.json'), 'utf-8')
+      const content = fs.readFileSync(path.join(folderPath, mf), 'utf-8')
       manifests.push(JSON.parse(content))
     } catch { /* skip malformed */ }
   }

@@ -9,6 +9,11 @@ import { parseColladaAnimations } from './colladaAnimationParser'
 
 const API_BASE = 'http://localhost:3001'
 
+/** Encode a filesystem directory path into a URL-safe base64url token. */
+function encodeDirToken(dir: string): string {
+  return btoa(dir).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+}
+
 export interface LoadResult {
   scene: THREE.Group
   textures: LoadedTexture[]
@@ -33,7 +38,8 @@ export interface Manifest {
 export async function loadScene(manifest: Manifest): Promise<LoadResult> {
   console.log(`[SceneService] Loading: ${manifest.name} (${manifest.modelFormat}, ${manifest.textures.length} textures)`)
 
-  const baseUrl = `${API_BASE}/assets/${manifest.assetsPath}/`
+  const dirToken = encodeDirToken(manifest.dir)
+  const baseUrl = `${API_BASE}/serve/${dirToken}/`
   const modelUrl = `${baseUrl}${manifest.modelFile}`
   console.log(`[SceneService] Model URL: ${modelUrl}`)
 
@@ -53,6 +59,7 @@ export async function loadScene(manifest: Manifest): Promise<LoadResult> {
     // animations. So we parse the raw XML ourselves.
     animations = collada.animations
     console.log(`[SceneService] DAE loaded: ${animations.length} clip(s) from ColladaLoader`)
+
     if (animations.length === 0 || (animations.length === 1 && animations[0].tracks.length === 0)) {
       console.log('[SceneService] ColladaLoader returned no/empty animations, trying custom parser...')
       try {
@@ -161,12 +168,46 @@ interface ColladaResult {
   animations: THREE.AnimationClip[]
 }
 
-function loadDaeWithManager(modelUrl: string): Promise<ColladaResult> {
-  return new Promise((resolve, reject) => {
-    const manager = new THREE.LoadingManager()
-    const loader = new ColladaLoader(manager)
-    loader.setCrossOrigin('anonymous')
+async function loadDaeWithManager(modelUrl: string): Promise<ColladaResult> {
+  // Fetch the DAE XML text first so we can sanitise it before parsing.
+  // The ColladaLoader crashes if an animation targets a bone that doesn't
+  // exist in the visual scene (e.g. "__bone_id" from empty-named bones).
+  const response = await fetch(modelUrl)
+  if (!response.ok) throw new Error(`Failed to fetch DAE: ${response.status}`)
+  let text = await response.text()
 
+  // Collect all node IDs from the visual scene
+  const xmlDoc = new DOMParser().parseFromString(text, 'text/xml')
+  const nodeIds = new Set<string>()
+  xmlDoc.querySelectorAll('node[id]').forEach(el => nodeIds.add(el.getAttribute('id')!))
+
+  // Remove <animation> elements whose channel targets a non-existent node
+  const animations = xmlDoc.querySelectorAll('library_animations > animation')
+  let removed = 0
+  animations.forEach(anim => {
+    const channel = anim.querySelector('channel')
+    if (!channel) return
+    const target = channel.getAttribute('target') || ''
+    const targetId = target.split('/')[0]
+    if (targetId && !nodeIds.has(targetId)) {
+      anim.parentNode?.removeChild(anim)
+      removed++
+    }
+  })
+  if (removed > 0) {
+    console.warn(`[SceneService] Removed ${removed} animation(s) targeting non-existent bones`)
+    text = new XMLSerializer().serializeToString(xmlDoc)
+  }
+
+  // Extract base path for texture resolution
+  const basePath = modelUrl.substring(0, modelUrl.lastIndexOf('/') + 1)
+
+  const manager = new THREE.LoadingManager()
+  const loader = new ColladaLoader(manager)
+  loader.setCrossOrigin('anonymous')
+  loader.setResourcePath(basePath)
+
+  return new Promise((resolve, reject) => {
     let colladaResult: ColladaResult | null = null
     let managerDone = false
 
@@ -190,24 +231,22 @@ function loadDaeWithManager(modelUrl: string): Promise<ColladaResult> {
       console.warn(`[SceneService] DAE LoadingManager: failed to load ${url}`)
     }
 
-    loader.load(
-      modelUrl,
-      (collada) => {
-        console.log('[SceneService] ColladaLoader: model parsed')
-        // Animations may be on the Collada result or on the scene
-        const anims = (collada as any).animations || collada.scene.animations || []
-        colladaResult = {
-          scene: collada.scene as unknown as THREE.Group,
-          animations: anims,
-        }
-        // If manager already finished (no sub-resources), resolve now
-        tryResolve()
-      },
-      undefined,
-      (err) => reject(err),
-    )
+    try {
+      const collada = loader.parse(text, basePath)
+      console.log('[SceneService] ColladaLoader: model parsed')
+      const anims = (collada as any).animations || collada.scene.animations || []
+      colladaResult = {
+        scene: collada.scene as unknown as THREE.Group,
+        animations: anims,
+      }
+      // If manager already finished (no sub-resources), resolve now
+      tryResolve()
+    } catch (err) {
+      reject(err)
+      return
+    }
 
-    // Safety timeout
+    // Safety timeout for texture loading
     setTimeout(() => {
       if (!managerDone && colladaResult) {
         console.warn('[SceneService] DAE LoadingManager timeout — resolving with partial textures')

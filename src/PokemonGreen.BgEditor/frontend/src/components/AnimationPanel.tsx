@@ -1,4 +1,5 @@
 import { useEditorStore } from '../store/editorStore'
+import { Pause, Play } from 'lucide-react'
 
 export default function AnimationPanel() {
   const animations = useEditorStore(s => s.animations)
@@ -15,6 +16,8 @@ export default function AnimationPanel() {
       flexDirection: 'column',
       overflow: 'hidden',
       borderTop: '1px solid #2a2a4a',
+      flex: 1,
+      minHeight: 0,
     }}>
       {/* Header */}
       <div style={{
@@ -34,52 +37,61 @@ export default function AnimationPanel() {
         </span>
       </div>
 
-      {/* Content */}
+      {/* Play/Pause + active clip name */}
       <div style={{
-        flex: 1,
-        overflow: 'auto',
         padding: '8px 14px',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
       }}>
-        {/* Play/Pause button */}
         <button
           onClick={() => setAnimationPlaying(!animationPlaying)}
           style={{
-            width: '100%',
-            padding: '8px 0',
+            padding: '6px 14px',
             background: animationPlaying ? '#3a2a4a' : '#2a3a4a',
             border: '1px solid #3a3a6a',
             borderRadius: 4,
             color: '#ccc',
             fontSize: 12,
             cursor: 'pointer',
-            marginBottom: 10,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
             gap: 6,
+            flexShrink: 0,
           }}
         >
           {animationPlaying ? (
             <>
-              {/* Pause icon */}
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                <rect x="2" y="1" width="3" height="10" rx="0.5" />
-                <rect x="7" y="1" width="3" height="10" rx="0.5" />
-              </svg>
+              <Pause size={12} strokeWidth={2} />
               Pause
             </>
           ) : (
             <>
-              {/* Play icon */}
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                <polygon points="2,1 10,6 2,11" />
-              </svg>
+              <Play size={12} strokeWidth={2} />
               Play
             </>
           )}
         </button>
+        <div style={{
+          fontSize: 11,
+          color: '#aaa',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          minWidth: 0,
+        }}>
+          {activeClipIndex + 1}/{animations.length}: {animations[activeClipIndex]?.name || `Clip ${activeClipIndex}`}
+        </div>
+      </div>
 
-        {/* Clip list */}
+      {/* Clip list */}
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto',
+        padding: '0 14px 8px',
+      }}>
         {animations.map((clip, i) => (
           <div
             key={clip.name + i}
@@ -88,8 +100,8 @@ export default function AnimationPanel() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '6px 10px',
-              marginBottom: 3,
+              padding: '5px 10px',
+              marginBottom: 2,
               borderRadius: 4,
               cursor: 'pointer',
               background: i === activeClipIndex ? '#2a2a5a' : 'transparent',

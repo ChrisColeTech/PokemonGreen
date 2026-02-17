@@ -28,4 +28,15 @@
   <ItemGroup>
     <ProjectReference Include="..\PokemonGreen.Core\PokemonGreen.Core.csproj" />
   </ItemGroup>
+
+  <!-- Copy Pokemon3D assets into publish output only (not during regular builds). -->
+  <Target Name="PublishPokemon3D" AfterTargets="Publish">
+    <ItemGroup>
+      <Pokemon3DFiles Include="..\PokemonGreen.Assets\Pokemon3D\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(Pokemon3DFiles)"
+          DestinationFiles="@(Pokemon3DFiles->'$(PublishDir)Pokemon3D\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="Copied Pokemon3D assets to publish output." />
+  </Target>
 </Project>

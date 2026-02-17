@@ -114,6 +114,9 @@ public class Game1 : Game
         _graphics.PreferredBackBufferHeight = ViewportHeight;
         _graphics.ApplyChanges();
 
+        // Resolve Pokemon3D/ assets from the Assets project source directory
+        PokemonModelLoader.InitializeDevPaths();
+
         SpeciesRegistry.Initialize();
         WorldRegistry.Initialize();
         MapRegistry.Initialize();
@@ -1095,6 +1098,19 @@ public class Game1 : Game
                 _gameWorld.ExitBattle();
                 AutoSave();
             });
+
+        // Wire animation clip switching for battle events
+        // Clip index 0 = idle (default). Other indices can be mapped once
+        // the animation slot IDs are identified per species.
+        _battleTurnManager.OnAllyAttack = () => _allyModel?.PlayIndex(1);
+        _battleTurnManager.OnFoeAttack = () => _foeModel?.PlayIndex(1);
+        _battleTurnManager.OnAllyFaint = () => _allyModel?.PlayIndex(2);
+        _battleTurnManager.OnFoeFaint = () => _foeModel?.PlayIndex(2);
+        _battleTurnManager.OnReturnToIdle = () =>
+        {
+            _allyModel?.PlayIndex(0);
+            _foeModel?.PlayIndex(0);
+        };
 
         // Select the battle background set based on encounter type
         var bgType = _gameWorld.CurrentBattleBackground;

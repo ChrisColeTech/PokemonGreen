@@ -30,6 +30,7 @@ class Program
         {
             case "scan":   return RunScan(args);
             case "export": return RunExport(args);
+            case "diag":   return RunDiag(args);
             default:
                 Console.Error.WriteLine($"Unknown command: {args[0]}");
                 PrintUsage();
@@ -218,14 +219,19 @@ class Program
                         scene.Merge(animScene);
                 }
 
-                // 4. Export textures
+                // 4. Export textures to textures/ subdirectory
+                string texturesDir = Path.Combine(pokemonDir, "textures");
+                Directory.CreateDirectory(texturesDir);
+
+                var textureManifest = new List<object>();
                 foreach (H3DTexture tex in scene.Textures)
                 {
                     try
                     {
-                        string texPath = Path.Combine(pokemonDir, $"{tex.Name}.png");
+                        string texPath = Path.Combine(texturesDir, $"{tex.Name}.png");
                         Bitmap bmp = tex.ToBitmap();
                         bmp.Save(texPath, ImageFormat.Png);
+                        textureManifest.Add(new { name = tex.Name, file = $"textures/{tex.Name}.png", width = (int)tex.Width, height = (int)tex.Height });
                     }
                     catch (Exception ex)
                     {
@@ -233,37 +239,57 @@ class Program
                     }
                 }
 
-                // 5. Export model(s) — one DAE per model, static (no animation baked in)
+                // 5. Export static model(s) — no animation baked in
+                var modelManifest = new List<object>();
                 for (int m = 0; m < scene.Models.Count; m++)
                 {
-                    int animIdx = -1; // export static model, animations are in separate files
-                    var dae = new DAE(scene, m, animIdx);
-
-                    string suffix = scene.Models.Count > 1 ? $"_{m}" : "";
-                    string daePath = Path.Combine(pokemonDir, $"model{suffix}.dae");
+                    var dae = new DAE(scene, m, -1);
+                    string name = m == 0 ? "model" : "model_lowpoly";
+                    string daePath = Path.Combine(pokemonDir, $"{name}.dae");
                     dae.Save(daePath);
 
                     var mdl = scene.Models[m];
-                    Console.WriteLine($"  model{suffix}.dae ({mdl.Meshes.Count} meshes, {mdl.Skeleton.Count} bones, {scene.SkeletalAnimations.Count} anims available, baked={animIdx})");
+                    modelManifest.Add(new { file = $"{name}.dae", meshCount = mdl.Meshes.Count, boneCount = mdl.Skeleton.Count });
+                    Console.WriteLine($"  {name}.dae ({mdl.Meshes.Count} meshes, {mdl.Skeleton.Count} bones)");
                 }
 
-                // 6. Export each animation as a separate DAE file
+                // 6. Export each animation as a clip-only DAE (skeleton + channels, no mesh)
+                string clipsDir = Path.Combine(pokemonDir, "clips");
+                Directory.CreateDirectory(clipsDir);
+
+                var clipManifest = new List<object>();
                 for (int a = 0; a < scene.SkeletalAnimations.Count; a++)
                 {
                     try
                     {
-                        var dae = new DAE(scene, 0, a);
-                        string animName = scene.SkeletalAnimations[a].Name ?? $"anim_{a}";
-                        string safeName = string.Join("_", animName.Split(Path.GetInvalidFileNameChars()));
-                        string animPath = Path.Combine(pokemonDir, $"anim_{a:D3}_{safeName}.dae");
-                        dae.Save(animPath);
-                        Console.WriteLine($"  anim_{a:D3}_{safeName}.dae ({(int)scene.SkeletalAnimations[a].FramesCount} frames)");
+                        var dae = new DAE(scene, 0, a, clipOnly: true);
+                        string clipFile = $"clip_{a:D3}.dae";
+                        string clipPath = Path.Combine(clipsDir, clipFile);
+                        dae.Save(clipPath);
+
+                        var anim = scene.SkeletalAnimations[a];
+                        string clipName = anim.Name ?? $"clip_{a}";
+                        clipManifest.Add(new { index = a, name = clipName, file = $"clips/{clipFile}", frameCount = (int)anim.FramesCount, fps = 30 });
+                        Console.WriteLine($"  clips/{clipFile} \"{clipName}\" ({(int)anim.FramesCount} frames)");
                     }
                     catch (Exception ex)
                     {
-                        Console.Error.WriteLine($"  anim_{a}: {ex.Message}");
+                        Console.Error.WriteLine($"  clip_{a}: {ex.Message}");
                     }
                 }
+
+                // 7. Write manifest.json
+                var manifest = new
+                {
+                    version = 1,
+                    pokemonId = group.Id,
+                    models = modelManifest,
+                    textures = textureManifest,
+                    clips = clipManifest
+                };
+
+                var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(Path.Combine(pokemonDir, "manifest.json"), manifestJson);
 
                 exported++;
             }
@@ -276,6 +302,116 @@ class Program
 
         Console.WriteLine($"\nDone. Exported {exported} Pokemon, {errors} errors.");
         return errors > 0 ? 1 : 0;
+    }
+
+    // ── diag ─────────────────────────────────────────────────────────
+
+    static int RunDiag(string[] args)
+    {
+        string garcPath = args.Length > 1 ? args[1] : null;
+        if (garcPath == null)
+        {
+            Console.Error.WriteLine("Usage: Spica.Registry diag <garc-file>");
+            return 1;
+        }
+
+        using var fs = new FileStream(garcPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var garcEntries = GARC.GetEntries(fs);
+
+        // Load first Pokemon model (entry 1) + animations (entries 5,6,7)
+        H3D scene = LoadEntry(fs, garcEntries[1]);
+        if (scene == null || scene.Models.Count == 0)
+        {
+            Console.Error.WriteLine("No model in entry 1");
+            return 1;
+        }
+
+        var skeleton = scene.Models[0].Skeleton;
+
+        // Merge texture entries
+        foreach (int ti in new[] { 2, 3 })
+        {
+            H3D ts = LoadEntry(fs, garcEntries[ti]);
+            if (ts != null) scene.Merge(ts);
+        }
+
+        // Merge animation entries
+        foreach (int ai in new[] { 5, 6, 7 })
+        {
+            H3D ans = LoadEntryWithSkeleton(fs, garcEntries[ai], skeleton);
+            if (ans != null) scene.Merge(ans);
+        }
+
+        Console.WriteLine($"Skeleton: {skeleton.Count} bones");
+        Console.WriteLine($"Animations: {scene.SkeletalAnimations.Count}");
+        Console.WriteLine();
+
+        // Dump bone hierarchy
+        Console.WriteLine("=== SKELETON BONES ===");
+        for (int i = 0; i < skeleton.Count; i++)
+        {
+            var b = skeleton[i];
+            Console.WriteLine($"  [{i,2}] {b.Name,-30} parent={b.ParentIndex,3}  T=({b.Translation.X:F3},{b.Translation.Y:F3},{b.Translation.Z:F3}) R=({b.Rotation.X:F3},{b.Rotation.Y:F3},{b.Rotation.Z:F3}) S=({b.Scale.X:F3},{b.Scale.Y:F3},{b.Scale.Z:F3})");
+        }
+
+        Console.WriteLine();
+
+        // Dump first animation element details
+        for (int a = 0; a < Math.Min(scene.SkeletalAnimations.Count, 1); a++)
+        {
+            var anim = scene.SkeletalAnimations[a];
+            Console.WriteLine($"=== ANIMATION [{a}] \"{anim.Name}\" frames={anim.FramesCount} elements={anim.Elements.Count} ===");
+
+            var boneNames = new HashSet<string>();
+            for (int i = 0; i < skeleton.Count; i++)
+                boneNames.Add(skeleton[i].Name);
+
+            var elemNames = new HashSet<string>();
+
+            foreach (var elem in anim.Elements)
+            {
+                elemNames.Add(elem.Name);
+                string typeStr = elem.PrimitiveType.ToString();
+                string detail = "";
+
+                if (elem.Content is H3DAnimTransform t)
+                {
+                    detail = $"TX={t.TranslationX.Exists} TY={t.TranslationY.Exists} TZ={t.TranslationZ.Exists} " +
+                             $"RX={t.RotationX.Exists} RY={t.RotationY.Exists} RZ={t.RotationZ.Exists} " +
+                             $"SX={t.ScaleX.Exists} SY={t.ScaleY.Exists} SZ={t.ScaleZ.Exists}";
+                }
+                else if (elem.Content is H3DAnimQuatTransform qt)
+                {
+                    detail = $"HasT={qt.HasTranslation}({qt.Translations.Count}) HasR={qt.HasRotation}({qt.Rotations.Count}) HasS={qt.HasScale}({qt.Scales.Count})";
+                }
+                else if (elem.Content is H3DAnimMtxTransform mt)
+                {
+                    detail = $"Frames={mt.Frames.Count}";
+                }
+
+                bool matchesBone = boneNames.Contains(elem.Name);
+                string marker = matchesBone ? "  " : "!!";
+                Console.WriteLine($"  {marker} {elem.Name,-30} type={typeStr,-15} target={elem.TargetType,-10} {detail}");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("=== BONES WITHOUT ANIMATION ELEMENT ===");
+            for (int i = 0; i < skeleton.Count; i++)
+            {
+                if (!elemNames.Contains(skeleton[i].Name))
+                    Console.WriteLine($"  [{i,2}] {skeleton[i].Name}");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("=== ANIMATION ELEMENTS NOT MATCHING ANY BONE ===");
+            foreach (var elem in anim.Elements)
+            {
+                if (!boneNames.Contains(elem.Name))
+                    Console.WriteLine($"  {elem.Name} (type={elem.PrimitiveType})");
+            }
+        }
+
+        return 0;
     }
 
     // ── helpers ───────────────────────────────────────────────────────

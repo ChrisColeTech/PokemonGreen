@@ -38,6 +38,15 @@ namespace SPICA.Formats.Generic.COLLADA
             Rotation[2].Set(new Vector4(1, 0, 0, DAEUtils.RadToDeg(R.X)));
             Scale.Set(S);
         }
+
+        public void SetBoneMatrix(Matrix4x4 localTransform)
+        {
+            matrix = new DAEMatrix()
+            {
+                sid = "transform",
+                data = DAEUtils.MatrixStr(new SPICA.Math3D.Matrix3x4(localTransform))
+            };
+        }
     }
 
     public enum DAENodeType

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import EditorPage from './pages/EditorPage'
+import AnimationsPage from './pages/AnimationsPage'
 import ToolsPage from './pages/ToolsPage'
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         }}>
           <Routes>
             <Route path="/" element={<EditorPage />} />
+            <Route path="/animations" element={<AnimationsPage />} />
             <Route path="/tools" element={<ToolsPage />} />
           </Routes>
         </div>

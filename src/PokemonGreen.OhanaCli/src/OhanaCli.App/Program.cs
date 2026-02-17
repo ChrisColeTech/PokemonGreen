@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Text.Json;
 
 using OhanaCli.Formats;
 using OhanaCli.Formats.Containers;
@@ -21,8 +22,8 @@ var outputOption = new Option<DirectoryInfo>(new[] { "-o", "--output" }, "Output
 };
 
 var formatOption = new Option<string>(new[] { "-f", "--format" }, () => "dae", "Export format: dae or obj.");
-var animationIndexOption = new Option<int?>(new[] { "-a", "--animation-index" }, "Skeletal animation index for DAE export. Overrides --consolidate-animations when provided.");
-var consolidateAnimationsOption = new Option<bool>("--consolidate-animations", "For DAE export, emit one model DAE containing all skeletal clips instead of per-clip .anim_### outputs.");
+var animationIndexOption = new Option<int?>(new[] { "-a", "--animation-index" }, "Skeletal animation index for DAE export.");
+var splitModelAnimationsOption = new Option<bool>("--split-model-anims", "Export one model DAE plus separate skeletal clip DAEs and manifest metadata.");
 var limitOption = new Option<int?>(new[] { "-n", "--limit" }, "Maximum container entries to process.");
 var diagnosticAnimationOption = new Option<bool>("--diag-anim", "Emit per-bone animation segment diagnostics during export.");
 var startOption = new Option<int>("--start", () => 0, "Diagnose start entry index (inclusive).");
@@ -41,7 +42,7 @@ convertCommand.AddArgument(convertFileArgument);
 convertCommand.AddOption(outputOption);
 convertCommand.AddOption(formatOption);
 convertCommand.AddOption(animationIndexOption);
-convertCommand.AddOption(consolidateAnimationsOption);
+convertCommand.AddOption(splitModelAnimationsOption);
 convertCommand.AddOption(limitOption);
 convertCommand.AddOption(diagnosticAnimationOption);
 convertCommand.SetHandler((InvocationContext ctx) =>
@@ -57,10 +58,10 @@ convertCommand.SetHandler((InvocationContext ctx) =>
 
     string format = ctx.ParseResult.GetValueForOption(formatOption) ?? "dae";
     int? animationIndex = ctx.ParseResult.GetValueForOption(animationIndexOption);
-    bool consolidateAnimations = ctx.ParseResult.GetValueForOption(consolidateAnimationsOption);
+    bool splitModelAnimations = ctx.ParseResult.GetValueForOption(splitModelAnimationsOption);
     int? limit = ctx.ParseResult.GetValueForOption(limitOption);
     bool diagAnim = ctx.ParseResult.GetValueForOption(diagnosticAnimationOption);
-    ctx.ExitCode = RunFatalSafe(() => RunWithAnimationDiagnostics(diagAnim, () => ConvertHandler(file, output, format, animationIndex, consolidateAnimations, limit)));
+    ctx.ExitCode = RunFatalSafe(() => RunWithAnimationDiagnostics(diagAnim, () => ConvertHandler(file, output, format, animationIndex, splitModelAnimations, limit)));
 });
 
 var batchCommand = new Command("batch", "Batch-convert files from a directory.");
@@ -68,7 +69,7 @@ batchCommand.AddArgument(batchInputArgument);
 batchCommand.AddOption(outputOption);
 batchCommand.AddOption(formatOption);
 batchCommand.AddOption(animationIndexOption);
-batchCommand.AddOption(consolidateAnimationsOption);
+batchCommand.AddOption(splitModelAnimationsOption);
 batchCommand.AddOption(limitOption);
 batchCommand.AddOption(diagnosticAnimationOption);
 batchCommand.SetHandler((InvocationContext ctx) =>
@@ -84,10 +85,10 @@ batchCommand.SetHandler((InvocationContext ctx) =>
 
     string format = ctx.ParseResult.GetValueForOption(formatOption) ?? "dae";
     int? animationIndex = ctx.ParseResult.GetValueForOption(animationIndexOption);
-    bool consolidateAnimations = ctx.ParseResult.GetValueForOption(consolidateAnimationsOption);
+    bool splitModelAnimations = ctx.ParseResult.GetValueForOption(splitModelAnimationsOption);
     int? limit = ctx.ParseResult.GetValueForOption(limitOption);
     bool diagAnim = ctx.ParseResult.GetValueForOption(diagnosticAnimationOption);
-    ctx.ExitCode = RunFatalSafe(() => RunWithAnimationDiagnostics(diagAnim, () => BatchHandler(inputDir, output, format, animationIndex, consolidateAnimations, limit)));
+    ctx.ExitCode = RunFatalSafe(() => RunWithAnimationDiagnostics(diagAnim, () => BatchHandler(inputDir, output, format, animationIndex, splitModelAnimations, limit)));
 });
 
 var diagnoseCommand = new Command("diagnose", "Inspect container entries and detected content types.");
@@ -218,7 +219,7 @@ static int InfoHandler(FileInfo file)
     return CliConventions.ExitFatal;
 }
 
-static int ConvertHandler(FileInfo file, DirectoryInfo outputDir, string format, int? animationIndex, bool consolidateAnimations, int? limit)
+static int ConvertHandler(FileInfo file, DirectoryInfo outputDir, string format, int? animationIndex, bool splitModelAnimations, int? limit)
 {
     if (!file.Exists)
     {
@@ -238,6 +239,22 @@ static int ConvertHandler(FileInfo file, DirectoryInfo outputDir, string format,
         return CliConventions.ExitFatal;
     }
 
+    if (splitModelAnimations)
+    {
+        if (normalizedFormat != "dae")
+        {
+            Console.Error.WriteLine("--split-model-anims supports DAE format only");
+            return CliConventions.ExitFatal;
+        }
+
+        if (animationIndex.HasValue)
+        {
+            Console.Error.WriteLine("--split-model-anims cannot be combined with --animation-index");
+            return CliConventions.ExitFatal;
+        }
+
+    }
+
     Directory.CreateDirectory(outputDir.FullName);
 
     FileIO.LoadedFile loaded = FileIO.load(file.FullName);
@@ -246,7 +263,7 @@ static int ConvertHandler(FileInfo file, DirectoryInfo outputDir, string format,
     if (loaded.type == FileIO.formatType.model && loaded.data is RenderBase.OModelGroup modelGroup)
     {
         string folderPath = Path.Combine(outputDir.FullName, SanitizeName(baseName));
-        ExportStats stats = ExportModelGroup(modelGroup, folderPath, normalizedFormat, animationIndex, consolidateAnimations);
+        ExportStats stats = ExportModelGroup(modelGroup, folderPath, normalizedFormat, animationIndex, splitModelAnimations);
         Console.WriteLine($"convert summary: groupsTotal=1 groupsSucceeded=1 groupsFailed=0 models={stats.Models} textures={stats.Textures} clipsFound={stats.ClipsFound} clipsExported={stats.ClipsExported} clipsSkipped={stats.ClipsSkipped} out={folderPath}");
         if (stats.Models > 0)
         {
@@ -285,7 +302,7 @@ static int ConvertHandler(FileInfo file, DirectoryInfo outputDir, string format,
                 string folderPath = Path.Combine(containerRoot, folderName);
                 try
                 {
-                    ExportStats stats = ExportModelGroup(group.ModelGroup, folderPath, normalizedFormat, animationIndex, consolidateAnimations);
+                    ExportStats stats = ExportModelGroup(group.ModelGroup, folderPath, normalizedFormat, animationIndex, splitModelAnimations);
                     modelTotal += stats.Models;
                     textureTotal += stats.Textures;
                     clipsFoundTotal += stats.ClipsFound;
@@ -329,7 +346,7 @@ static int ConvertHandler(FileInfo file, DirectoryInfo outputDir, string format,
     return CliConventions.ExitFatal;
 }
 
-static int BatchHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, string format, int? animationIndex, bool consolidateAnimations, int? limit)
+static int BatchHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, string format, int? animationIndex, bool splitModelAnimations, int? limit)
 {
     if (!inputDir.Exists)
     {
@@ -363,7 +380,7 @@ static int BatchHandler(DirectoryInfo inputDir, DirectoryInfo outputDir, string 
 
         try
         {
-            result = ConvertHandler(new FileInfo(filePath), outputDir, format, animationIndex, consolidateAnimations, limit);
+            result = ConvertHandler(new FileInfo(filePath), outputDir, format, animationIndex, splitModelAnimations, limit);
         }
         catch (Exception ex)
         {
@@ -562,6 +579,11 @@ static GroupingOutcome GroupContainerEntries(OContainer container, int? limit)
         }
     }
 
+    if (current is not null && limit.HasValue && max < entryCount)
+    {
+        ExtendTrailingGroupForTextures(container, current, max, entryCount);
+    }
+
     if (current is not null)
     {
         DeduplicateTextures(current.ModelGroup);
@@ -583,6 +605,98 @@ static GroupingOutcome GroupContainerEntries(OContainer container, int? limit)
         Groups = groups,
         LimitExcludedAnimations = limitExcludedAnimations
     };
+}
+
+static void ExtendTrailingGroupForTextures(OContainer container, GroupedEntry current, int startIndex, int entryCount)
+{
+    if (HasAllReferencedTextures(current.ModelGroup))
+    {
+        return;
+    }
+
+    for (int i = startIndex; i < entryCount; i++)
+    {
+        OContainer.fileEntry entry = container.content[i];
+        byte[] entryData = ReadEntryData(container, entry);
+        if (entryData.Length == 0)
+        {
+            continue;
+        }
+
+        FileIO.LoadedFile loaded;
+        try
+        {
+            loaded = FileIO.load(new MemoryStream(entryData));
+        }
+        catch
+        {
+            continue;
+        }
+
+        RenderBase.OModelGroup part = BuildModelGroupFromLoaded(loaded, 0);
+        if (part.model.Count == 0 && part.texture.Count == 0 && part.skeletalAnimation.list.Count == 0)
+        {
+            continue;
+        }
+
+        int meshCount = CountMeshes(part);
+        bool hasModels = part.model.Count > 0;
+        bool hasMeshes = meshCount > 0;
+        if (hasModels && hasMeshes)
+        {
+            break;
+        }
+
+        current.ModelGroup.merge(part);
+        current.EndEntry = i;
+
+        if (HasAllReferencedTextures(current.ModelGroup))
+        {
+            break;
+        }
+    }
+}
+
+static bool HasAllReferencedTextures(RenderBase.OModelGroup modelGroup)
+{
+    HashSet<string> required = GetRequiredTextureNames(modelGroup);
+    if (required.Count == 0)
+    {
+        return true;
+    }
+
+    HashSet<string> available = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    for (int i = 0; i < modelGroup.texture.Count; i++)
+    {
+        RenderBase.OTexture tex = modelGroup.texture[i];
+        if (tex == null || string.IsNullOrWhiteSpace(tex.name))
+        {
+            continue;
+        }
+
+        available.Add(tex.name);
+    }
+
+    return required.IsSubsetOf(available);
+}
+
+static HashSet<string> GetRequiredTextureNames(RenderBase.OModelGroup modelGroup)
+{
+    HashSet<string> required = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    for (int modelIndex = 0; modelIndex < modelGroup.model.Count; modelIndex++)
+    {
+        RenderBase.OModel mdl = modelGroup.model[modelIndex];
+        for (int matIndex = 0; matIndex < mdl.material.Count; matIndex++)
+        {
+            RenderBase.OMaterial mat = mdl.material[matIndex];
+
+            if (!string.IsNullOrWhiteSpace(mat.name0)) required.Add(mat.name0);
+            if (!string.IsNullOrWhiteSpace(mat.name1)) required.Add(mat.name1);
+            if (!string.IsNullOrWhiteSpace(mat.name2)) required.Add(mat.name2);
+        }
+    }
+
+    return required;
 }
 
 static bool DetectAnimationBeyondLimit(OContainer container, int startIndex)
@@ -695,19 +809,25 @@ static RenderBase.OModelGroup BuildModelGroupFromLoaded(FileIO.LoadedFile loaded
     return output;
 }
 
-static ExportStats ExportModelGroup(RenderBase.OModelGroup modelGroup, string outputDir, string format, int? animationIndex, bool consolidateAnimations)
+static ExportStats ExportModelGroup(RenderBase.OModelGroup modelGroup, string outputDir, string format, int? animationIndex, bool splitModelAnimations)
 {
     Directory.CreateDirectory(outputDir);
     DeduplicateTextures(modelGroup);
 
-    int writtenTextures = WriteTextures(modelGroup, outputDir);
+    WriteTexturesResult textureWrite = WriteTextures(modelGroup, outputDir);
+    int writtenTextures = textureWrite.Count;
     int writtenModels = 0;
-    int clipsFound = modelGroup.skeletalAnimation.list.OfType<RenderBase.OSkeletalAnimation>().Count();
+    List<RenderBase.OSkeletalAnimation> skeletalClips = modelGroup.skeletalAnimation.list.OfType<RenderBase.OSkeletalAnimation>().ToList();
+    int clipsFound = skeletalClips.Count;
     int clipsExported = 0;
     int clipsSkipped = 0;
 
+    if (splitModelAnimations && format == "dae")
+    {
+        return ExportSplitModelAnimations(modelGroup, outputDir, textureWrite.FileNames, skeletalClips);
+    }
+
     List<int> clipIndicesToExport = new List<int>();
-    bool exportConsolidatedAnimations = false;
     if (format == "dae")
     {
         if (animationIndex.HasValue)
@@ -723,11 +843,6 @@ static ExportStats ExportModelGroup(RenderBase.OModelGroup modelGroup, string ou
                 clipsSkipped = clipsFound;
                 Console.Error.WriteLine($"warning: animation index {animationIndex.Value} is out of range (clipsFound={clipsFound}); exporting static DAE without animation.");
             }
-        }
-        else if (consolidateAnimations)
-        {
-            exportConsolidatedAnimations = true;
-            clipsExported = clipsFound;
         }
         else
         {
@@ -766,12 +881,6 @@ static ExportStats ExportModelGroup(RenderBase.OModelGroup modelGroup, string ou
                 DAE.export(modelGroup, modelPath, i, selectedAnimation);
                 writtenModels++;
             }
-            else if (exportConsolidatedAnimations)
-            {
-                string modelPath = Path.Combine(outputDir, $"{uniqueName}.{format}");
-                DAE.export(modelGroup, modelPath, i, -1, includeAllSkeletalAnimations: true);
-                writtenModels++;
-            }
             else if (clipIndicesToExport.Count > 0)
             {
                 for (int clipIdx = 0; clipIdx < clipIndicesToExport.Count; clipIdx++)
@@ -800,9 +909,10 @@ static ExportStats ExportModelGroup(RenderBase.OModelGroup modelGroup, string ou
     return new ExportStats(writtenModels, writtenTextures, clipsFound, clipsExported, clipsSkipped);
 }
 
-static int WriteTextures(RenderBase.OModelGroup modelGroup, string outputDir)
+static WriteTexturesResult WriteTextures(RenderBase.OModelGroup modelGroup, string outputDir)
 {
     int count = 0;
+    List<string> fileNames = new List<string>();
     HashSet<string> usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     for (int i = 0; i < modelGroup.texture.Count; i++)
@@ -818,10 +928,97 @@ static int WriteTextures(RenderBase.OModelGroup modelGroup, string outputDir)
         string path = Path.Combine(outputDir, uniqueName + ".png");
 
         texture.texture.Save(path, ImageFormat.Png);
+        fileNames.Add(Path.GetFileName(path));
         count++;
     }
 
-    return count;
+    return new WriteTexturesResult(count, fileNames);
+}
+
+static ExportStats ExportSplitModelAnimations(
+    RenderBase.OModelGroup modelGroup,
+    string outputDir,
+    List<string> textureFileNames,
+    List<RenderBase.OSkeletalAnimation> skeletalClips)
+{
+    int writtenModels = 0;
+    int clipsExported = 0;
+
+    HashSet<string> usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    List<SplitModelManifestEntry> modelEntries = new List<SplitModelManifestEntry>();
+
+    for (int i = 0; i < modelGroup.model.Count; i++)
+    {
+        RenderBase.OModel model = modelGroup.model[i];
+        if (model.mesh.Count == 0)
+        {
+            continue;
+        }
+
+        string baseName = string.IsNullOrWhiteSpace(model.name) ? $"model_{i}" : SanitizeName(model.name);
+        string uniqueName = EnsureUniqueName(baseName, usedNames);
+
+        string modelPath = Path.Combine(outputDir, $"{uniqueName}.dae");
+        DAE.export(modelGroup, modelPath, i, -1);
+        writtenModels++;
+
+        string modelClipDir = Path.Combine(outputDir, "clips", uniqueName);
+        Directory.CreateDirectory(modelClipDir);
+
+        List<SplitClipManifestEntry> clipEntries = new List<SplitClipManifestEntry>();
+        for (int clipIndex = 0; clipIndex < skeletalClips.Count; clipIndex++)
+        {
+            string clipFileName = $"clip_{clipIndex:D3}.dae";
+            string clipPath = Path.Combine(modelClipDir, clipFileName);
+            DAE.exportSkeletalClip(modelGroup, clipPath, i, clipIndex);
+
+            RenderBase.OSkeletalAnimation clip = skeletalClips[clipIndex];
+            clipEntries.Add(new SplitClipManifestEntry
+            {
+                Index = clipIndex,
+                Name = $"clip_{clipIndex:D3}",
+                File = ToRelativePath(outputDir, clipPath),
+                FrameCount = clip.frameSize,
+                Fps = 30f
+            });
+            clipsExported++;
+        }
+
+        modelEntries.Add(new SplitModelManifestEntry
+        {
+            Name = uniqueName,
+            ModelFile = Path.GetFileName(modelPath),
+            Clips = clipEntries
+        });
+    }
+
+    WriteSplitManifest(outputDir, textureFileNames, modelEntries);
+    return new ExportStats(writtenModels, textureFileNames.Count, skeletalClips.Count, clipsExported, 0);
+}
+
+static void WriteSplitManifest(string outputDir, List<string> textureFileNames, List<SplitModelManifestEntry> modelEntries)
+{
+    SplitExportManifest manifest = new SplitExportManifest
+    {
+        Version = 1,
+        Mode = "split-model-anims",
+        Textures = textureFileNames,
+        Models = modelEntries
+    };
+
+    JsonSerializerOptions options = new JsonSerializerOptions
+    {
+        WriteIndented = true
+    };
+
+    string manifestPath = Path.Combine(outputDir, "manifest.json");
+    File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, options));
+}
+
+static string ToRelativePath(string rootDir, string fullPath)
+{
+    string relative = Path.GetRelativePath(rootDir, fullPath);
+    return relative.Replace('\\', '/');
 }
 
 static void DeduplicateTextures(RenderBase.OModelGroup modelGroup)
@@ -1078,6 +1275,31 @@ static string SanitizeNote(string message)
 }
 
 readonly record struct ExportStats(int Models, int Textures, int ClipsFound, int ClipsExported, int ClipsSkipped);
+readonly record struct WriteTexturesResult(int Count, List<string> FileNames);
+
+sealed class SplitExportManifest
+{
+    public int Version { get; set; }
+    public required string Mode { get; set; }
+    public required List<string> Textures { get; set; }
+    public required List<SplitModelManifestEntry> Models { get; set; }
+}
+
+sealed class SplitModelManifestEntry
+{
+    public required string Name { get; set; }
+    public required string ModelFile { get; set; }
+    public required List<SplitClipManifestEntry> Clips { get; set; }
+}
+
+sealed class SplitClipManifestEntry
+{
+    public int Index { get; set; }
+    public required string Name { get; set; }
+    public required string File { get; set; }
+    public float FrameCount { get; set; }
+    public float Fps { get; set; }
+}
 
 sealed class GroupingOutcome
 {

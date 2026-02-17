@@ -1,8 +1,10 @@
 import { NavLink } from 'react-router-dom'
+import { Hexagon, Play, Settings, type LucideIcon } from 'lucide-react'
 
-const navItems = [
-  { to: '/', label: 'Editor', icon: '⬡' },
-  { to: '/tools', label: 'Tools', icon: '⚙' },
+const navItems: { to: string; label: string; Icon: LucideIcon }[] = [
+  { to: '/', label: 'Editor', Icon: Hexagon },
+  { to: '/animations', label: 'Anim', Icon: Play },
+  { to: '/tools', label: 'Tools', Icon: Settings },
 ]
 
 export default function Sidebar() {
@@ -37,7 +39,7 @@ export default function Sidebar() {
             transition: 'color 0.15s',
           })}
         >
-          <span style={{ fontSize: 20 }}>{item.icon}</span>
+          <item.Icon size={20} strokeWidth={1.5} />
           <span>{item.label}</span>
         </NavLink>
       ))}

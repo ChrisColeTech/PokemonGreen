@@ -653,13 +653,11 @@ namespace OhanaCli.Formats.Models.GenericFormats
         /// <param name="fileName">The output File Name</param>
         /// <param name="modelIndex">Index of the model to be exported</param>
         /// <param name="skeletalAnimationIndex">(Optional) Index of the skeletal animation</param>
-        /// <param name="includeAllSkeletalAnimations">When true, emits all skeletal clips into one DAE file.</param>
         public static void export(
             RenderBase.OModelGroup model,
             string fileName,
             int modelIndex,
-            int skeletalAnimationIndex = -1,
-            bool includeAllSkeletalAnimations = false)
+            int skeletalAnimationIndex = -1)
         {
             RenderBase.OModel mdl = model.model[modelIndex];
             COLLADA dae = new COLLADA();
@@ -781,7 +779,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
             {
                 //Geometry
                 daeGeometry geometry = new daeGeometry();
-                RenderBase.OMaterial meshMaterial = mdl.material[obj.materialId];
+                RenderBase.OMaterial meshMaterial = getMeshMaterial(mdl, obj);
 
                 string meshName = "mesh_" + meshIndex++ + "_" + obj.name;
                 geometry.id = meshName + "_id";
@@ -1069,14 +1067,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 vs.node.Add(node);
             }
 
-            if (includeAllSkeletalAnimations)
-            {
-                for (int i = 0; i < model.skeletalAnimation.list.Count; i++)
-                {
-                    exportAnimation(dae, model, mdl, i);
-                }
-            }
-            else if (skeletalAnimationIndex >= 0)
+            if (skeletalAnimationIndex >= 0)
             {
                 exportAnimation(dae, model, mdl, skeletalAnimationIndex);
             }
@@ -1103,7 +1094,53 @@ namespace OhanaCli.Formats.Models.GenericFormats
             }
         }
 
-        public static void exportAnimation(COLLADA dae, RenderBase.OModelGroup model, RenderBase.OModel mdl, int animIndex)
+        public static void exportSkeletalClip(
+            RenderBase.OModelGroup model,
+            string fileName,
+            int modelIndex,
+            int skeletalAnimationIndex)
+        {
+            RenderBase.OModel mdl = model.model[modelIndex];
+            COLLADA dae = new COLLADA();
+
+            dae.asset.created = DateTime.Now.ToString("yyyy-MM-ddThh:mm:ssZ");
+            dae.asset.modified = dae.asset.created;
+            dae.asset.up_axis = "Y_UP";
+
+            daeVisualScene vs = new daeVisualScene();
+            vs.name = "vs_" + mdl.name;
+            vs.id = vs.name + "_id";
+            if (mdl.skeleton.Count > 0) writeSkeleton(mdl.skeleton, 0, ref vs.node);
+
+            exportAnimation(dae, model, mdl, skeletalAnimationIndex);
+
+            dae.library_visual_scenes.Add(vs);
+
+            daeInstaceVisualScene scene = new daeInstaceVisualScene();
+            scene.url = "#" + vs.id;
+            dae.scene.Add(scene);
+
+            XmlWriterSettings settings = new XmlWriterSettings
+            {
+                Encoding = Encoding.UTF8,
+                Indent = true,
+                IndentChars = "\t"
+            };
+
+            XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
+            ns.Add("", "http://www.collada.org/2005/11/COLLADASchema");
+            XmlSerializer serializer = new XmlSerializer(typeof(COLLADA));
+            using (XmlWriter output = XmlWriter.Create(new FileStream(fileName, FileMode.Create), settings))
+            {
+                serializer.Serialize(output, dae, ns);
+            }
+        }
+
+        public static void exportAnimation(
+            COLLADA dae,
+            RenderBase.OModelGroup model,
+            RenderBase.OModel mdl,
+            int animIndex)
         {
             if (model.skeletalAnimation == null) return;
             if (animIndex < 0 || animIndex >= model.skeletalAnimation.list.Count) return;
@@ -1120,6 +1157,13 @@ namespace OhanaCli.Formats.Models.GenericFormats
             for (int boneIndex = 0; boneIndex < anim.bone.Count; boneIndex++)
             {
                 RenderBase.OSkeletalAnimationBone animBone = anim.bone[boneIndex];
+
+                if (string.IsNullOrWhiteSpace(animBone.name) || !skeletonByName.ContainsKey(animBone.name))
+                {
+                    logDiagnostic("Skipping animation bone '" + (animBone.name ?? "") + "' at index " + boneIndex + " (not in skeleton).");
+                    continue;
+                }
+
                 string segmentKind = getSegmentKind(animBone);
 
                 logDiagnostic(
@@ -1137,6 +1181,7 @@ namespace OhanaCli.Formats.Models.GenericFormats
                 }
 
                 List<float> sampleFrames = collectSampleFrames(anim, animBone);
+
                 if (sampleFrames.Count == 0)
                 {
                     logDiagnostic("Skipping bone '" + animBone.name + "' (no sample frames, segment=" + segmentKind + ").");
@@ -1243,60 +1288,70 @@ namespace OhanaCli.Formats.Models.GenericFormats
                     appendMatrix(outputMatrices, localTransform);
                 }
 
-                daeSource input = new daeSource();
-                input.id = baseName + "_input";
-                input.float_array = new daeFloatArray();
-                input.float_array.id = input.id + "_array";
                 List<float> sampleTimes = new List<float>(sampleFrames.Count);
                 for (int i = 0; i < sampleFrames.Count; i++)
                 {
                     sampleTimes.Add(frameToSeconds(sampleFrames[i]));
                 }
 
-                input.float_array.set(sampleTimes);
-                input.technique_common.accessor.source = "#" + input.float_array.id;
-                input.technique_common.accessor.count = (uint)sampleTimes.Count;
-                input.technique_common.accessor.stride = 1;
-                input.technique_common.accessor.addParam("TIME", "float");
-
-                daeSource output = new daeSource();
-                output.id = baseName + "_output";
-                output.float_array = new daeFloatArray();
-                output.float_array.id = output.id + "_array";
-                output.float_array.set(outputMatrices);
-                output.technique_common.accessor.source = "#" + output.float_array.id;
-                output.technique_common.accessor.count = (uint)sampleFrames.Count;
-                output.technique_common.accessor.stride = 16;
-                output.technique_common.accessor.addParam("TRANSFORM", "float4x4");
-
-                daeSource interpolation = new daeSource();
-                interpolation.id = baseName + "_interpolation";
-                interpolation.Name_array = new daeNameArray();
-                interpolation.Name_array.id = interpolation.id + "_array";
-                List<string> interpolationData = new List<string>();
-                for (int i = 0; i < sampleTimes.Count; i++) interpolationData.Add("LINEAR");
-                interpolation.Name_array.set(interpolationData);
-                interpolation.technique_common.accessor.source = "#" + interpolation.Name_array.id;
-                interpolation.technique_common.accessor.count = (uint)sampleTimes.Count;
-                interpolation.technique_common.accessor.stride = 1;
-                interpolation.technique_common.accessor.addParam("INTERPOLATION", "Name");
-
-                daeAnimation animation = new daeAnimation();
-                animation.id = baseName;
-                animation.name = baseName;
-                animation.source.Add(input);
-                animation.source.Add(output);
-                animation.source.Add(interpolation);
-                animation.sampler.id = baseName + "_sampler";
-                animation.sampler.addInput("INPUT", "#" + input.id);
-                animation.sampler.addInput("OUTPUT", "#" + output.id);
-                animation.sampler.addInput("INTERPOLATION", "#" + interpolation.id);
-                animation.channel.source = "#" + animation.sampler.id;
-                animation.channel.target = animBone.name + "_bone_id/transform";
-
-                dae.library_animations.Add(animation);
+                addTransformAnimation(dae, baseName, animBone.name, sampleTimes, outputMatrices);
                 logDiagnostic("Exported matrix animation for bone '" + animBone.name + "' with " + sampleFrames.Count + " samples.");
             }
+        }
+
+        private static void addTransformAnimation(
+            COLLADA dae,
+            string baseName,
+            string boneName,
+            List<float> sampleTimes,
+            List<float> outputMatrices)
+        {
+            daeSource input = new daeSource();
+            input.id = baseName + "_input";
+            input.float_array = new daeFloatArray();
+            input.float_array.id = input.id + "_array";
+            input.float_array.set(sampleTimes);
+            input.technique_common.accessor.source = "#" + input.float_array.id;
+            input.technique_common.accessor.count = (uint)sampleTimes.Count;
+            input.technique_common.accessor.stride = 1;
+            input.technique_common.accessor.addParam("TIME", "float");
+
+            daeSource output = new daeSource();
+            output.id = baseName + "_output";
+            output.float_array = new daeFloatArray();
+            output.float_array.id = output.id + "_array";
+            output.float_array.set(outputMatrices);
+            output.technique_common.accessor.source = "#" + output.float_array.id;
+            output.technique_common.accessor.count = (uint)sampleTimes.Count;
+            output.technique_common.accessor.stride = 16;
+            output.technique_common.accessor.addParam("TRANSFORM", "float4x4");
+
+            daeSource interpolation = new daeSource();
+            interpolation.id = baseName + "_interpolation";
+            interpolation.Name_array = new daeNameArray();
+            interpolation.Name_array.id = interpolation.id + "_array";
+            List<string> interpolationData = new List<string>();
+            for (int i = 0; i < sampleTimes.Count; i++) interpolationData.Add("LINEAR");
+            interpolation.Name_array.set(interpolationData);
+            interpolation.technique_common.accessor.source = "#" + interpolation.Name_array.id;
+            interpolation.technique_common.accessor.count = (uint)sampleTimes.Count;
+            interpolation.technique_common.accessor.stride = 1;
+            interpolation.technique_common.accessor.addParam("INTERPOLATION", "Name");
+
+            daeAnimation animation = new daeAnimation();
+            animation.id = baseName;
+            animation.name = baseName;
+            animation.source.Add(input);
+            animation.source.Add(output);
+            animation.source.Add(interpolation);
+            animation.sampler.id = baseName + "_sampler";
+            animation.sampler.addInput("INPUT", "#" + input.id);
+            animation.sampler.addInput("OUTPUT", "#" + output.id);
+            animation.sampler.addInput("INTERPOLATION", "#" + interpolation.id);
+            animation.channel.source = "#" + animation.sampler.id;
+            animation.channel.target = boneName + "_bone_id/transform";
+
+            dae.library_animations.Add(animation);
         }
 
         private static string getSegmentKind(RenderBase.OSkeletalAnimationBone bone)
@@ -1648,10 +1703,23 @@ namespace OhanaCli.Formats.Models.GenericFormats
             float rotatedU = (centeredU * cos) - (centeredV * sin);
             float rotatedV = (centeredU * sin) + (centeredV * cos);
 
-            float transformedU = (rotatedU + 0.5f) * scaleU - coordinator.translateU;
-            float transformedV = (rotatedV + 0.5f) * scaleV - coordinator.translateV;
+            float transformedU = scaleU * (rotatedU + 0.5f - coordinator.translateU);
+            float transformedV = scaleV * (rotatedV + 0.5f - coordinator.translateV);
 
             return new RenderBase.OVector2(transformedU, transformedV);
+        }
+
+        private static RenderBase.OMaterial getMeshMaterial(RenderBase.OModel model, RenderBase.OMesh mesh)
+        {
+            if (model.material.Count == 0) return new RenderBase.OMaterial();
+
+            int materialIndex = mesh.materialId;
+            if (materialIndex < 0 || materialIndex >= model.material.Count)
+            {
+                return model.material[0];
+            }
+
+            return model.material[materialIndex];
         }
 
         private static void addTexcoordBinding(daeBindMaterialInstace instanceMaterial, int texUvCount)

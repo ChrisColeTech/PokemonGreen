@@ -6,6 +6,7 @@ const API_BASE = 'http://localhost:3001'
 
 interface ManifestEntry {
   name: string
+  dir: string
   assetsPath: string
   modelFile: string
   modelFormat: string

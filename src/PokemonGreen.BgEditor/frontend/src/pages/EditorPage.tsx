@@ -4,7 +4,6 @@ import Viewport from '../components/Viewport'
 import DropZone from '../components/DropZone'
 import TexturePanel from '../components/TexturePanel'
 import ColorControls from '../components/ColorControls'
-import AnimationPanel from '../components/AnimationPanel'
 import ExportPanel from '../components/ExportPanel'
 
 export default function EditorPage() {
@@ -37,9 +36,6 @@ export default function EditorPage() {
             }}>
               <div style={{ flex: '0 0 auto', maxHeight: '30%', overflow: 'hidden', display: 'flex' }}>
                 <TexturePanel />
-              </div>
-              <div style={{ flex: '0 0 auto', overflow: 'hidden' }}>
-                <AnimationPanel />
               </div>
               <div style={{ flex: '1 1 auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <ColorControls />
