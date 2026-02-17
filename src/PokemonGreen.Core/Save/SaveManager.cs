@@ -189,6 +189,7 @@ public class SaveManager : IDisposable
 
         using var conn = new SqliteConnection($"Data Source={path}");
         conn.Open();
+        EnsureSchema(conn);
 
         var data = new GameSaveData();
 

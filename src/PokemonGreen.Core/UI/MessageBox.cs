@@ -126,7 +126,7 @@ public class MessageBox
 
         UIStyle.DrawBattlePanel(spriteBatch, pixel, bounds);
 
-        int padding = 16;
+        int padding = 4 * fontScale;
         int maxChars = Math.Min((int)_visibleChars, _currentMessage.Length);
         fontRenderer.DrawString(spriteBatch, _currentMessage,
             new Vector2(bounds.X + padding, bounds.Y + padding),

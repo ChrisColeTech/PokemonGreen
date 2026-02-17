@@ -19,5 +19,5 @@ public interface IScreenOverlay
     /// <summary>Draw the full-screen overlay.</summary>
     void Draw(SpriteBatch spriteBatch, Texture2D pixel,
               KermFontRenderer? fontRenderer, KermFont? font,
-              SpriteFont fallbackFont, int screenWidth, int screenHeight);
+              SpriteFont fallbackFont, int screenWidth, int screenHeight, int fontScale = 3);
 }

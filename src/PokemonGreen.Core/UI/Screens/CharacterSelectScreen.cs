@@ -283,8 +283,14 @@ public class CharacterSelectScreen : IScreenOverlay
 
     public void Draw(SpriteBatch sb, Texture2D pixel,
                      KermFontRenderer? fontRenderer, KermFont? font,
-                     SpriteFont fallbackFont, int screenWidth, int screenHeight)
+                     SpriteFont fallbackFont, int screenWidth, int screenHeight, int fontScale = 3)
     {
+        // Derived sizes from font scale
+        int charW = fontScale * 5 / 3;    // approx glyph width at scale=3 → 5
+        int lineH = fontScale * 7;
+        int smallScale = Math.Max(1, fontScale * 2 / 3);
+        int smallCharW = smallScale * 5 / 3;
+
         var fullRect = new Rectangle(0, 0, screenWidth, screenHeight);
         UIStyle.DrawTripleGradient(sb, pixel, fullRect, GradTop, GradMid, GradBot);
 
@@ -294,19 +300,20 @@ public class CharacterSelectScreen : IScreenOverlay
             title = "SELECT CATEGORY";
         else
             title = $"{CurrentCat.Label.ToUpperInvariant()}  ({_page + 1}/{TotalPages})  [{CurrentCat.Folders.Length}]";
-        DrawText(sb, fontRenderer, fallbackFont, title, new Vector2(Padding, Padding - 4), Color.White, 3);
+        DrawText(sb, fontRenderer, fallbackFont, title, new Vector2(Padding, Padding - 4), Color.White, fontScale);
 
         // Breadcrumb for item level
         if (_level == Level.Items)
         {
             DrawText(sb, fontRenderer, fallbackFont, "< Esc to go back",
-                new Vector2(Padding, Padding + 22), new Color(140, 160, 200), 2);
+                new Vector2(Padding, Padding + lineH + 2), new Color(140, 160, 200), smallScale);
         }
 
         // Grid
-        int gridY = Padding + (_level == Level.Items ? 44 : 40);
+        int gridY = Padding + (_level == Level.Items ? lineH * 2 + 4 : lineH + 12);
+        int bottomBarH = 14 * fontScale;
         int gridW = screenWidth - Padding * 2;
-        int gridH = screenHeight - gridY - Padding - BottomHeight;
+        int gridH = screenHeight - gridY - Padding - bottomBarH;
         int cardW = (gridW - CardSpacing * (GridColumns - 1)) / GridColumns;
         int cardH = (gridH - CardSpacing * (GridRows - 1)) / GridRows;
 
@@ -331,56 +338,53 @@ public class CharacterSelectScreen : IScreenOverlay
             {
                 int gi = CatPageStart + i;
                 var cat = _categories[gi];
-                // Category label
                 DrawText(sb, fontRenderer, fallbackFont, cat.Label,
-                    new Vector2(cx + cardW / 2 - cat.Label.Length * 5, cy + cardH / 2 - 16), Color.White, 3);
-                // Count
+                    new Vector2(cx + cardW / 2 - cat.Label.Length * charW, cy + cardH / 2 - lineH), Color.White, fontScale);
                 string countStr = $"{cat.Folders.Length} models";
                 DrawText(sb, fontRenderer, fallbackFont, countStr,
-                    new Vector2(cx + cardW / 2 - countStr.Length * 4, cy + cardH / 2 + 8), new Color(160, 180, 220), 2);
-                // Prefix
+                    new Vector2(cx + cardW / 2 - countStr.Length * smallCharW, cy + cardH / 2 + 4), new Color(160, 180, 220), smallScale);
                 DrawText(sb, fontRenderer, fallbackFont, cat.Prefix,
-                    new Vector2(cx + 8, cy + cardH - 20), new Color(120, 120, 140), 2);
+                    new Vector2(cx + 8, cy + cardH - lineH - 4), new Color(120, 120, 140), smallScale);
             }
             else
             {
                 int gi = PageStart + i;
                 string name = gi < CurrentCat.Names.Length ? CurrentCat.Names[gi] : CurrentCat.Folders[gi];
                 DrawText(sb, fontRenderer, fallbackFont, name,
-                    new Vector2(cx + cardW / 2 - name.Length * 5, cy + cardH / 2 - 8), Color.White, 3);
+                    new Vector2(cx + cardW / 2 - name.Length * charW, cy + cardH / 2 - lineH / 2), Color.White, fontScale);
                 DrawText(sb, fontRenderer, fallbackFont, CurrentCat.Folders[gi],
-                    new Vector2(cx + 8, cy + cardH - 20), new Color(160, 160, 180), 2);
+                    new Vector2(cx + 8, cy + cardH - lineH - 4), new Color(160, 160, 180), smallScale);
             }
         }
 
         // Bottom bar
-        int btnW = 100;
-        int btnH = 36;
-        int bottomY = screenHeight - BottomHeight + (BottomHeight - btnH) / 2;
+        int btnW = 32 * fontScale;
+        int btnH = 10 * fontScale;
+        int bottomY = screenHeight - bottomBarH + (bottomBarH - btnH) / 2;
         int totalPages = CurrentTotalPages;
         bool hasPrev = _page > 0;
         bool hasNext = _page < totalPages - 1;
 
         _prevRect = new Rectangle(Padding, bottomY, btnW, btnH);
         DrawButton(sb, pixel, fontRenderer, fallbackFont, _prevRect, "<< Q",
-            _bottomFocus == BottomFocus.Prev, hasPrev);
+            _bottomFocus == BottomFocus.Prev, hasPrev, fontScale);
 
         _nextRect = new Rectangle(Padding + btnW + CardSpacing, bottomY, btnW, btnH);
         DrawButton(sb, pixel, fontRenderer, fallbackFont, _nextRect, "E >>",
-            _bottomFocus == BottomFocus.Next, hasNext);
+            _bottomFocus == BottomFocus.Next, hasNext, fontScale);
 
         _backRect = new Rectangle(screenWidth - btnW - Padding, bottomY, btnW, btnH);
         sb.Draw(pixel, _backRect, _bottomFocus == BottomFocus.Back ? BtnBackSel : BtnBack);
         if (_bottomFocus == BottomFocus.Back) DrawBorder(sb, pixel, _backRect, 2, CardBorder);
         string backLabel = _level == Level.Items ? "Back" : "Close";
         DrawText(sb, fontRenderer, fallbackFont, backLabel,
-            new Vector2(_backRect.X + btnW / 2 - backLabel.Length * 5, _backRect.Y + 8), Color.White, 3);
+            new Vector2(_backRect.X + btnW / 2 - backLabel.Length * charW, _backRect.Y + (btnH - lineH) / 2), Color.White, fontScale);
 
         // Page dots
         if (totalPages > 1 && totalPages <= 30)
         {
-            int dotSize = 6;
-            int dotSpacing = 12;
+            int dotSize = Math.Max(4, fontScale * 2);
+            int dotSpacing = dotSize * 2;
             int dotsW = totalPages * dotSpacing - (dotSpacing - dotSize);
             int dotsX = screenWidth / 2 - dotsW / 2;
             for (int p = 0; p < totalPages; p++)
@@ -393,7 +397,7 @@ public class CharacterSelectScreen : IScreenOverlay
         {
             string pageStr = $"Page {_page + 1}/{totalPages}";
             DrawText(sb, fontRenderer, fallbackFont, pageStr,
-                new Vector2(screenWidth / 2 - pageStr.Length * 4, bottomY + 8), new Color(180, 180, 200), 2);
+                new Vector2(screenWidth / 2 - pageStr.Length * smallCharW, bottomY + (btnH - lineH) / 2), new Color(180, 180, 200), smallScale);
         }
 
         // Fade
@@ -408,14 +412,16 @@ public class CharacterSelectScreen : IScreenOverlay
     }
 
     private void DrawButton(SpriteBatch sb, Texture2D pixel, KermFontRenderer? fr, SpriteFont ff,
-                            Rectangle rect, string label, bool selected, bool enabled)
+                            Rectangle rect, string label, bool selected, bool enabled, int fontScale = 3)
     {
+        int charW = fontScale * 5 / 3;
+        int lineH = fontScale * 7;
         Color bg = selected ? BtnSelected : (enabled ? BtnNormal : new Color(30, 30, 30, 100));
         sb.Draw(pixel, rect, bg);
         if (selected) DrawBorder(sb, pixel, rect, 2, CardBorder);
         DrawText(sb, fr, ff, label,
-            new Vector2(rect.X + rect.Width / 2 - label.Length * 5, rect.Y + 8),
-            enabled ? Color.White : new Color(80, 80, 80), 3);
+            new Vector2(rect.X + rect.Width / 2 - label.Length * charW, rect.Y + (rect.Height - lineH) / 2),
+            enabled ? Color.White : new Color(80, 80, 80), fontScale);
     }
 
     private static void DrawText(SpriteBatch sb, KermFontRenderer? fontRenderer,

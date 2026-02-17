@@ -1,15 +1,15 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using PokemonGreen.Core.Battle;
 using PokemonGreen.Core.Maps;
 using PokemonGreen.Core.Rendering;
-using PokemonGreen.Core.Rendering.Skeletal;
 using PokemonGreen.Core.Save;
+using PokemonGreen.Core.Rendering.Skeletal;
 using PokemonGreen.Core.Systems;
 using PokemonGreen.Core.UI;
 using PokemonGreen.Core.UI.Fonts;
@@ -45,44 +45,10 @@ public class Game1 : Game
     private readonly MenuBox _pauseMenuBox = new() { Columns = 1, UseStandardStyle = true };
     private bool _isPaused;
 
-    // Persistence
-    private readonly SaveManager _saveManager = new();
-    private const int SaveSlot = 99; // dedicated slot for 3D POC
-    private HashSet<string> _storyFlags = new();
-
-    // Collectible cubes
-    private static readonly Vector3[] CubeSpawnPositions =
-    {
-        // Center map area
-        new( 3, 0,  5), new(-4, 0,  8), new( 7, 0, -3),
-        new(-6, 0, -7), new(10, 0,  2), new(-2, 0, 12),
-        new( 8, 0, -9), new(-9, 0,  4), new( 5, 0, -12),
-        new(12, 0,  9), new(-11, 0, -2), new( 1, 0, 15),
-        // North map
-        new( 4, 0, -20), new(14, 0, -25), new(24, 0, -18),
-        new(10, 0, -30), new(20, 0, -22), new( 8, 0, -15),
-        // South map
-        new( 6, 0,  38), new(18, 0,  42), new(26, 0,  35),
-        new(12, 0,  50), new(22, 0,  45), new( 2, 0,  55),
-        // West map
-        new(-18, 0,  6), new(-24, 0, 14), new(-12, 0, 22),
-        new(-28, 0, 10), new(-20, 0, 26), new(-15, 0, 18),
-        // East map
-        new( 38, 0,  4), new( 44, 0, 12), new( 50, 0,  8),
-        new( 36, 0, 20), new( 42, 0, 26), new( 55, 0, 16),
-        // Scattered extras
-        new( 16, 0, 16), new( 30, 0, 30), new(-5, 0, 30),
-        new( 28, 0, -8), new(-22, 0, -4), new( 48, 0, 22),
-    };
-    private bool[] _cubeCollected;
-    private int _cubeCount;
-    private VertexPositionColor[] _cubeVertices;
-    private short[] _cubeIndices;
-    private float _cubeRotation;
-    private float _cubeBobTimer;
-    private const float CubeSize = 0.4f;
-    private const float CubeHoverHeight = 0.8f;
-    private const float CubeCollectRadius = 1.5f;
+    // Subsystems
+    private BattleScreen3D _battleScreen = null!;
+    private CubeCollectibleSystem _cubeSystem = null!;
+    private PersistenceManager3D _persistence = null!;
 
     // Encounter system
     private readonly Random _encounterRng = new();
@@ -104,6 +70,15 @@ public class Game1 : Game
     private bool _wasTurning;
     private float _cameraFollowDelayTimer;
     private float _verticalVelocity;
+
+    // Set to true to launch directly into the battle screen for debugging.
+    private const bool DebugStartInBattle = false;
+
+    // Virtual resolution for 2D UI — higher than the 2D game (800x600) so the
+    // transform matrix scales DOWN at 1080p instead of up, keeping text crisp.
+    private const int VirtualWidth = 1280;
+    private const int VirtualHeight = 960;
+    private const int UIFontScale = 5;
 
     private const float PlayerTargetHeight = 2f;
     private const float PlayerModelHeightOffset = 0.0f;
@@ -138,7 +113,6 @@ public class Game1 : Game
         };
 
         _gridVertices = CreateGridVertices();
-        (_cubeVertices, _cubeIndices) = CreateCubeMesh(CubeSize, new Color(255, 200, 50));
 
         // Load all maps in the world and build 3D mesh
         const string worldId = "small_world";
@@ -160,7 +134,14 @@ public class Game1 : Game
         _camera.MaxDistance = 20f;
 
         // Load persisted state
-        LoadSaveData();
+        _persistence = new PersistenceManager3D();
+        _persistence.Load();
+
+        if (!string.IsNullOrEmpty(_persistence.RestoredCharacterFolder))
+        {
+            _currentCharacterFolder = _persistence.RestoredCharacterFolder;
+            Console.WriteLine($"[Save] Restored character: {_currentCharacterFolder}");
+        }
 
         // Pause menu items
         _pauseMenuBox.SetItems(
@@ -201,13 +182,26 @@ public class Game1 : Game
             var palette = new[]
             {
                 Color.Transparent,
-                new Color(239, 239, 239, 255),
-                new Color(80, 80, 80, 90),
-                new Color(40, 40, 40, 60),
+                new Color(245, 245, 245, 255),  // main text — bright white
+                new Color(40, 40, 50, 50),       // shadow — subtle, low alpha
+                new Color(20, 20, 30, 30),       // outer — barely visible
             };
             _kermFont = new KermFont(GraphicsDevice, kermFontPath, palette: palette);
             _kermFontRenderer = new KermFontRenderer(_kermFont);
         }
+
+        // Initialize subsystems that need GPU resources
+        _battleScreen = new BattleScreen3D(GraphicsDevice, _spriteBatch, _pixel,
+            _kermFontRenderer, _kermFont);
+
+        _cubeSystem = new CubeCollectibleSystem(GraphicsDevice, _gridEffect, _spriteBatch,
+            _pixel, _kermFontRenderer, _kermFont);
+        _cubeSystem.LoadFromFlags(_persistence.StoryFlags);
+
+        Console.WriteLine($"[Save] Loaded {_cubeSystem.CubeCount} collected cubes");
+
+        if (DebugStartInBattle)
+            _battleScreen.EnterBattle();
 
         // Load default character
         LoadCharacterModel(_currentCharacterFolder);
@@ -238,8 +232,17 @@ public class Game1 : Game
         bool confirmPressed = keyboard.GetPressedKeyCount() > 0 && _prevKeyboard.GetPressedKeyCount() == 0;
 
         // Animate cubes regardless of state
-        _cubeRotation += dt * 1.5f;
-        _cubeBobTimer += dt;
+        _cubeSystem.UpdateAnimation(dt);
+
+        // Handle battle state (blocks all overworld input)
+        if (_battleScreen.InBattle)
+        {
+            var uiInput = BuildInputState(keyboard);
+            _battleScreen.Update(dt, uiInput);
+            _prevKeyboard = keyboard;
+            base.Update(gameTime);
+            return;
+        }
 
         // Handle message box (blocks all other input)
         if (_messageBox.IsActive)
@@ -278,7 +281,7 @@ public class Game1 : Game
                 if (_overlay.SelectedFolder != null)
                 {
                     LoadCharacterModel(_overlay.SelectedFolder);
-                    PersistCharacterSelection(_overlay.SelectedFolder);
+                    _persistence.Save(_playerPosition, _currentCharacterFolder, _cubeSystem.CubeCount);
                 }
                 _overlay = null;
             }
@@ -381,7 +384,12 @@ public class Game1 : Game
         }
 
         // Check cube collection
-        CheckCubeCollection();
+        if (_cubeSystem.CheckCollection(_playerPosition, _persistence.StoryFlags))
+        {
+            _messageBox.Show("You found another cube!");
+            _messageBox.OnFinished = null; // just dismiss
+            _persistence.Save(_playerPosition, _currentCharacterFolder, _cubeSystem.CubeCount);
+        }
 
         // Check encounter tiles (only while moving on the ground)
         if (isMoving && isGrounded)
@@ -432,6 +440,17 @@ public class Game1 : Game
 
     protected override void Draw(GameTime gameTime)
     {
+        if (_battleScreen.InBattle)
+        {
+            GraphicsDevice.Clear(new Color(24, 24, 40));
+            _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied,
+                SamplerState.PointClamp, transformMatrix: GetUITransform());
+            _battleScreen.Draw(UIFontScale);
+            _spriteBatch.End();
+            base.Draw(gameTime);
+            return;
+        }
+
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         if (_gridVertices != null && _gridVertices.Length > 0)
@@ -464,7 +483,7 @@ public class Game1 : Game
         }
 
         // Draw collectible cubes
-        DrawCubes();
+        _cubeSystem.DrawCubes(_effect.View, _effect.Projection);
 
         if (_model?.VertexBuffer != null)
         {
@@ -481,50 +500,50 @@ public class Game1 : Game
             _model.Draw(GraphicsDevice, _effect);
         }
 
-        // 2D UI overlay pass
-        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+        // 2D UI overlay pass — virtual 800x600, scaled to fill viewport (matches 2D game)
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied,
+            SamplerState.PointClamp, transformMatrix: GetUITransform());
 
         // Cube counter (upper-left)
-        DrawCubeCounter();
+        _cubeSystem.DrawCounter(UIFontScale);
 
         // Character select overlay
         if (_overlay != null)
         {
             _overlay.Draw(_spriteBatch, _pixel, _kermFontRenderer, _kermFont,
-                null!, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+                null!, VirtualWidth, VirtualHeight, UIFontScale);
         }
 
-        // Pause menu (top-right, same as 2D game)
+        // Pause menu (top-right)
         if (_isPaused)
         {
-            int vw = GraphicsDevice.Viewport.Width;
-            int menuW = 160;
-            int menuH = 140;
-            int menuX = vw - menuW - 16;
-            int menuY = 16;
+            int menuW = 256;
+            int menuH = 224;
+            int menuX = VirtualWidth - menuW - 24;
+            int menuY = 24;
 
             if (_kermFontRenderer != null && _kermFont != null)
                 _pauseMenuBox.Draw(_spriteBatch, _kermFontRenderer, _kermFont, _pixel,
-                    new Rectangle(menuX, menuY, menuW, menuH), 3);
+                    new Rectangle(menuX, menuY, menuW, menuH), UIFontScale);
         }
 
         // Message box (bottom of screen)
         if (_messageBox.IsActive)
         {
-            int vw = GraphicsDevice.Viewport.Width;
-            int vh = GraphicsDevice.Viewport.Height;
-            int boxH = 80;
-            int margin = 20;
-            var bounds = new Rectangle(margin, vh - boxH - margin, vw - margin * 2, boxH);
+            int boxH = 128;
+            int margin = 32;
+            var bounds = new Rectangle(margin, VirtualHeight - boxH - margin, VirtualWidth - margin * 2, boxH);
 
             if (_kermFontRenderer != null)
-                _messageBox.Draw(_spriteBatch, _kermFontRenderer, _pixel, bounds, fontScale: 1);
+                _messageBox.Draw(_spriteBatch, _kermFontRenderer, _pixel, bounds, fontScale: UIFontScale);
         }
 
         _spriteBatch.End();
 
         base.Draw(gameTime);
     }
+
+    // ── Input ─────────────────────────────────────────────────────────
 
     private InputState BuildInputState(KeyboardState keyboard)
     {
@@ -547,6 +566,8 @@ public class Game1 : Game
             MouseClicked = mouse.LeftButton == ButtonState.Pressed,
         };
     }
+
+    // ── Grid ──────────────────────────────────────────────────────────
 
     private static VertexPositionColor[] CreateGridVertices()
     {
@@ -574,43 +595,7 @@ public class Game1 : Game
         return vertices;
     }
 
-    // ── Persistence ──────────────────────────────────────────────────
-
-    private void LoadSaveData()
-    {
-        _cubeCollected = new bool[CubeSpawnPositions.Length];
-        _cubeCount = 0;
-
-        var saveData = _saveManager.Load(SaveSlot);
-        if (saveData != null)
-        {
-            _storyFlags = saveData.StoryFlags;
-
-            // Restore collected cubes from story flags
-            for (int i = 0; i < CubeSpawnPositions.Length; i++)
-            {
-                if (_storyFlags.Contains($"cube_{i}"))
-                {
-                    _cubeCollected[i] = true;
-                    _cubeCount++;
-                }
-            }
-
-            // Restore character selection
-            if (!string.IsNullOrEmpty(saveData.SelectedCharacter))
-            {
-                _currentCharacterFolder = saveData.SelectedCharacter;
-                Console.WriteLine($"[Save] Restored character: {_currentCharacterFolder}");
-            }
-
-            Console.WriteLine($"[Save] Loaded {_cubeCount} collected cubes from slot {SaveSlot}");
-        }
-        else
-        {
-            _storyFlags = new HashSet<string>();
-            Console.WriteLine("[Save] No save found, starting fresh");
-        }
-    }
+    // ── Pause Menu ───────────────────────────────────────────────────
 
     private void OpenPauseMenu()
     {
@@ -627,64 +612,10 @@ public class Game1 : Game
 
     private void ResetCubes()
     {
-        for (int i = 0; i < CubeSpawnPositions.Length; i++)
-        {
-            _cubeCollected[i] = false;
-            _storyFlags.Remove($"cube_{i}");
-        }
-        _cubeCount = 0;
-        PerformSave();
+        _cubeSystem.ResetAll(_persistence.StoryFlags);
+        _persistence.Save(_playerPosition, _currentCharacterFolder, _cubeSystem.CubeCount);
         ClosePauseMenu();
         _messageBox.Show("All cubes have been reset!");
-    }
-
-    private void PersistCharacterSelection(string folderName)
-    {
-        PerformSave();
-    }
-
-    private void PerformSave()
-    {
-        var data = new GameSaveData
-        {
-            PlayerName = "Red",
-            MapId = "3d_overworld",
-            PlayerX = _playerPosition.X,
-            PlayerY = _playerPosition.Z, // map Y = world Z
-            SelectedCharacter = _currentCharacterFolder,
-            StoryFlags = _storyFlags,
-            SavedAt = DateTime.UtcNow,
-        };
-        _saveManager.Save(SaveSlot, data);
-        Console.WriteLine($"[Save] Saved {_cubeCount} cubes to slot {SaveSlot}");
-    }
-
-    // ── Cube Collection ───────────────────────────────────────────────
-
-    private void CheckCubeCollection()
-    {
-        var playerXZ = new Vector2(_playerPosition.X, _playerPosition.Z);
-
-        for (int i = 0; i < CubeSpawnPositions.Length; i++)
-        {
-            if (_cubeCollected[i]) continue;
-
-            var cubeXZ = new Vector2(CubeSpawnPositions[i].X, CubeSpawnPositions[i].Z);
-            float dist = Vector2.Distance(playerXZ, cubeXZ);
-
-            if (dist < CubeCollectRadius)
-            {
-                _cubeCollected[i] = true;
-                _cubeCount++;
-                _storyFlags.Add($"cube_{i}");
-
-                _messageBox.Show("You found another cube!");
-                _messageBox.OnFinished = null; // just dismiss
-
-                PerformSave();
-                break; // one per frame
-            }
-        }
     }
 
     // ── Encounter ──────────────────────────────────────────────────────
@@ -715,124 +646,22 @@ public class Game1 : Game
         }
     }
 
-    // ── Cube Rendering ────────────────────────────────────────────────
+    // ── UI Scaling ─────────────────────────────────────────────────────
 
-    private void DrawCubes()
+    /// <summary>
+    /// Maps virtual 800x600 UI coordinates to the actual viewport,
+    /// maintaining aspect ratio (letterboxed). Matches the 2D game exactly.
+    /// </summary>
+    private Matrix GetUITransform()
     {
-        if (_cubeVertices == null) return;
-
-        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-        GraphicsDevice.BlendState = BlendState.Opaque;
-        GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
-
-        _gridEffect.View = _effect.View;
-        _gridEffect.Projection = _effect.Projection;
-
-        float bob = MathF.Sin(_cubeBobTimer * 2f) * 0.15f;
-
-        for (int i = 0; i < CubeSpawnPositions.Length; i++)
-        {
-            if (_cubeCollected[i]) continue;
-
-            var pos = CubeSpawnPositions[i];
-            _gridEffect.World =
-                Matrix.CreateRotationY(_cubeRotation)
-                * Matrix.CreateTranslation(pos.X, CubeHoverHeight + bob, pos.Z);
-
-            foreach (var pass in _gridEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                GraphicsDevice.DrawUserIndexedPrimitives(
-                    PrimitiveType.TriangleList,
-                    _cubeVertices, 0, _cubeVertices.Length,
-                    _cubeIndices, 0, _cubeIndices.Length / 3);
-            }
-        }
-    }
-
-    private void DrawCubeCounter()
-    {
-        int total = CubeSpawnPositions.Length;
-        string text = $"Cubes: {_cubeCount} / {total}";
-
-        // Background panel
-        int px = 12, py = 12, padX = 12, padY = 8;
-        int textW = text.Length * 8; // approximate
-        int textH = 16;
-
-        if (_kermFont != null)
-        {
-            var size = _kermFont.MeasureString(text);
-            textW = size.X;
-            textH = size.Y;
-        }
-
-        var panelRect = new Rectangle(px, py, textW + padX * 2, textH + padY * 2);
-        UIStyle.DrawBattlePanel(_spriteBatch, _pixel, panelRect);
-
-        if (_kermFontRenderer != null)
-        {
-            _kermFontRenderer.DrawString(_spriteBatch, text,
-                new Vector2(px + padX, py + padY), 1, Color.White);
-        }
-    }
-
-    // ── Cube Mesh ─────────────────────────────────────────────────────
-
-    private static (VertexPositionColor[] verts, short[] indices) CreateCubeMesh(float size, Color color)
-    {
-        float s = size / 2f;
-        var darkColor = new Color(
-            (int)(color.R * 0.6f), (int)(color.G * 0.6f), (int)(color.B * 0.6f));
-        var midColor = new Color(
-            (int)(color.R * 0.8f), (int)(color.G * 0.8f), (int)(color.B * 0.8f));
-
-        // 8 corners, colored by face for a bit of shading
-        var verts = new VertexPositionColor[]
-        {
-            // Top face (bright)
-            new(new Vector3(-s,  s, -s), color),     // 0
-            new(new Vector3( s,  s, -s), color),     // 1
-            new(new Vector3( s,  s,  s), color),     // 2
-            new(new Vector3(-s,  s,  s), color),     // 3
-            // Bottom face (dark)
-            new(new Vector3(-s, -s, -s), darkColor),  // 4
-            new(new Vector3( s, -s, -s), darkColor),  // 5
-            new(new Vector3( s, -s,  s), darkColor),  // 6
-            new(new Vector3(-s, -s,  s), darkColor),  // 7
-            // Front face (mid)
-            new(new Vector3(-s, -s,  s), midColor),   // 8
-            new(new Vector3( s, -s,  s), midColor),   // 9
-            new(new Vector3( s,  s,  s), color),      // 10
-            new(new Vector3(-s,  s,  s), color),      // 11
-            // Back face (mid)
-            new(new Vector3( s, -s, -s), midColor),   // 12
-            new(new Vector3(-s, -s, -s), midColor),   // 13
-            new(new Vector3(-s,  s, -s), midColor),   // 14
-            new(new Vector3( s,  s, -s), midColor),   // 15
-            // Right face (mid-bright)
-            new(new Vector3( s, -s,  s), midColor),   // 16
-            new(new Vector3( s, -s, -s), midColor),   // 17
-            new(new Vector3( s,  s, -s), color),      // 18
-            new(new Vector3( s,  s,  s), color),      // 19
-            // Left face (dark)
-            new(new Vector3(-s, -s, -s), darkColor),  // 20
-            new(new Vector3(-s, -s,  s), darkColor),  // 21
-            new(new Vector3(-s,  s,  s), midColor),   // 22
-            new(new Vector3(-s,  s, -s), midColor),   // 23
-        };
-
-        var indices = new short[]
-        {
-            0,1,2,  0,2,3,       // top
-            4,6,5,  4,7,6,       // bottom
-            8,9,10, 8,10,11,     // front
-            12,13,14, 12,14,15,  // back
-            16,17,18, 16,18,19,  // right
-            20,21,22, 20,22,23,  // left
-        };
-
-        return (verts, indices);
+        int w = GraphicsDevice.Viewport.Width;
+        int h = GraphicsDevice.Viewport.Height;
+        float sx = (float)w / VirtualWidth;
+        float sy = (float)h / VirtualHeight;
+        float scale = Math.Min(sx, sy);
+        float ox = (w - VirtualWidth * scale) / 2f;
+        float oy = (h - VirtualHeight * scale) / 2f;
+        return Matrix.CreateScale(scale, scale, 1f) * Matrix.CreateTranslation(ox, oy, 0f);
     }
 
     // ── Utility ───────────────────────────────────────────────────────

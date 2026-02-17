@@ -208,7 +208,7 @@ public class PartyScreen : IScreenOverlay
 
     public void Draw(SpriteBatch sb, Texture2D pixel,
                      KermFontRenderer? fontRenderer, KermFont? font,
-                     SpriteFont fallbackFont, int screenWidth, int screenHeight)
+                     SpriteFont fallbackFont, int screenWidth, int screenHeight, int fontScale = 3)
     {
         var fullRect = new Rectangle(0, 0, screenWidth, screenHeight);
 
