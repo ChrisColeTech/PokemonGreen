@@ -2,7 +2,7 @@
 
 ## Summary
 
-This session decomposed the monolithic `BattleScreen3D.cs` (~886 lines) into focused components, rewrote the camera system, added deploy/recall scale animations, wired up EXP rewards, implemented Pokemon party switch-in, and improved the battle UI layout. Several issues remain around battle exit transitions.
+This session decomposed the monolithic `BattleScreen3D.cs` (~886 lines) into focused components, rewrote the camera system, added deploy/recall scale animations, wired up EXP rewards, implemented Pokemon party switch-in, and improved the battle UI layout. Battle exit transition issues were later fixed with a dedicated fade-state overhaul (documented below).
 
 ---
 
@@ -95,17 +95,22 @@ Split `ExitBattle()` into two steps:
 
 ## 2. What Work Remains
 
-### Battle Exit Transition Bug (ACTIVE)
+### Battle Exit Transition Bug (RESOLVED)
 
-**The Problem:** When exiting battle (Run), the screen fades to black correctly but then briefly flashes `Color.CornflowerBlue` (the overworld clear color) before fading back in.
+**Original Symptoms:** Exiting battle could produce a blue flash, black-frame pop, horizontal-line artifact, or overworld popping in before fade timing finished.
 
-**Root Cause:** The `FadeOutBattle` transition in Game1 has two halves:
-1. Fade to black (battle visible) — `0 → FadeDuration`
-2. Fade from black (overworld visible) — `FadeDuration → FadeDuration*2`
+**Final Fix Implemented (Game1 transition overhaul):**
+1. Replaced single `FadeOutBattle` phase with two explicit phases:
+   - `FadeToBlackFromBattle`
+   - `FadeFromBlackToOverworld`
+2. `OnBattleExit` now starts fade at alpha `0` and ramps to `1` over `FadeDuration`.
+3. At full black (`alpha = 1`), call `CleanupBattle()` exactly once, then switch to fade-in phase.
+4. During `FadeFromBlackToOverworld`, allow normal overworld update so world/camera are live while alpha drops `1 -> 0`.
+5. Rendering clear-color rule:
+   - Use `Color.Black` only during `FadeToBlackFromBattle`
+   - Use normal overworld clear color during `FadeFromBlackToOverworld`
 
-`CleanupBattle()` (which sets `InBattle=false`) is called at the END of the fade. But during phase 2, `InBattle` is still true, so the Draw method enters the battle branch and returns early — the overworld never draws. When `CleanupBattle` fires at the very end, the next frame jumps from battle to overworld with no fade.
-
-**The Dilemma:** If `CleanupBattle` is called at the midpoint (screen fully black), the overworld draws with CornflowerBlue before the fade-back starts. If called at the end, there's no smooth fade to overworld.
+This sequence removes scene-pop artifacts and keeps exit transitions smooth and deterministic.
 
 ### Other Remaining Work
 
@@ -194,17 +199,16 @@ dotnet run --project src/PokemonGreen.3D/PokemonGreen.3D.csproj
 
 ## 6. Known Issues & Strategies
 
-### Issue 1: Battle Exit Blue Flash
+### Issue 1: Battle Exit Blue Flash (Resolved)
 
-**Problem:** Fade-out shows CornflowerBlue frame between battle and overworld.
+**Implemented approach:** single-responsibility exit phases in `Game1`:
+- fade battle to black (`FadeToBlackFromBattle`)
+- cleanup/swap scene at full black
+- fade from black to overworld (`FadeFromBlackToOverworld`)
+- allow overworld update during fade-in
+- black clear only in fade-to-black phase
 
-**Strategy A — Render Target Snapshot:** Before starting fade-out, capture the battle scene to a `RenderTarget2D`. During fade-out, draw the snapshot instead of the live battle. This completely decouples the fade visual from `InBattle` state.
-
-**Strategy B — Deferred Cleanup with Draw Guard:** Add a `_drawBattle` flag separate from `InBattle`. Set `InBattle=false` at fade midpoint (enabling overworld update) but keep `_drawBattle=true` until overworld has drawn at least one frame. This prevents the clear-color flash.
-
-**Strategy C — Black Clear During Transition:** In Game1.Draw, when `_transition == FadeOutBattle`, call `GraphicsDevice.Clear(Color.Black)` before deciding whether to draw battle or overworld. The fade overlay will cover it regardless.
-
-**Strategy D — Single-Phase Fade:** Instead of fade-to-black-then-back, just fade to black. On the next frame after full black, swap to overworld and start a separate fade-from-black. Two independent transitions instead of one two-phase transition.
+**Why this worked:** it fully separates scene swap timing from visual fade timing and avoids drawing stale or uninitialized frames during handoff.
 
 ### Issue 2: Camera Reset Takes Height Parameters
 
@@ -240,11 +244,11 @@ Game1 (MonoGame)
 - **Overlay Stack:** `BattleUIManager` pushes `IScreenOverlay` instances (PartyScreen, BagScreen). Topmost overlay receives input. `IsFinished` signals pop.
 - **Deploy/Recall Animation:** `_displayScale` lerps toward `_targetScale` at `DeploySpeed`. Draw multiplies model/cube size by displayScale. Hidden when scale < 0.001.
 - **Switch State Machine:** `SwitchPhase` enum drives the recall→deploy sequence. Each phase waits for animation completion (`IsAllyRecalled` / `IsAllyDeployed`).
-- **Two-Phase Exit:** `ExitBattle()` triggers transition, `CleanupBattle()` clears state after fade.
+- **Two-Step Exit Handoff:** fade battle to black, cleanup at full black, then fade in overworld.
 
 ### Quick Wins
 
-1. **Fix blue flash (Strategy C):** Add `GraphicsDevice.Clear(Color.Black)` at top of `Draw()` when `_transition == FadeOutBattle`. ~2 lines, eliminates the cornflower blue flash entirely.
+1. **Completed:** Transition state-machine split for battle exit (`FadeToBlackFromBattle` + `FadeFromBlackToOverworld`) with swap at full black.
 
 2. **Sync PP back to party:** In `BattlePokemon.SyncToParty()`, copy `Moves[i].CurrentPP` back to `Source.MovePPs[i]`. ~5 lines.
 

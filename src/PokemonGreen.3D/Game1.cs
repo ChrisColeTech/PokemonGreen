@@ -172,7 +172,7 @@ public class Game1 : Game
         // Pause menu items
         _pauseMenuBox.SetItems(
             new MenuItem("Resume", ClosePauseMenu),
-            new MenuItem("Reset Cubes", ResetCubes),
+            new MenuItem("Reset Coins", ResetCubes),
             new MenuItem("Close", ClosePauseMenu));
         _pauseMenuBox.OnCancel = ClosePauseMenu;
 
@@ -237,9 +237,10 @@ public class Game1 : Game
 
         _cubeSystem = new CubeCollectibleSystem(GraphicsDevice, _gridEffect, _spriteBatch,
             _pixel, _kermFontRenderer, _kermFont);
+        _cubeSystem.GenerateSpawnsForWorld("small_world", _tileMapMesh!.TileWorldSize, (x, z) => _tileMapMesh.IsWalkable(x, z));
         _cubeSystem.LoadFromFlags(_persistence.StoryFlags);
 
-        Console.WriteLine($"[Save] Loaded {_cubeSystem.CubeCount} collected cubes");
+        Console.WriteLine($"[Save] Loaded {_cubeSystem.CubeCount} collected coins");
 
         if (DebugStartInBattle)
         {
@@ -280,7 +281,7 @@ public class Game1 : Game
         var keyboard = Keyboard.GetState();
         bool confirmPressed = keyboard.GetPressedKeyCount() > 0 && _prevKeyboard.GetPressedKeyCount() == 0;
 
-        // Animate cubes regardless of state
+        // Animate collectibles regardless of state
         _cubeSystem.UpdateAnimation(dt);
 
         // Update battle transition (flash/fade)
@@ -291,6 +292,7 @@ public class Game1 : Game
             && _transition != TransitionPhase.FadeFromBattle
             && _transition != TransitionPhase.FadeFromBlackToOverworld)
         {
+            _input.Consume();
             _prevKeyboard = keyboard;
             base.Update(gameTime);
             return;
@@ -299,6 +301,7 @@ public class Game1 : Game
         // Handle battle state (blocks all overworld input)
         if (_battleScreen.InBattle)
         {
+            _input.Consume();
             var uiInput = BuildInputState(keyboard);
             _battleScreen.Update(dt, uiInput, gameTime.TotalGameTime.TotalSeconds);
             _prevKeyboard = keyboard;
@@ -309,6 +312,7 @@ public class Game1 : Game
         // Handle message box (blocks all other input) — any key dismisses
         if (_messageBox.IsActive)
         {
+            _input.Consume();
             bool anyKey = keyboard.GetPressedKeyCount() > 0 && _prevKeyboard.GetPressedKeyCount() == 0;
             _messageBox.Update(dt, anyKey);
             _prevKeyboard = keyboard;
@@ -319,6 +323,7 @@ public class Game1 : Game
         // Handle pause menu (blocks all other input)
         if (_isPaused)
         {
+            _input.Consume();
             var uiInput = BuildInputState(keyboard);
             _pauseMenuBox.Update(
                 left: false, right: false,
@@ -336,6 +341,7 @@ public class Game1 : Game
         // Handle overlay
         if (_overlay != null)
         {
+            _input.Consume();
             var uiInput = BuildInputState(keyboard);
             _overlay.Update(dt, uiInput);
 
@@ -357,6 +363,7 @@ public class Game1 : Game
         // Enter opens pause menu
         if (keyboard.IsKeyDown(Keys.Enter) && !_prevKeyboard.IsKeyDown(Keys.Enter))
         {
+            _input.Consume();
             OpenPauseMenu();
             _prevKeyboard = keyboard;
             base.Update(gameTime);
@@ -367,6 +374,7 @@ public class Game1 : Game
         if ((keyboard.IsKeyDown(Keys.Tab) && !_prevKeyboard.IsKeyDown(Keys.Tab))
             || (keyboard.IsKeyDown(Keys.Escape) && !_prevKeyboard.IsKeyDown(Keys.Escape)))
         {
+            _input.Consume();
             _overlay = new CharacterSelectScreen(
                 _characters.Select(c => c.folder).ToArray(),
                 _characters.Select(c => c.name).ToArray());
@@ -449,10 +457,10 @@ public class Game1 : Game
             isGrounded = true;
         }
 
-        // Check cube collection
+        // Check coin collection
         if (_cubeSystem.CheckCollection(_playerPosition, _persistence.StoryFlags))
         {
-            _messageBox.Show("You found another cube!");
+            _messageBox.Show("You found a coin!");
             _messageBox.OnFinished = null; // just dismiss
             _persistence.Save(_playerPosition, _currentCharacterFolder, _cubeSystem.CubeCount);
         }
@@ -566,7 +574,7 @@ public class Game1 : Game
             _tileMapMesh.Draw(GraphicsDevice, _gridEffect);
         }
 
-        // Draw collectible cubes
+        // Draw collectible coins
         _cubeSystem.DrawCubes(_effect.View, _effect.Projection);
 
         if (_model?.VertexBuffer != null)
@@ -588,7 +596,7 @@ public class Game1 : Game
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied,
             SamplerState.PointClamp, transformMatrix: GetUITransform());
 
-        // Cube counter (upper-left)
+        // Coin counter (upper-left)
         _cubeSystem.DrawCounter(UIFontScale);
 
         // Character select overlay
@@ -725,7 +733,7 @@ public class Game1 : Game
         _cubeSystem.ResetAll(_persistence.StoryFlags);
         _persistence.Save(_playerPosition, _currentCharacterFolder, _cubeSystem.CubeCount);
         ClosePauseMenu();
-        _messageBox.Show("All cubes have been reset!");
+        _messageBox.Show("All coins have been reset!");
     }
 
     // ── Encounter ──────────────────────────────────────────────────────

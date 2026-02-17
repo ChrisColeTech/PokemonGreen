@@ -60,6 +60,26 @@ public sealed class ThirdPersonInputMapper
             IsRunning: _runToggled);
     }
 
+    /// <summary>
+    /// Synchronize keyboard state without emitting one-frame actions.
+    /// Use this while gameplay input is blocked by overlays/transitions.
+    /// </summary>
+    public void Consume()
+    {
+        _currentState = Keyboard.GetState();
+        _previousState = _currentState;
+
+        State = new ThirdPersonInputState(
+            ExitRequested: false,
+            MoveX: 0f,
+            MoveZ: 0f,
+            Turn: 0f,
+            Pitch: 0f,
+            Zoom: 0f,
+            JumpPressed: false,
+            IsRunning: _runToggled);
+    }
+
     private bool IsPressed(Keys key) => _currentState.IsKeyDown(key) && !_previousState.IsKeyDown(key);
 
     private float Axis(Keys negativePrimary, Keys? negativeAlt, Keys positivePrimary, Keys? positiveAlt)

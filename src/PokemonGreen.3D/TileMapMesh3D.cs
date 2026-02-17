@@ -265,6 +265,11 @@ public sealed class TileMapMesh3D
         return true;
     }
 
+    public bool IsInBounds(float worldX, float worldZ)
+    {
+        return TryGetTile(worldX, worldZ, out _, out _, out _);
+    }
+
     /// <summary>
     /// Check whether the player can occupy a world-space position at the given foot height.
     /// Allows landing on top of jump-standable blocking overlays when high enough.

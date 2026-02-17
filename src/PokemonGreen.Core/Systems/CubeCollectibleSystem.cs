@@ -1,18 +1,21 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using PokemonGreen.Core.Maps;
 using PokemonGreen.Core.UI;
 using PokemonGreen.Core.UI.Fonts;
 
 namespace PokemonGreen.Core.Systems;
 
 /// <summary>
-/// Manages collectible cube spawning, animation, collection detection, and rendering.
+/// Manages collectible coin spawning, animation, collection detection, and rendering.
 /// </summary>
 public class CubeCollectibleSystem
 {
-    private static readonly Vector3[] CubeSpawnPositions =
+    private static readonly Vector3[] LegacySpawnPositions =
     {
         // Center map area
         new( 3, 0,  5), new(-4, 0,  8), new( 7, 0, -3),
@@ -46,6 +49,8 @@ public class CubeCollectibleSystem
     private readonly Texture2D _pixel;
     private readonly KermFontRenderer? _kermFontRenderer;
     private readonly KermFont? _kermFont;
+    private Vector3[] _spawnPositions;
+    private string[] _spawnFlagKeys;
 
     private bool[] _cubeCollected;
     private int _cubeCount;
@@ -58,7 +63,7 @@ public class CubeCollectibleSystem
     public int CubeCount => _cubeCount;
 
     /// <summary>Total number of cubes in the world.</summary>
-    public int TotalCubes => CubeSpawnPositions.Length;
+    public int TotalCubes => _spawnPositions.Length;
 
     public CubeCollectibleSystem(GraphicsDevice graphicsDevice, BasicEffect effect,
         SpriteBatch spriteBatch, Texture2D pixel,
@@ -71,9 +76,129 @@ public class CubeCollectibleSystem
         _kermFontRenderer = kermFontRenderer;
         _kermFont = kermFont;
 
-        (_cubeVertices, _cubeIndices) = CreateCubeMesh(CubeSize, new Color(255, 200, 50));
-        _cubeCollected = new bool[CubeSpawnPositions.Length];
+        (_cubeVertices, _cubeIndices) = CreateCoinMesh(radius: CubeSize * 0.55f, thickness: CubeSize * 0.20f,
+            faceColor: new Color(255, 210, 70));
+        _spawnPositions = (Vector3[])LegacySpawnPositions.Clone();
+        _spawnFlagKeys = Enumerable.Range(0, _spawnPositions.Length)
+            .Select(i => $"coin_legacy_{i}")
+            .ToArray();
+        _cubeCollected = new bool[_spawnPositions.Length];
         _cubeCount = 0;
+    }
+
+    /// <summary>
+    /// Generates coin spawns per map from walkable tile centers.
+    /// This keeps all spawns inside loaded map bounds and deterministic.
+    /// </summary>
+    public void GenerateSpawnsForWorld(string worldId, float tileWorldSize, Func<float, float, bool> canPlace)
+    {
+        var generated = new List<Vector3>();
+        var generatedFlags = new List<string>();
+        const int targetTotalCoins = 84;
+
+        var maps = MapCatalog.GetAllMaps()
+            .Where(m => string.Equals(m.WorldId, worldId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(m => m.WorldY)
+            .ThenBy(m => m.WorldX)
+            .ThenBy(m => m.Id, StringComparer.Ordinal)
+            .ToList();
+
+        var mapCandidates = new List<(MapDefinition map, List<(Vector3 pos, string flag)> candidates)>();
+        int totalCandidates = 0;
+
+        foreach (var map in maps)
+        {
+            float offsetX = map.WorldX * map.Width * tileWorldSize;
+            float offsetZ = map.WorldY * map.Height * tileWorldSize;
+
+            var candidates = new List<(Vector3 pos, string flag)>(map.Width * map.Height);
+            for (int ty = 0; ty < map.Height; ty++)
+            {
+                for (int tx = 0; tx < map.Width; tx++)
+                {
+                    float x = offsetX + (tx + 0.5f) * tileWorldSize;
+                    float z = offsetZ + (ty + 0.5f) * tileWorldSize;
+                    if (canPlace(x, z))
+                        candidates.Add((new Vector3(x, 0f, z), $"coin_{worldId}_{map.Id}_{tx}_{ty}"));
+                }
+            }
+
+            if (candidates.Count == 0)
+                continue;
+
+            mapCandidates.Add((map, candidates));
+            totalCandidates += candidates.Count;
+        }
+
+        if (mapCandidates.Count > 0 && totalCandidates > 0)
+        {
+            int worldTarget = Math.Min(targetTotalCoins, totalCandidates);
+            var allocated = new int[mapCandidates.Count];
+            var remainders = new float[mapCandidates.Count];
+
+            int allocatedSum = 0;
+            for (int i = 0; i < mapCandidates.Count; i++)
+            {
+                float exact = worldTarget * (mapCandidates[i].candidates.Count / (float)totalCandidates);
+                int baseCount = Math.Min((int)MathF.Floor(exact), mapCandidates[i].candidates.Count);
+                allocated[i] = baseCount;
+                remainders[i] = exact - baseCount;
+                allocatedSum += baseCount;
+            }
+
+            while (allocatedSum < worldTarget)
+            {
+                int bestIndex = -1;
+                float bestRemainder = float.MinValue;
+                for (int i = 0; i < mapCandidates.Count; i++)
+                {
+                    if (allocated[i] >= mapCandidates[i].candidates.Count)
+                        continue;
+
+                    if (remainders[i] > bestRemainder)
+                    {
+                        bestRemainder = remainders[i];
+                        bestIndex = i;
+                    }
+                }
+
+                if (bestIndex < 0)
+                    break;
+
+                allocated[bestIndex]++;
+                remainders[bestIndex] = 0f;
+                allocatedSum++;
+            }
+
+            for (int i = 0; i < mapCandidates.Count; i++)
+            {
+                int coinsForMap = allocated[i];
+                if (coinsForMap <= 0)
+                    continue;
+
+                var map = mapCandidates[i].map;
+                var candidates = mapCandidates[i].candidates;
+                int seed = StableHash32($"{worldId}:{map.Id}:{map.Width}:{map.Height}");
+                foreach (int idx in PickUniqueIndices(candidates.Count, coinsForMap, seed))
+                {
+                    generated.Add(candidates[idx].pos);
+                    generatedFlags.Add(candidates[idx].flag);
+                }
+            }
+        }
+
+        if (generated.Count == 0)
+        {
+            generated.AddRange(LegacySpawnPositions);
+            generatedFlags.AddRange(Enumerable.Range(0, LegacySpawnPositions.Length)
+                .Select(i => $"coin_legacy_{i}"));
+        }
+
+        _spawnPositions = generated.ToArray();
+        _spawnFlagKeys = generatedFlags.ToArray();
+        _cubeCollected = new bool[_spawnPositions.Length];
+        _cubeCount = 0;
+        Console.WriteLine($"[Coins] Generated {_spawnPositions.Length} coin spawns in world '{worldId}'.");
     }
 
     /// <summary>
@@ -82,12 +207,19 @@ public class CubeCollectibleSystem
     /// </summary>
     public void LoadFromFlags(System.Collections.Generic.HashSet<string> storyFlags)
     {
-        _cubeCollected = new bool[CubeSpawnPositions.Length];
+        _cubeCollected = new bool[_spawnPositions.Length];
         _cubeCount = 0;
 
-        for (int i = 0; i < CubeSpawnPositions.Length; i++)
+        for (int i = 0; i < _spawnPositions.Length; i++)
         {
-            if (storyFlags.Contains($"cube_{i}"))
+            bool collected = storyFlags.Contains(_spawnFlagKeys[i]);
+            if (!collected && storyFlags.Contains($"cube_{i}"))
+            {
+                collected = true;
+                storyFlags.Add(_spawnFlagKeys[i]);
+            }
+
+            if (collected)
             {
                 _cubeCollected[i] = true;
                 _cubeCount++;
@@ -111,18 +243,18 @@ public class CubeCollectibleSystem
     {
         var playerXZ = new Vector2(playerPosition.X, playerPosition.Z);
 
-        for (int i = 0; i < CubeSpawnPositions.Length; i++)
+        for (int i = 0; i < _spawnPositions.Length; i++)
         {
             if (_cubeCollected[i]) continue;
 
-            var cubeXZ = new Vector2(CubeSpawnPositions[i].X, CubeSpawnPositions[i].Z);
+            var cubeXZ = new Vector2(_spawnPositions[i].X, _spawnPositions[i].Z);
             float dist = Vector2.Distance(playerXZ, cubeXZ);
 
             if (dist < CubeCollectRadius)
             {
                 _cubeCollected[i] = true;
                 _cubeCount++;
-                storyFlags.Add($"cube_{i}");
+                storyFlags.Add(_spawnFlagKeys[i]);
                 return true;
             }
         }
@@ -132,10 +264,15 @@ public class CubeCollectibleSystem
     /// <summary>Reset all cubes to uncollected and remove their flags.</summary>
     public void ResetAll(System.Collections.Generic.HashSet<string> storyFlags)
     {
-        for (int i = 0; i < CubeSpawnPositions.Length; i++)
+        var keysToRemove = storyFlags
+            .Where(k => k.StartsWith("coin_", StringComparison.Ordinal) || k.StartsWith("cube_", StringComparison.Ordinal))
+            .ToList();
+        foreach (var key in keysToRemove)
+            storyFlags.Remove(key);
+
+        for (int i = 0; i < _spawnPositions.Length; i++)
         {
             _cubeCollected[i] = false;
-            storyFlags.Remove($"cube_{i}");
         }
         _cubeCount = 0;
     }
@@ -154,13 +291,14 @@ public class CubeCollectibleSystem
 
         float bob = MathF.Sin(_cubeBobTimer * 2f) * 0.15f;
 
-        for (int i = 0; i < CubeSpawnPositions.Length; i++)
+        for (int i = 0; i < _spawnPositions.Length; i++)
         {
             if (_cubeCollected[i]) continue;
 
-            var pos = CubeSpawnPositions[i];
+            var pos = _spawnPositions[i];
             _effect.World =
-                Matrix.CreateRotationY(_cubeRotation)
+                Matrix.CreateRotationX(0.24f)
+                * Matrix.CreateRotationY(_cubeRotation * 2.3f)
                 * Matrix.CreateTranslation(pos.X, CubeHoverHeight + bob, pos.Z);
 
             foreach (var pass in _effect.CurrentTechnique.Passes)
@@ -177,8 +315,7 @@ public class CubeCollectibleSystem
     /// <summary>Draw the cube counter HUD element (call within SpriteBatch.Begin/End).</summary>
     public void DrawCounter(int fontScale = 2)
     {
-        int total = CubeSpawnPositions.Length;
-        string text = $"Cubes: {_cubeCount} / {total}";
+        string text = $"Coins: {_cubeCount}";
 
         // Background panel
         int px = 12, py = 12, padX = 12, padY = 8;
@@ -204,59 +341,94 @@ public class CubeCollectibleSystem
 
     // ── Mesh generation ──────────────────────────────────────────────
 
-    private static (VertexPositionColor[] verts, short[] indices) CreateCubeMesh(float size, Color color)
+    private static (VertexPositionColor[] verts, short[] indices) CreateCoinMesh(float radius, float thickness, Color faceColor)
     {
-        float s = size / 2f;
-        var darkColor = new Color(
-            (int)(color.R * 0.6f), (int)(color.G * 0.6f), (int)(color.B * 0.6f));
-        var midColor = new Color(
-            (int)(color.R * 0.8f), (int)(color.G * 0.8f), (int)(color.B * 0.8f));
+        const int segments = 16;
+        float half = thickness * 0.5f;
 
-        // 24 vertices (4 per face for distinct face shading)
-        var verts = new VertexPositionColor[]
+        var edgeColor = new Color(
+            (int)(faceColor.R * 0.78f),
+            (int)(faceColor.G * 0.68f),
+            (int)(faceColor.B * 0.35f));
+        var backColor = new Color(
+            (int)(faceColor.R * 0.82f),
+            (int)(faceColor.G * 0.82f),
+            (int)(faceColor.B * 0.82f));
+
+        var verts = new System.Collections.Generic.List<VertexPositionColor>(segments * 4 + 2);
+        var indices = new System.Collections.Generic.List<short>(segments * 12);
+
+        short frontCenter = (short)verts.Count;
+        verts.Add(new VertexPositionColor(new Vector3(0f, 0f, half), faceColor));
+
+        short backCenter = (short)verts.Count;
+        verts.Add(new VertexPositionColor(new Vector3(0f, 0f, -half), backColor));
+
+        for (int i = 0; i < segments; i++)
         {
-            // Top face (bright)
-            new(new Vector3(-s,  s, -s), color),     // 0
-            new(new Vector3( s,  s, -s), color),     // 1
-            new(new Vector3( s,  s,  s), color),     // 2
-            new(new Vector3(-s,  s,  s), color),     // 3
-            // Bottom face (dark)
-            new(new Vector3(-s, -s, -s), darkColor),  // 4
-            new(new Vector3( s, -s, -s), darkColor),  // 5
-            new(new Vector3( s, -s,  s), darkColor),  // 6
-            new(new Vector3(-s, -s,  s), darkColor),  // 7
-            // Front face (mid)
-            new(new Vector3(-s, -s,  s), midColor),   // 8
-            new(new Vector3( s, -s,  s), midColor),   // 9
-            new(new Vector3( s,  s,  s), color),      // 10
-            new(new Vector3(-s,  s,  s), color),      // 11
-            // Back face (mid)
-            new(new Vector3( s, -s, -s), midColor),   // 12
-            new(new Vector3(-s, -s, -s), midColor),   // 13
-            new(new Vector3(-s,  s, -s), midColor),   // 14
-            new(new Vector3( s,  s, -s), midColor),   // 15
-            // Right face (mid-bright)
-            new(new Vector3( s, -s,  s), midColor),   // 16
-            new(new Vector3( s, -s, -s), midColor),   // 17
-            new(new Vector3( s,  s, -s), color),      // 18
-            new(new Vector3( s,  s,  s), color),      // 19
-            // Left face (dark)
-            new(new Vector3(-s, -s, -s), darkColor),  // 20
-            new(new Vector3(-s, -s,  s), darkColor),  // 21
-            new(new Vector3(-s,  s,  s), midColor),   // 22
-            new(new Vector3(-s,  s, -s), midColor),   // 23
-        };
+            float t = MathHelper.TwoPi * i / segments;
+            float x = MathF.Cos(t) * radius;
+            float y = MathF.Sin(t) * radius;
 
-        var indices = new short[]
+            verts.Add(new VertexPositionColor(new Vector3(x, y, half), faceColor));
+            verts.Add(new VertexPositionColor(new Vector3(x, y, -half), backColor));
+        }
+
+        for (int i = 0; i < segments; i++)
         {
-            0,1,2,  0,2,3,       // top
-            4,6,5,  4,7,6,       // bottom
-            8,9,10, 8,10,11,     // front
-            12,13,14, 12,14,15,  // back
-            16,17,18, 16,18,19,  // right
-            20,21,22, 20,22,23,  // left
-        };
+            short i0f = (short)(2 + i * 2);
+            short i0b = (short)(i0f + 1);
+            short i1f = (short)(2 + ((i + 1) % segments) * 2);
+            short i1b = (short)(i1f + 1);
 
-        return (verts, indices);
+            indices.Add(frontCenter);
+            indices.Add(i0f);
+            indices.Add(i1f);
+
+            indices.Add(backCenter);
+            indices.Add(i1b);
+            indices.Add(i0b);
+
+            short sideBase = (short)verts.Count;
+            verts.Add(new VertexPositionColor(new Vector3(verts[i0f].Position.X, verts[i0f].Position.Y, half), edgeColor));
+            verts.Add(new VertexPositionColor(new Vector3(verts[i1f].Position.X, verts[i1f].Position.Y, half), edgeColor));
+            verts.Add(new VertexPositionColor(new Vector3(verts[i1b].Position.X, verts[i1b].Position.Y, -half), edgeColor));
+            verts.Add(new VertexPositionColor(new Vector3(verts[i0b].Position.X, verts[i0b].Position.Y, -half), edgeColor));
+
+            indices.Add(sideBase);
+            indices.Add((short)(sideBase + 1));
+            indices.Add((short)(sideBase + 2));
+            indices.Add(sideBase);
+            indices.Add((short)(sideBase + 2));
+            indices.Add((short)(sideBase + 3));
+        }
+
+        return (verts.ToArray(), indices.ToArray());
+    }
+
+    private static IEnumerable<int> PickUniqueIndices(int total, int pickCount, int seed)
+    {
+        var indices = Enumerable.Range(0, total).ToArray();
+        var rng = new Random(seed);
+
+        for (int i = indices.Length - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (indices[i], indices[j]) = (indices[j], indices[i]);
+        }
+
+        for (int i = 0; i < pickCount; i++)
+            yield return indices[i];
+    }
+
+    private static int StableHash32(string text)
+    {
+        unchecked
+        {
+            int hash = (int)2166136261;
+            for (int i = 0; i < text.Length; i++)
+                hash = (hash ^ text[i]) * 16777619;
+            return hash;
+        }
     }
 }
