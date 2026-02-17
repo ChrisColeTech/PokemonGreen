@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using System.Xml.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,6 +12,7 @@ public sealed class SkinnedDaeModel
 
     private readonly List<SkinnedMesh> _meshes = new();
     private readonly List<MeshDrawBatch> _batches = new();
+    private int _debugFrameCount;
 
     public VertexBuffer? VertexBuffer { get; private set; }
     public IndexBuffer? IndexBuffer { get; private set; }
@@ -28,6 +30,7 @@ public sealed class SkinnedDaeModel
 
         _meshes.Clear();
         _batches.Clear();
+        _debugFrameCount = 0;
 
         string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "skinned_dae_log.txt");
         File.WriteAllText(logPath, $"[SkinnedDae] Loading {daePath}\n");
@@ -146,11 +149,18 @@ public sealed class SkinnedDaeModel
         List<int> allIndices = new();
         _batches.Clear();
 
+        string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "skinned_dae_log.txt");
+
         for (int meshIndex = 0; meshIndex < _meshes.Count; meshIndex++)
         {
             SkinnedMesh mesh = _meshes[meshIndex];
             int baseVertex = allVertices.Count;
             int startIndex = allIndices.Count;
+
+            Vector3 boundsMin = new(float.MaxValue);
+            Vector3 boundsMax = new(float.MinValue);
+            Vector3 rawMin = new(float.MaxValue);
+            Vector3 rawMax = new(float.MinValue);
 
             for (int i = 0; i < mesh.Vertices.Length; i++)
             {
@@ -161,6 +171,40 @@ public sealed class SkinnedDaeModel
                 Vector3 nrm = Vector3.Normalize(Vector3.TransformNormal(src.Normal, skin));
 
                 allVertices.Add(new VertexPositionNormalTexture(pos, nrm, src.Uv));
+
+                boundsMin = Vector3.Min(boundsMin, pos);
+                boundsMax = Vector3.Max(boundsMax, pos);
+                rawMin = Vector3.Min(rawMin, src.Position);
+                rawMax = Vector3.Max(rawMax, src.Position);
+            }
+
+            if (_debugFrameCount == 1)
+            {
+                Vector2 uvMin = new(float.MaxValue);
+                Vector2 uvMax = new(float.MinValue);
+                for (int j = 0; j < mesh.Vertices.Length; j++)
+                {
+                    uvMin = Vector2.Min(uvMin, mesh.Vertices[j].Uv);
+                    uvMax = Vector2.Max(uvMax, mesh.Vertices[j].Uv);
+                }
+
+                File.AppendAllText(logPath,
+                    $"[Skin] mesh {meshIndex} face={mesh.IsFace}: skinned=({boundsMin.X:F1},{boundsMin.Y:F1},{boundsMin.Z:F1})->({boundsMax.X:F1},{boundsMax.Y:F1},{boundsMax.Z:F1}) " +
+                    $"uv=({uvMin.X:F3},{uvMin.Y:F3})->({uvMax.X:F3},{uvMax.Y:F3})");
+                if (mesh.IsFace)
+                {
+                    int bi = mesh.Vertices[0].BoneIndices[0];
+                    if (bi < skinMatrices.Length)
+                    {
+                        Matrix sm = skinMatrices[bi];
+                        File.AppendAllText(logPath,
+                            $" skinMtx=[{sm.M11:F3},{sm.M12:F3},{sm.M13:F3},{sm.M14:F3} | " +
+                            $"{sm.M21:F3},{sm.M22:F3},{sm.M23:F3},{sm.M24:F3} | " +
+                            $"{sm.M31:F3},{sm.M32:F3},{sm.M33:F3},{sm.M34:F3} | " +
+                            $"{sm.M41:F3},{sm.M42:F3},{sm.M43:F3},{sm.M44:F3}]");
+                    }
+                }
+                File.AppendAllText(logPath, "\n");
             }
 
             for (int i = 0; i < mesh.Indices.Length; i++)
@@ -195,6 +239,7 @@ public sealed class SkinnedDaeModel
         IndexBuffer.SetData(allIndices.ToArray());
 
         PrimitiveCount = allIndices.Count / 3;
+        _debugFrameCount++;
     }
 
     private static Matrix ComputeSkinMatrix(SkinnedVertex v, Matrix[] skinMatrices)

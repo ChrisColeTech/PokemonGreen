@@ -48,21 +48,23 @@ This document covers the skeletal animation work in `PokemonGreen.3D`, the proof
 | Arm/body clipping | No depth buffer testing | Set `DepthStencilState.Default` before model draw |
 | Dark lower body tint | `CullNone` renders back-faces with inverted lighting | Increased ambient light (0.6) to reduce contrast |
 | Manifest format mismatch | Spica uses camelCase + flat clips, OhanaCli uses PascalCase + nested | Case-insensitive JSON + fallback property logic |
+| Face solid color / missing | OhanaCli face UVs use V > 1.0 (atlas tiling); `1f-v` flip + LinearClamp = clamped to single pixel | Set `SamplerState.LinearWrap` before drawing |
+| Face behind head mesh | Eye/Mouth meshes render before body; same-depth faces occluded | Tag face batches, render last with `CompareFunction.LessEqual` |
 
 ---
 
 ## 2. What Work Remains
 
-### Critical: Face Not Rendering on _fi Characters
-- The Spica-exported `tr0001_00` renders faces correctly
-- OhanaCli-exported `_fi` characters (tr0002–tr0018) do NOT show face meshes
-- The debug log confirms textures load and mesh vertex counts are healthy
-- Current face depth ordering fix (Eye/Mouth rendered last with `LessEqual`) did not resolve it
-- **This is the #1 blocker** — see Section 6 for new strategies
+### Resolved: Face Not Rendering on _fi Characters
+**Root cause:** OhanaCli-exported models use UV V coordinates > 1.0 for face texture atlas tiling (e.g., V=1.75–2.0 to select idle expression). After the `1f - v` flip, these become negative (V=-0.75 to -1.0). MonoGame's default `SamplerState.LinearClamp` clamped negative UVs to 0, mapping the entire face to a single pixel row — appearing as a solid color.
+
+**Fix:** Set `GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap` before drawing. Wrapped UVs correctly tile into the texture atlas. Combined with the face depth ordering (Eye/Mouth batches render last with `CompareFunction.LessEqual`), all characters now render faces correctly.
+
+**Key lesson:** Always check UV ranges when textures appear as solid colors. UV values outside 0–1 require `LinearWrap`, not `LinearClamp`.
 
 ### Remaining Tasks
 - Walk → run animation transition feels instant; needs crossfade/blend between clips
-- No animation for jump (currently uses idle pose while airborne)
+- Jump animation not wired up yet
 - Character select only shows 6 of 18 available characters
 - No shadow casting or ambient occlusion
 - No collision with environment (player walks through everything)
@@ -156,65 +158,33 @@ dotnet run --project src/PokemonGreen/PokemonGreen.csproj
 
 ---
 
-## 6. Known Issues & New Strategies for Face Rendering
+## 6. Resolved: Face Rendering Investigation
 
-### The Problem
-Face meshes (Eye, Mouth) load correctly — textures found, vertex counts healthy, material chains resolve — but the face is visually absent on OhanaCli-exported `_fi` characters. The Spica-exported `tr0001_00` works fine.
+### The Problem (Now Fixed)
+Face meshes on OhanaCli `_fi` characters appeared as solid colors or were invisible. Debug showed textures loading, geometry correctly skinned, but faces still wrong.
 
-### What We Already Tried
-1. **Alpha blending** (`BlendState.AlphaBlend`) — Helped face on tr0001_00 but caused lower body to vanish
-2. **Forced alpha=255** — Fixed lower body; face still missing on _fi models
-3. **CullNone** — Both face sides render but doesn't fix visibility
-4. **CullCounterClockwise** — Made face AND upper body vanish on _fi models (winding mismatch)
-5. **Face depth ordering** (Eye/Mouth last with `LessEqual`) — No change
+### Investigation Trail
+1. **Alpha blending** (`BlendState.AlphaBlend`) — Helped some faces but caused lower body to vanish (low alpha pixels)
+2. **Forced alpha=255** — Fixed lower body transparency
+3. **CullNone** — Fixed missing faces from mixed winding, but caused dark tint on back-faces
+4. **Increased ambient light** (0.6 ambient / 0.5 directional) — Reduced dark back-face contrast
+5. **Face depth ordering** (Eye/Mouth last with `LessEqual`) — Fixed faces hidden behind head mesh
+6. **Bind shape matrix comparison** — Both exports use identity; ruled out
+7. **Skeleton/inverse bind comparison** — Identical between Spica and OhanaCli; ruled out
+8. **Skin matrix logging** — Confirmed skinning produces near-identity for idle pose; geometry position correct
+9. **UV range logging** — **FOUND IT**: Face UVs had V > 1.0 (atlas tiling), `1f-v` flip produced negative values, `LinearClamp` mapped entire face to single pixel
 
-### Strategy 1: Compare Vertex Positions After Skinning
-The face mesh vertices might collapse to a single point or move inside the head after the skin transform. Add debug logging in `RebuildBuffers()` to dump the bounding box of face mesh vertices after skinning:
+### Root Cause
+OhanaCli preserves original 3DS UV coordinates which use V > 1.0 for face expression atlas tiling (e.g., V=1.75–2.0 selects idle expression row). The `1f - v` V-flip converts these to negative values (-0.75 to -1.0). MonoGame's default `SamplerState.LinearClamp` clamps negative UVs to 0, mapping the entire face mesh to one pixel row.
+
+### Fix Applied
 ```csharp
-if (mesh.IsFace)
-{
-    Vector3 min = new(float.MaxValue), max = new(float.MinValue);
-    // compute bounds of transformed face verts
-    File.AppendAllText(logPath, $"Face bounds: {min} to {max}\n");
-}
+GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
 ```
-If the bounds are degenerate (zero volume or very small), the bone weights or bind pose transforms are wrong for the _fi export format.
+With `LinearWrap`, negative UVs wrap correctly into the texture atlas. Combined with the other fixes (alpha=255, CullNone, face depth ordering), all characters now render correctly.
 
-### Strategy 2: Compare DAE Structure Between Working and Broken
-The Spica export (`tr0001_00`) and OhanaCli export (`tr0001_00_fi`) are the SAME character from different exporters. Direct comparison would reveal structural differences:
-- **Bind shape matrix** (`<bind_shape_matrix>`) — Does one have an identity and the other a transform?
-- **Joint ordering** — Are bone names/IDs different between exporters?
-- **Inverse bind matrices** — Do they match? Transposition applied consistently?
-- **Vertex weight mapping** — Same control point count? Same bone assignments?
-
-A script to dump and diff key matrices from both DAEs would pinpoint the discrepancy.
-
-### Strategy 3: Render Face Mesh Without Skinning
-Bypass the skeleton entirely for face meshes to test if it's a skinning issue:
-```csharp
-// In RebuildBuffers, for face meshes:
-if (mesh.IsFace)
-{
-    // Use raw bind-pose positions (no skin transform)
-    allVertices.Add(new VertexPositionNormalTexture(src.Position, src.Normal, src.Uv));
-}
-```
-If the face appears (even in the wrong pose), the problem is confirmed as skin matrix computation specific to _fi bone data.
-
-### Strategy 4: Apply Bind Shape Matrix
-COLLADA `<skin>` elements can have a `<bind_shape_matrix>` that transforms vertices before skinning. The current `SkinnedDaeModel.cs` does NOT parse or apply this matrix. If the _fi models have a non-identity bind shape matrix, all skinned vertices would be in the wrong space.
-
-Check for:
-```xml
-<skin source="#mesh_2_Eye_id">
-  <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
-```
-If it's not identity, it must be applied to each vertex position BEFORE the bone weights:
-```csharp
-Vector3 pos = Vector3.Transform(src.Position, bindShapeMatrix);
-pos = Vector3.Transform(pos, skinMatrix);
-```
-**This is the highest-probability fix** — Spica might bake the bind shape into vertex positions during export, while OhanaCli preserves the raw COLLADA data.
+### Key Debugging Lesson
+When textures appear as solid colors, **always log UV ranges**. Out-of-range UVs + wrong SamplerState is a common silent failure.
 
 ---
 

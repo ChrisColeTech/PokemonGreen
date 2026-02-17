@@ -295,6 +295,7 @@ public class Game1 : Game
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+            GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
 
             _effect.World =
                 Matrix.CreateScale(PlayerModelScale)
@@ -307,7 +308,7 @@ public class Game1 : Game
         // Draw UI overlay on top of 3D scene
         if (_overlay != null)
         {
-            _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+            _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
             _overlay.Draw(_spriteBatch, _pixel, _kermFontRenderer, _kermFont,
                 null!, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
             _spriteBatch.End();
