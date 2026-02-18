@@ -48,11 +48,15 @@ export interface ExtractionResultsResponse {
   groups: ExtractedGroupResult[]
 }
 
-export interface ArchivePreset {
-  id: string
-  label: string
+export interface ScannedArchive {
   subpath: string
-  description: string
+  sizeBytes: number
+  sizeLabel: string
+}
+
+export interface ScanResponse {
+  romfsPath: string
+  archives: ScannedArchive[]
 }
 
 // ---------------------------------------------------------------------------
@@ -98,11 +102,15 @@ export async function getExtractionResults(jobId: string): Promise<ExtractionRes
   return res.json()
 }
 
-export async function getArchivePresets(): Promise<ArchivePreset[]> {
-  const res = await fetch(`${API_BASE}/api/extraction/presets`)
+export async function scanArchives(romfsPath: string): Promise<ScanResponse> {
+  const res = await fetch(`${API_BASE}/api/extraction/scan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ romfsPath }),
+  })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || `Presets failed: ${res.status}`)
+    throw new Error(err.error || `Scan failed: ${res.status}`)
   }
   return res.json()
 }

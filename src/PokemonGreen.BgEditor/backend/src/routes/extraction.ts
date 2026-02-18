@@ -1,5 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import {
   runExtraction,
   type ExtractionConfig,
@@ -25,42 +27,72 @@ interface ExtractionJob {
 const jobs = new Map<string, ExtractionJob>();
 
 // ---------------------------------------------------------------------------
-// Archive presets
+// RomFS scanner — find all non-empty leaf files (GARC archives)
 // ---------------------------------------------------------------------------
 
-interface ArchivePresetInfo {
-  id: string;
-  label: string;
+interface ScannedArchive {
   subpath: string;
-  description: string;
+  sizeBytes: number;
+  sizeLabel: string;
 }
 
-const ARCHIVE_PRESETS: ArchivePresetInfo[] = [
-  {
-    id: 'pokemon-models',
-    label: 'Pokemon Models (a/0/9/4)',
-    subpath: 'a/0/9/4',
-    description: 'All Pokemon 3D models, textures, and skeletal animations',
-  },
-  {
-    id: 'pokemon-textures',
-    label: 'Pokemon Textures (a/0/9/5)',
-    subpath: 'a/0/9/5',
-    description: 'Pokemon texture-only archive (shiny, alternate forms)',
-  },
-  {
-    id: 'trainer-models',
-    label: 'Trainer Models (a/0/9/6)',
-    subpath: 'a/0/9/6',
-    description: 'Trainer battle models and animations',
-  },
-  {
-    id: 'trainer-overworld',
-    label: 'Trainer Overworld (a/1/0/5)',
-    subpath: 'a/1/0/5',
-    description: 'Trainer overworld sprites / mini-models',
-  },
-];
+function formatSize(bytes: number): string {
+  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
+  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+/** Check if a file starts with the GARC magic bytes ("CRAG"). */
+function isGarc(filePath: string): boolean {
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    const buf = Buffer.alloc(4);
+    const bytesRead = fs.readSync(fd, buf, 0, 4, 0);
+    if (bytesRead < 4) return false;
+    return buf.toString('ascii', 0, 4) === 'CRAG';
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+function scanRomFS(rootDir: string): ScannedArchive[] {
+  const results: ScannedArchive[] = [];
+
+  function walk(dir: string) {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile()) {
+        try {
+          const stat = fs.statSync(full);
+          if (stat.size >= 4 && isGarc(full)) {
+            const subpath = path.relative(rootDir, full).replace(/\\/g, '/');
+            results.push({
+              subpath,
+              sizeBytes: stat.size,
+              sizeLabel: formatSize(stat.size),
+            });
+          }
+        } catch {
+          // skip unreadable files
+        }
+      }
+    }
+  }
+
+  walk(rootDir);
+  results.sort((a, b) => a.subpath.localeCompare(b.subpath));
+  return results;
+}
 
 // ---------------------------------------------------------------------------
 // Request / response schemas
@@ -216,8 +248,17 @@ export default async function extractionRoutes(app: FastifyInstance) {
     };
   });
 
-  // ── GET /api/extraction/presets ─────────────────────────────────────
-  app.get('/api/extraction/presets', async () => {
-    return ARCHIVE_PRESETS;
+  // ── POST /api/extraction/scan ───────────────────────────────────────
+  app.post<{ Body: { romfsPath: string } }>('/api/extraction/scan', async (request, reply) => {
+    const { romfsPath } = request.body;
+    if (!romfsPath) {
+      return reply.status(400).send({ error: 'romfsPath is required' });
+    }
+    if (!fs.existsSync(romfsPath) || !fs.statSync(romfsPath).isDirectory()) {
+      return reply.status(400).send({ error: `Not a directory: ${romfsPath}` });
+    }
+
+    const archives = scanRomFS(romfsPath);
+    return { romfsPath, archives };
   });
 }

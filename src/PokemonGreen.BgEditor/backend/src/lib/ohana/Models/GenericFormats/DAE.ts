@@ -256,6 +256,7 @@ export class DAE {
 
     for (const obj of mdl.mesh) {
       const meshMaterial = mdl.material[obj.materialId];
+      if (!meshMaterial) continue; // skip meshes with missing material
       const meshName = 'mesh_' + meshIndex++ + '_' + obj.name;
 
       const mesh = MeshUtils.optimizeMesh<OVertex>(obj);
@@ -385,7 +386,7 @@ export class DAE {
       // Controller (skinning)
       const hasNode = obj.vertices.length > 0 && obj.vertices[0].node.length > 0;
       const hasWeight = obj.vertices.length > 0 && obj.vertices[0].weight.length > 0;
-      const hasController = hasNode && hasWeight;
+      const hasController = hasNode && hasWeight && mdl.skeleton.length > 0;
       let controllerId = '';
 
       if (hasController) {
@@ -701,6 +702,7 @@ export class DAE {
 
     for (const obj of mdl.mesh) {
       const meshMaterial = mdl.material[obj.materialId];
+      if (!meshMaterial) continue; // skip meshes with missing material
       const meshName = 'mesh_' + meshIndex++ + '_' + obj.name;
 
       const mesh = MeshUtils.optimizeMesh<OVertex>(obj);
@@ -830,7 +832,7 @@ export class DAE {
       // Controller (skinning)
       const hasNode = obj.vertices.length > 0 && obj.vertices[0].node.length > 0;
       const hasWeight = obj.vertices.length > 0 && obj.vertices[0].weight.length > 0;
-      const hasController = hasNode && hasWeight;
+      const hasController = hasNode && hasWeight && mdl.skeleton.length > 0;
       let controllerId = '';
 
       if (hasController) {

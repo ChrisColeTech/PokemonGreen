@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type {
-  ArchivePreset,
   ExportMode,
   ExtractionPhase,
-} from '../types/extraction'
-import {
-  ARCHIVE_PRESETS,
+  ExtractedGroup,
 } from '../types/extraction'
 import { useExtractionStore } from '../store/extractionStore'
+import { scanArchives, type ScannedArchive } from '../services/extractionService'
 
 // ---------------------------------------------------------------------------
 // Shared styles (matching ToolsPage conventions)
@@ -148,9 +146,11 @@ export default function ExtractionPage() {
   } = useExtractionStore()
 
   // Source selection
-  const [archivePreset, setArchivePreset] = useState<ArchivePreset>('pokemon-battle-models')
   const [garcPath, setGarcPath] = useState('')
-  const [customSubpath, setCustomSubpath] = useState('')
+  const [scannedArchives, setScannedArchives] = useState<ScannedArchive[]>([])
+  const [selectedSubpath, setSelectedSubpath] = useState('')
+  const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
 
   // Output config
   const [outputDir, setOutputDir] = useState('')
@@ -168,17 +168,40 @@ export default function ExtractionPage() {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logLines.length])
 
-  // Derived values
-  const selectedPreset = ARCHIVE_PRESETS.find(p => p.key === archivePreset)
-  const activeSubpath = archivePreset === 'custom' ? customSubpath : (selectedPreset?.subpath ?? '')
-  const fullGarcPath = garcPath && activeSubpath
-    ? `${garcPath.replace(/[\\/]+$/, '')}/${activeSubpath}`
-    : garcPath
+  // Scan RomFS when path changes (debounced)
+  useEffect(() => {
+    if (!garcPath.trim()) {
+      setScannedArchives([])
+      setSelectedSubpath('')
+      setScanError(null)
+      return
+    }
 
-  // Handle preset change
-  const handlePresetChange = useCallback((preset: ArchivePreset) => {
-    setArchivePreset(preset)
-  }, [])
+    const timer = setTimeout(async () => {
+      setScanning(true)
+      setScanError(null)
+      try {
+        const result = await scanArchives(garcPath.trim())
+        setScannedArchives(result.archives)
+        // Auto-select first archive if none selected
+        if (result.archives.length > 0 && !selectedSubpath) {
+          setSelectedSubpath(result.archives[0].subpath)
+        }
+      } catch (err) {
+        setScanError(err instanceof Error ? err.message : 'Scan failed')
+        setScannedArchives([])
+      } finally {
+        setScanning(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [garcPath])
+
+  // Derived values
+  const fullGarcPath = garcPath && selectedSubpath
+    ? `${garcPath.replace(/[\\/]+$/, '')}/${selectedSubpath}`
+    : garcPath
 
   // Browse
   const handleBrowseGarc = async () => {
@@ -191,7 +214,7 @@ export default function ExtractionPage() {
     if (picked) setOutputDir(picked)
   }
 
-  // Start extraction (real)
+  // Start extraction
   const handleStart = useCallback(() => {
     start({
       garcPath: fullGarcPath || garcPath,
@@ -202,7 +225,7 @@ export default function ExtractionPage() {
     })
   }, [start, fullGarcPath, garcPath, outputDir, exportMode, entryLimit, deriveFolderNames])
 
-  // Stop extraction (real)
+  // Stop extraction
   const handleStop = useCallback(() => {
     cancel()
   }, [cancel])
@@ -214,7 +237,7 @@ export default function ExtractionPage() {
 
   const isRunning = running
   const isDone = phase === 'done' || phase === 'error' || phase === 'stopped'
-  const canStart = !isRunning && garcPath.trim() !== '' && outputDir.trim() !== ''
+  const canStart = !isRunning && garcPath.trim() !== '' && outputDir.trim() !== '' && selectedSubpath !== ''
   const progressPercent = stats.totalEntries > 0
     ? Math.round((stats.processedEntries / stats.totalEntries) * 100)
     : 0
@@ -245,7 +268,7 @@ export default function ExtractionPage() {
         flexDirection: 'column',
         gap: 24,
       }}>
-        {/* ── Source + Output Card (single card, like ToolsPage generator) ── */}
+        {/* ── Source + Output Card ── */}
         <div style={{
           background: '#16162a',
           border: '1px solid #2a2a4a',
@@ -254,7 +277,7 @@ export default function ExtractionPage() {
         }}>
           <h2 style={{ margin: '0 0 16px', fontSize: 15, color: '#e0e0e0' }}>Extraction Settings</h2>
 
-          {/* RomFS base path — FIRST */}
+          {/* RomFS base path */}
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>RomFS Base Path</label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -269,41 +292,45 @@ export default function ExtractionPage() {
             </div>
           </div>
 
-          {/* Archive type — consolidated single dropdown */}
+          {/* GARC Archive dropdown — dynamically scanned */}
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>GARC Archive</label>
+            <label style={labelStyle}>
+              GARC Archive
+              {scanning && <span style={{ color: '#6b8cff', marginLeft: 8 }}>Scanning...</span>}
+              {!scanning && scannedArchives.length > 0 && (
+                <span style={{ color: '#666', marginLeft: 8 }}>
+                  {scannedArchives.length} archives found
+                </span>
+              )}
+            </label>
+            {scanError && (
+              <div style={{ fontSize: 12, color: '#ff6666', marginBottom: 6 }}>{scanError}</div>
+            )}
             <select
-              value={archivePreset}
-              onChange={e => handlePresetChange(e.target.value as ArchivePreset)}
-              style={selectStyle}
+              value={selectedSubpath}
+              onChange={e => setSelectedSubpath(e.target.value)}
+              disabled={scannedArchives.length === 0}
+              style={{
+                ...selectStyle,
+                opacity: scannedArchives.length === 0 ? 0.5 : 1,
+              }}
             >
-              {ARCHIVE_PRESETS.map(p => (
-                <option key={p.key} value={p.key}>
-                  {p.key === 'custom'
-                    ? 'Custom Path...'
-                    : `${p.label}  \u2014  ${p.subpath}${p.entries ? `  (${p.entries} entries)` : ''}`
-                  }
+              {scannedArchives.length === 0 ? (
+                <option value="">
+                  {garcPath ? (scanning ? 'Scanning...' : 'No archives found') : 'Enter RomFS path to scan'}
                 </option>
-              ))}
+              ) : (
+                scannedArchives.map(a => (
+                  <option key={a.subpath} value={a.subpath} style={{ background: '#2a2a4a', color: '#e0e0e0' }}>
+                    {a.subpath}  ({a.sizeLabel})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
-          {/* Custom subpath input (shown only for custom) */}
-          {archivePreset === 'custom' && (
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>Custom GARC Subpath</label>
-              <input
-                type="text"
-                value={customSubpath}
-                onChange={e => setCustomSubpath(e.target.value)}
-                placeholder="e.g. a/0/9/4"
-                style={inputStyle}
-              />
-            </div>
-          )}
-
           {/* Resolved full path preview */}
-          {garcPath && activeSubpath && (
+          {garcPath && selectedSubpath && (
             <div style={{
               fontSize: 12,
               color: '#555',
@@ -392,7 +419,7 @@ export default function ExtractionPage() {
             </div>
           </div>
 
-          {/* Start / Stop buttons + status (like ToolsPage generate button row) */}
+          {/* Start / Stop buttons + status */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               onClick={handleStart}

@@ -59,10 +59,12 @@ export class GARC {
 
           input.seek(startOffset + dataOffset);
 
-          const buffer = input.readBytes(length);
+          // Only read the first few bytes needed for magic detection (not the full entry)
+          const peekLen = Math.min(length, 16);
+          const peek = input.readBytes(peekLen);
 
-          const isCompressed = buffer.length > 0 ? buffer[0] === 0x11 : false;
-          const extension = FileIO.getExtension(buffer, isCompressed ? 5 : 0);
+          const isCompressed = peek.length > 0 ? peek[0] === 0x11 : false;
+          const extension = FileIO.getExtension(peek, isCompressed ? 5 : 0);
           const name = folder + `file_${String(flags === 1 ? i : bit).padStart(5, '0')}${extension}`;
 
           // Add the file to the container list

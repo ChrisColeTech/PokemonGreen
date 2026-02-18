@@ -420,130 +420,13 @@ export async function runExtraction(
 
   if (isCancelled()) return [];
 
-  // -- Phase 1: Parse entries --
-  const parsedEntries: { group: OModelGroup; hasMeshes: boolean }[] = [];
-
-  for (let i = 0; i < max; i++) {
-    if (isCancelled()) return [];
-
-    const entry = container.content[i];
-    try {
-      reader.seek(entry.fileOffset);
-      const raw = reader.readBytes(entry.fileLength);
-      const data = entry.doDecompression ? LZSS_Ninty.decompress(raw) : raw;
-      const loaded = FileIO.load(BinaryReader.fromBuffer(data));
-      const group = buildModelGroup(loaded);
-
-      if (group.model.length === 0 && group.texture.length === 0 && group.skeletalAnimation.list.length === 0) {
-        parsedEntries.push({ group, hasMeshes: false });
-        stats.processedEntries = i + 1;
-        continue;
-      }
-
-      const meshCount = countMeshes(group);
-      parsedEntries.push({ group, hasMeshes: group.model.length > 0 && meshCount > 0 });
-    } catch {
-      parsedEntries.push({ group: new OModelGroup(), hasMeshes: false });
-      stats.parseErrors++;
-    }
-
-    stats.processedEntries = i + 1;
-
-    if ((i + 1) % 1000 === 0 || i === max - 1) {
-      log(`  Parsed ${i + 1}/${max} entries...`);
-      emit('parsing');
-    }
-  }
-
-  if (isCancelled()) return [];
-
-  // -- Phase 2: Group consecutive entries --
-  log('');
-  log('Phase 2: Grouping entries...');
-  emit('grouping');
-
-  const groups: GroupedEntry[] = [];
-  let current: GroupedEntry | null = null;
-  let pendingPrefix = new OModelGroup();
-
-  for (let i = 0; i < parsedEntries.length; i++) {
-    const { group: part, hasMeshes } = parsedEntries[i];
-    const hasContent = part.model.length > 0 || part.texture.length > 0 || part.skeletalAnimation.list.length > 0;
-    if (!hasContent) continue;
-
-    if (hasMeshes) {
-      if (current) {
-        deduplicateTextures(current.modelGroup);
-        groups.push(current);
-      }
-
-      if (pendingPrefix.model.length > 0 || pendingPrefix.texture.length > 0 || pendingPrefix.skeletalAnimation.list.length > 0) {
-        part.merge(pendingPrefix);
-        pendingPrefix = new OModelGroup();
-      }
-
-      current = { startEntry: i, endEntry: i, modelGroup: part };
-    } else if (current) {
-      current.modelGroup.merge(part);
-      current.endEntry = i;
-    } else {
-      pendingPrefix.merge(part);
-    }
-  }
-
-  if (current) {
-    deduplicateTextures(current.modelGroup);
-    groups.push(current);
-  }
-
-  // Phase 2b: Extend trailing group for textures when limited
-  if (entryLimit && max < container.content.length && groups.length > 0) {
-    const trailing = groups[groups.length - 1];
-    if (!hasAllReferencedTextures(trailing.modelGroup)) {
-      log('  Extending trailing group past limit to find missing textures...');
-      for (let i = max; i < container.content.length; i++) {
-        const entry = container.content[i];
-        try {
-          reader.seek(entry.fileOffset);
-          const raw = reader.readBytes(entry.fileLength);
-          const data = entry.doDecompression ? LZSS_Ninty.decompress(raw) : raw;
-          const loaded = FileIO.load(BinaryReader.fromBuffer(data));
-          const part = buildModelGroup(loaded);
-
-          const hasContent = part.model.length > 0 || part.texture.length > 0 || part.skeletalAnimation.list.length > 0;
-          if (!hasContent) continue;
-
-          if (part.model.length > 0 && countMeshes(part) > 0) break;
-
-          trailing.modelGroup.merge(part);
-          trailing.endEntry = i;
-
-          if (hasAllReferencedTextures(trailing.modelGroup)) break;
-        } catch {
-          // Skip unparseable entries
-        }
-      }
-      deduplicateTextures(trailing.modelGroup);
-    }
-  }
-
-  stats.groupsFound = groups.length;
-  log(`  Found ${groups.length} model groups from ${max} entries (${stats.parseErrors} parse errors)`);
-  log('');
-  emit('grouping');
-
-  if (isCancelled()) return [];
-
-  // -- Phase 3: Export each group --
-  log(`Phase 3: Exporting ${groups.length} groups...`);
-  emit('exporting');
-
-  const results: ExtractedGroupResult[] = [];
-
-  for (let gi = 0; gi < groups.length; gi++) {
-    if (isCancelled()) return results;
-
-    const { startEntry, endEntry, modelGroup } = groups[gi];
+  // -- Helper: export a single group to disk and free its memory --
+  async function exportGroup(
+    modelGroup: OModelGroup,
+    gi: number,
+    startEntry: number,
+    endEntry: number,
+  ): Promise<ExtractedGroupResult> {
     const assetType = detectAssetType(modelGroup);
     const folderName = (deriveFolderNames !== false)
       ? deriveGroupName(modelGroup, gi, startEntry)
@@ -568,7 +451,6 @@ export async function runExtraction(
     }
 
     if (splitModelAnims) {
-      // -- Split model + clips mode --
       const manifestModels: ManifestModel[] = [];
       const usedNames = new Set<string>();
 
@@ -595,7 +477,6 @@ export async function runExtraction(
           stats.exportErrors++;
         }
 
-        // Export clip DAEs
         const clipDir = path.join(groupDir, 'clips', uniqueName);
         fs.mkdirSync(clipDir, { recursive: true });
         const clipEntries: ManifestClip[] = [];
@@ -650,7 +531,6 @@ export async function runExtraction(
       fs.writeFileSync(path.join(groupDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
       groupFiles.push('manifest.json');
     } else {
-      // -- Default mode: one DAE per model (with animations baked in) --
       const usedNames = new Set<string>();
 
       for (let mi = 0; mi < modelGroup.model.length; mi++) {
@@ -678,19 +558,99 @@ export async function runExtraction(
     }
 
     const modelCountInGroup = modelGroup.model.filter(m => m.mesh.length > 0).length;
-    results.push({
+    return {
       folderName,
       modelCount: modelCountInGroup,
       textureCount: textureFileNames.length,
       clipCount: skeletalClips.length,
       files: groupFiles,
-    });
+    };
+  }
 
-    if ((gi + 1) % 100 === 0 || gi === groups.length - 1) {
-      const meshes = countMeshes(modelGroup);
-      log(`  Group ${gi + 1}/${groups.length}: entries ${startEntry}-${endEntry}, models=${modelGroup.model.length}, meshes=${meshes}, textures=${modelGroup.texture.length}, clips=${skeletalClips.length}`);
+  // -- Streaming parse → group → export in a single pass --
+  // Each entry is parsed, grouped, and when a new model group starts,
+  // the previous group is exported and freed from memory immediately.
+
+  log('');
+  log('Streaming: parse, group, and export in one pass...');
+  emit('exporting');
+
+  const results: ExtractedGroupResult[] = [];
+  let currentGroup: GroupedEntry | null = null;
+  let pendingPrefix = new OModelGroup();
+  let groupIndex = 0;
+
+  for (let i = 0; i < max; i++) {
+    if (isCancelled()) return results;
+
+    const entry = container.content[i];
+    let part: OModelGroup;
+    let hasMeshes = false;
+
+    try {
+      reader.seek(entry.fileOffset);
+      const raw = reader.readBytes(entry.fileLength);
+      const data = entry.doDecompression ? LZSS_Ninty.decompress(raw) : raw;
+      const loaded = FileIO.load(BinaryReader.fromBuffer(data));
+      part = buildModelGroup(loaded);
+
+      const hasContent = part.model.length > 0 || part.texture.length > 0 || part.skeletalAnimation.list.length > 0;
+      if (!hasContent) {
+        stats.processedEntries = i + 1;
+        continue;
+      }
+
+      hasMeshes = part.model.length > 0 && countMeshes(part) > 0;
+    } catch {
+      stats.parseErrors++;
+      stats.processedEntries = i + 1;
+      continue;
+    }
+
+    if (hasMeshes) {
+      // New model group starting — export the previous one
+      if (currentGroup) {
+        deduplicateTextures(currentGroup.modelGroup);
+        const result = await exportGroup(currentGroup.modelGroup, groupIndex, currentGroup.startEntry, currentGroup.endEntry);
+        results.push(result);
+        stats.groupsFound = groupIndex + 1;
+        log(`  Group ${groupIndex + 1}: entries ${currentGroup.startEntry}-${currentGroup.endEntry}, exported`);
+        emit('exporting');
+        groupIndex++;
+        // Free previous group memory
+        currentGroup = null;
+      }
+
+      // Merge any pending prefix
+      if (pendingPrefix.model.length > 0 || pendingPrefix.texture.length > 0 || pendingPrefix.skeletalAnimation.list.length > 0) {
+        part.merge(pendingPrefix);
+        pendingPrefix = new OModelGroup();
+      }
+
+      currentGroup = { startEntry: i, endEntry: i, modelGroup: part };
+    } else if (currentGroup) {
+      currentGroup.modelGroup.merge(part);
+      currentGroup.endEntry = i;
+    } else {
+      pendingPrefix.merge(part);
+    }
+
+    stats.processedEntries = i + 1;
+
+    if ((i + 1) % 500 === 0) {
+      log(`  Processed ${i + 1}/${max} entries...`);
       emit('exporting');
     }
+  }
+
+  // Export the final group
+  if (currentGroup) {
+    deduplicateTextures(currentGroup.modelGroup);
+    const result = await exportGroup(currentGroup.modelGroup, groupIndex, currentGroup.startEntry, currentGroup.endEntry);
+    results.push(result);
+    stats.groupsFound = groupIndex + 1;
+    log(`  Group ${groupIndex + 1}: entries ${currentGroup.startEntry}-${currentGroup.endEntry}, exported`);
+    currentGroup = null;
   }
 
   // -- Done --
@@ -699,7 +659,7 @@ export async function runExtraction(
   log('=== Extraction complete ===');
   log(`  Time:      ${elapsedSec}s`);
   log(`  Entries:   ${max} (of ${container.content.length})`);
-  log(`  Groups:    ${groups.length}`);
+  log(`  Groups:    ${stats.groupsFound}`);
   log(`  Models:    ${stats.modelsExported} DAE files`);
   log(`  Clips:     ${stats.clipsExported} clip DAE files`);
   log(`  Textures:  ${stats.texturesExported} texture files`);
