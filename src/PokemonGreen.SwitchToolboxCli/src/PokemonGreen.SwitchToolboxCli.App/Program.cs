@@ -9,6 +9,7 @@ using PokemonGreen.SwitchToolboxCli.Formats.Archives.TRPFS;
 using PokemonGreen.SwitchToolboxCli.Formats.Export.Animations;
 using PokemonGreen.SwitchToolboxCli.Formats.Export.Models;
 using PokemonGreen.SwitchToolboxCli.Formats.Export.Textures;
+using static PokemonGreen.SwitchToolboxCli.Formats.Archives.TRPAK.TrpakOodleCodec;
 
 var argsList = args.ToList();
 if (argsList.Count == 0)
@@ -22,11 +23,20 @@ var loader = new FileLoader(registry);
 var walker = new ArchiveWalker(loader);
 var discovery = new DiscoveryService(walker);
 var extractor = new ArchiveExtractionService();
+var streamingExtractor = new StreamingNestedExtractionService(loader, extractor);
 var manifestWriter = new ManifestFileWriter();
 var textureExporter = new TextureArchiveExportService();
 var clipExporter = new AnimationClipArchiveExportService();
 var modelExporter = new ModelArchiveExportService();
 var trinityAssemblyService = new TrinityModelAssemblyService();
+
+// Check Oodle availability and warn if missing
+var oodleStatus = GetStatus();
+if (!oodleStatus.IsAvailable)
+{
+    Console.Error.WriteLine($"[WARNING] Oodle decompression unavailable: {oodleStatus.Detail}");
+    Console.Error.WriteLine("[WARNING] TRPAK files will extract as raw .oodle.bin data");
+}
 
 var command = argsList[0].ToLowerInvariant();
 var commandArgs = argsList.Skip(1).ToArray();
@@ -95,7 +105,11 @@ switch (command)
             return 1;
         }
 
-        return ExtractBinsCommand.Run(loader, extractor, extractBinsArgs.Input, extractBinsOutputDir, Console.Out, Console.Error);
+        {
+            var result = streamingExtractor.ExtractAll(extractBinsArgs.Input, extractBinsOutputDir, Console.Out, Console.Error);
+            Console.WriteLine($"Extract-bins complete. Archives: {result.ProcessedArchivesCount}, Files: {result.ExtractedFilesCount}, Failed: {result.FailedCount}");
+            return result.FailedCount > 0 ? 1 : 0;
+        }
 
     case "batch":
         if (!CliArguments.TryParse(commandArgs, out var batchArgs, out var batchParseError))

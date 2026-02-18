@@ -99,19 +99,23 @@ public sealed class TrpakArchive : IArchiveFile
             int oodleDecompressedSize = 0;
             if (isOodleCompressed)
             {
-                var compressedPayload = ReadSlice(stream, dataVectorPos, Math.Min(dataLength, 0x110));
-                if (compressedPayload.Length > 0 &&
-                    TrpakOodleCodec.TryDecompress(compressedPayload, Math.Min(decompressedSize, 0x110), out var sampleDecompressed, out var decodeDetail))
+                oodleDecompressedSize = decompressedSize;
+
+                // Check if Oodle codec is available - sample decompression doesn't work
+                // because Oodle needs complete compressed data, not partial samples
+                var oodleStatus = TrpakOodleCodec.GetStatus();
+                if (oodleStatus.IsAvailable)
                 {
-                    payloadSample = sampleDecompressed;
+                    // Oodle is available - assume decompression will succeed at extraction time
+                    // We can't sniff the file type without decompressing, so use .bin extension
                     suffix = string.Empty;
-                    detailMessage = $"compression=oodle; lazy=true; {decodeDetail}";
-                    oodleDecompressedSize = decompressedSize;
+                    detailMessage = $"compression=oodle; lazy=true; oodle_available";
                 }
                 else
                 {
-                    detailMessage = $"compression=oodle; lazy=true; sample_decode_failed";
-                    oodleDecompressedSize = decompressedSize;
+                    // Oodle unavailable - files will remain compressed
+                    detailMessage = $"compression=oodle; lazy=true; oodle_unavailable; reason={oodleStatus.Detail}";
+                    // Keep .oodle suffix to indicate extraction will fail
                 }
             }
  
@@ -150,8 +154,9 @@ public sealed class TrpakArchive : IArchiveFile
                 var decompSize = oodleDecompressedSize;
                 openRead = () =>
                 {
-                    if (!TrpakOodleCodec.TryDecompress(compressedPayload, decompSize, out var decompressed, out _))
+                    if (!TrpakOodleCodec.TryDecompress(compressedPayload, decompSize, out var decompressed, out var decompDetail))
                     {
+                        Console.Error.WriteLine($"[OODLE] Full decompression failed: compLen={compressedPayload.Length}, decompSize={decompSize}, reason={decompDetail}");
                         return new MemoryStream(compressedPayload, writable: false);
                     }
                     return new MemoryStream(decompressed, writable: false);
@@ -397,8 +402,9 @@ public sealed class TrpakArchive : IArchiveFile
             return new MemoryStream(Array.Empty<byte>(), writable: false);
         }
 
-        if (!TrpakOodleCodec.TryDecompress(compressed, decompressedSize, out var decompressed, out _))
+        if (!TrpakOodleCodec.TryDecompress(compressed, decompressedSize, out var decompressed, out var decompDetail))
         {
+            Console.Error.WriteLine($"[OODLE] File segment decompression failed: compLen={compressed.Length}, decompSize={decompressedSize}, reason={decompDetail}");
             return new MemoryStream(compressed, writable: false);
         }
 

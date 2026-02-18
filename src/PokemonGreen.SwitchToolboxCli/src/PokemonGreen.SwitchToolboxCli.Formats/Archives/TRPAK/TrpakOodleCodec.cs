@@ -2,9 +2,9 @@ using System.Runtime.InteropServices;
 
 namespace PokemonGreen.SwitchToolboxCli.Formats.Archives.TRPAK;
 
-internal static class TrpakOodleCodec
+public static class TrpakOodleCodec
 {
-    private const string DefaultDllName = "oo2core_6_win64.dll";
+    private const string DefaultDllName = "oo2core_8_win64.dll";
     private static readonly object Sync = new();
     private static bool _initialized;
     private static bool _isAvailable;
@@ -81,6 +81,17 @@ internal static class TrpakOodleCodec
         detail = $"decompressed_size={decompressedPayload.Length}; dll={GetResolvedDllPath()}";
         return true;
     }
+
+    /// <summary>
+    /// Gets diagnostic information about Oodle codec availability.
+    /// </summary>
+    public static OodleStatus GetStatus()
+    {
+        EnsureInitialized();
+        return new OodleStatus(_isAvailable, _availabilityDetail, GetResolvedDllPath());
+    }
+
+    public readonly record struct OodleStatus(bool IsAvailable, string Detail, string ResolvedPath);
 
     private static void EnsureInitialized()
     {
