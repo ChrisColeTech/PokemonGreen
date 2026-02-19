@@ -1,3 +1,7 @@
+import koffi from 'koffi';
+
+let oodleLib: ReturnType<typeof koffi.load> | null = null;
+
 /**
  * Decompression algorithms for TRPAK archives.
  * Ported from C# Decompressors.cs
@@ -5,14 +9,55 @@
 
 /**
  * Oodle decompression via native library.
- * Stub implementation - real Oodle requires native library.
+ * Implemented with Koffi matching C# signature.
  */
 export class OodleDecompressor {
     static Decompress(input: Buffer, decompressedLength: number): Buffer | null {
-        // TODO: Real Oodle decompression requires the oo2core_8_win64.dll native library
-        // This is a stub that returns null
-        console.warn('Oodle decompression requires native library - not implemented');
-        return null;
+        try {
+            if (!oodleLib) {
+                oodleLib = koffi.load('oo2core_8_win64.dll');
+            }
+            const OodleLZ_Decompress = oodleLib.func(`int64_t __cdecl OodleLZ_Decompress(
+                void *buffer, int64_t bufferSize,
+                void *result, int64_t outputBufferSize,
+                int32_t fuzz,
+                int32_t crc,
+                int32_t verbosity,
+                int64_t context,
+                int64_t e,
+                int64_t callback,
+                int64_t callback_ctx,
+                int64_t scratch,
+                int64_t scratch_size,
+                int32_t threadPhase
+            )`);
+
+            const resultBuf = Buffer.alloc(decompressedLength);
+            const decodedSize = OodleLZ_Decompress(
+                input,
+                input.length,
+                resultBuf,
+                resultBuf.length,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                3
+            );
+
+            if (decodedSize > 0) {
+                return resultBuf.slice(0, Number(decodedSize));
+            }
+            return null;
+        } catch (e) {
+            console.error('Oodle decompression error:', e);
+            return null;
+        }
     }
 }
 

@@ -16,7 +16,7 @@ export function ExportPage() {
                 {/* Page header */}
                 <div className="flex items-center gap-[10px]">
                     <Package size={18} className="text-accent" />
-                    <h1 className="text-[16px] font-semibold text-text m-0">Batch Export</h1>
+                    <h1 className="text-[16px] font-semibold text-text m-0">Export</h1>
                     <span className="text-[11px] text-text-disabled bg-border/40 px-[8px] py-[2px] rounded-[4px]">
                         TRPAK → DAE
                     </span>

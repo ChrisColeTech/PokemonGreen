@@ -1,6 +1,11 @@
+import * as fs from 'fs';
+import * as flatbuffers from 'flatbuffers';
+
 export class FlatBufferConverter {
-    static DeserializeFrom<T>(filePath: string | Buffer): T {
-        // TODO: Implement actual FlatBuffer deserialization
-        throw new Error('FlatBuffer deserialization not implemented');
+    static DeserializeFrom(data: string | Buffer, RootType: any): any {
+        const buf = typeof data === 'string' ? fs.readFileSync(data) : data;
+        const bb = new flatbuffers.ByteBuffer(new Uint8Array(buf));
+        const rootMethod = `getRootAs${RootType.name}`;
+        return (RootType as any)[rootMethod](bb);
     }
 }

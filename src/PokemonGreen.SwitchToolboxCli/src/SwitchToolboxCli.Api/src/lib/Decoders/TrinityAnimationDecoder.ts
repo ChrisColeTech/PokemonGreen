@@ -1,4 +1,4 @@
-import { Vector3, MathQuaternion } from './Math.js';
+import * as Decoders from './Math';
 import type { Vector3f, PackedQuaternion } from '../Flatbuffers/Common/Math.js';
 import type { Animation, BoneTrack } from '../Flatbuffers/GF/Animation/index.js';
 

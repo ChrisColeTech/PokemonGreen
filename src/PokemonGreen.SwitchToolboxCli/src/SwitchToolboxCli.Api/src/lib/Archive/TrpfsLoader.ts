@@ -40,7 +40,7 @@ export class TrpfsLoader {
             throw new Error(`data.trpfs not found: ${this._trpfsPath}`);
         }
 
-        this._fd = FlatBufferConverter.DeserializeFrom<CustomFileDescriptor>(trpfdPath);
+        this._fd = FlatBufferConverter.DeserializeFrom(trpfdPath, CustomFileDescriptor);
         this._fs = this.ReadFileSystem(this._trpfsPath);
         this._hashCache = hashCache ?? new TrpakHashCache();
     }
@@ -140,7 +140,7 @@ export class TrpfsLoader {
         offset += 8;
 
         const fsData = data.subarray(fsOffset);
-        return FlatBufferConverter.DeserializeFrom<FileSystem>(fsData);
+        return FlatBufferConverter.DeserializeFrom(fsData, FileSystem);
     }
 
     private TryResolvePackInfo(fileHash: bigint): { packName: string; packSize: bigint } | null {
@@ -194,7 +194,7 @@ export class TrpfsLoader {
         const packOffset = Number(this._fs.FileOffsets[fileIndex]);
         const packBytes = data.subarray(packOffset, packOffset + Number(packSize));
 
-        const pack = FlatBufferConverter.DeserializeFrom<PackedArchive>(packBytes);
+        const pack = FlatBufferConverter.DeserializeFrom(packBytes, PackedArchive);
         this._packCache.set(packHash, pack);
         return pack;
     }

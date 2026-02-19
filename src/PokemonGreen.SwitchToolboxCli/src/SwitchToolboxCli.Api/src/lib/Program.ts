@@ -154,7 +154,7 @@ async function exportModel(loader: TrpfsLoader, modelPath: string, outputDir: st
         console.log(`  Extracted: ${normalizedModel} (${trmdlBytes.length} bytes)`);
         
         // Parse TRMDL to find dependencies
-        const mdl = FlatBufferConverter.DeserializeFrom<TRMDL>(trmdlBytes);
+        const mdl = FlatBufferConverter.DeserializeFrom(trmdlBytes, TRMDL);
         const modelDir = getDirectoryOrEmpty(normalizedModel);
         
         const pending: string[] = [];
@@ -205,7 +205,7 @@ async function exportModel(loader: TrpfsLoader, modelPath: string, outputDir: st
             if (ext === '.trmsh') {
                 // TRMSH → buffer file
                 try {
-                    const msh = FlatBufferConverter.DeserializeFrom<TRMSH>(bytes);
+                    const msh = FlatBufferConverter.DeserializeFrom(bytes, TRMSH);
                     if (msh?.bufferFilePath && msh.bufferFilePath.trim().length > 0) {
                         enqueuePath(dir, msh.bufferFilePath, pending);
                     }
@@ -215,7 +215,7 @@ async function exportModel(loader: TrpfsLoader, modelPath: string, outputDir: st
             } else if (ext === '.trmtr') {
                 // TRMTR → texture files (BNTX)
                 try {
-                    const mtr = FlatBufferConverter.DeserializeFrom<TRMTR>(bytes);
+                    const mtr = FlatBufferConverter.DeserializeFrom(bytes, TRMTR);
                     if (mtr?.Materials) {
                         for (const mat of mtr.Materials) {
                             if (!mat?.Textures) continue;
@@ -349,7 +349,7 @@ async function exportModel(loader: TrpfsLoader, modelPath: string, outputDir: st
                     const animBytes = loader.ExtractFile(hash.toString());
                     if (animBytes === null) continue;
                     
-                    const animFb = FlatBufferConverter.DeserializeFrom<GFAnimation>(animBytes);
+                    const animFb = FlatBufferConverter.DeserializeFrom(animBytes, GFAnimation);
                     const clipName = path.parse(animName).name;
                     const animDecoder = new TrinityAnimationDecoder(animFb, clipName);
                     

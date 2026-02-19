@@ -1,4 +1,4 @@
-import { Vector3, MathQuaternion, Matrix4 } from './Math.js';
+import * as Decoders from './Math';
 import type { TRSKL, TRTransformNode, TRJointInfo, Matrix4x3f } from '../Flatbuffers/TR/Model/index.js';
 
 interface JointInfoJson {

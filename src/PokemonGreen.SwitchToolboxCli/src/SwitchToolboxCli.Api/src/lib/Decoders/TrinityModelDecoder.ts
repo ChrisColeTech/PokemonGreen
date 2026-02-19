@@ -2,6 +2,7 @@ import { Vector2, Vector3, Vector4 } from './Math.js';
 import { PathString } from '../Utils/PathString.js';
 import type { TrinityArmature } from './TrinityArmature.js';
 import { TrinityMaterial } from './TrinityMaterial.js';
+import { FlatBufferConverter } from '../Utils/index.js';
 import type {
     TRMDL, TRMSH, TRMBF, TRBuffer, TRVertexDeclaration,
     TRVertexUsage, TRVertexFormat, TRIndexFormat,
@@ -91,8 +92,7 @@ export class TrinityModelDecoder {
         this.Name = this.GetFileNameWithoutExtension(modelFile);
         this._modelPath = new PathString(modelFile);
 
-        // Stub - deserialize TRMDL
-        const mdl: TRMDL = {} as TRMDL;
+        const mdl = FlatBufferConverter.DeserializeFrom(modelFile, TRMDL);
 
         // Meshes
         if (loadAllLods) {
