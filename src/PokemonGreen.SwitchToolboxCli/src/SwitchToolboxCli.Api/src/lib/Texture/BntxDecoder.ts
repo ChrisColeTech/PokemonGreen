@@ -97,6 +97,8 @@ export enum BntxFormat {
   BC4_SNORM = 'BC4_SNORM',
   BC5_UNORM = 'BC5_UNORM',
   BC5_SNORM = 'BC5_SNORM',
+  BC6H_UF16 = 'BC6H_UF16',
+  BC6H_SF16 = 'BC6H_SF16',
   BC7_UNORM = 'BC7_UNORM',
   BC7_SRGB = 'BC7_SRGB',
   ASTC_4x4_UNORM = 'ASTC_4x4_UNORM',
@@ -143,6 +145,28 @@ interface FormatInfo {
  * Decodes BNTX (Binary NX Texture) files to RGBA pixel data.
  */
 export class BntxDecoder {
+  /**
+   * External BC6H decoder callback (injected at runtime when DirectXTex bridge is loaded).
+   * Signature: (data: number[], width: number, height: number) => number[]
+   */
+  private static _bc6hDecoderSf16: ((data: number[], w: number, h: number) => number[]) | null = null;
+  private static _bc6hDecoderUf16: ((data: number[], w: number, h: number) => number[]) | null = null;
+
+  /**
+   * Register the DirectXTex BC6H decoder bridge.
+   * Call this after loading the C# assemblies via node-api-dotnet.
+   * @param decoderSf16 - DirectXTexDecoder.DecodeBc6hSf16 bound method
+   * @param decoderUf16 - DirectXTexDecoder.DecodeBc6hUf16 bound method
+   */
+  static setBc6hDecoder(
+    decoderSf16: (data: number[], w: number, h: number) => number[],
+    decoderUf16: (data: number[], w: number, h: number) => number[]
+  ): void {
+    this._bc6hDecoderSf16 = decoderSf16;
+    this._bc6hDecoderUf16 = decoderUf16;
+    console.log('[BntxDecoder] BC6H DirectXTex decoder registered.');
+  }
+
   /**
    * Decode all textures from a BNTX file path.
    */
@@ -449,6 +473,10 @@ export class BntxDecoder {
       case BntxFormat.BC5_UNORM:
         return this.decodeBcn('BC5', width, height);
 
+      case BntxFormat.BC6H_UF16:
+      case BntxFormat.BC6H_SF16:
+        return this.decodeBc6h(data, width, height, format);
+
       case BntxFormat.BC7_UNORM:
       case BntxFormat.BC7_SRGB:
         return this.decodeBcn('BC7', width, height);
@@ -512,6 +540,31 @@ export class BntxDecoder {
 
       default:
         throw new Error(`Unsupported texture format: ${format}`);
+    }
+  }
+
+  /**
+   * Decode BC6H compressed data using DirectXTex (via C# bridge).
+   * BC6H is an HDR format that requires the Microsoft DirectXTex reference decoder.
+   * The decoder is injected at runtime via setBc6hDecoder().
+   */
+  private static decodeBc6h(data: Buffer, width: number, height: number, format: BntxFormat): Buffer {
+    const isSigned = format === BntxFormat.BC6H_SF16;
+    const decoder = isSigned ? this._bc6hDecoderSf16 : this._bc6hDecoderUf16;
+
+    if (!decoder) {
+      console.warn(`[BntxDecoder] BC6H ${format} ${width}x${height} — no DirectXTex decoder registered!`);
+      console.warn('[BntxDecoder] Call BntxDecoder.setBc6hDecoder() after loading the C# bridge.');
+      return this.createPlaceholder(width, height, 255, 0, 255, 255); // Magenta = BC6H missing
+    }
+
+    try {
+      const inputArray = Array.from(data);
+      const rgbaArray = decoder(inputArray, width, height);
+      return Buffer.from(rgbaArray);
+    } catch (ex: any) {
+      console.error(`[BntxDecoder] BC6H ${format} decode failed: ${ex.message}`);
+      return this.createPlaceholder(width, height, 255, 0, 0, 255); // Red = decode error
     }
   }
 
@@ -628,6 +681,8 @@ export class BntxDecoder {
       case BntxFormat.BC3_SRGB:
       case BntxFormat.BC5_UNORM:
       case BntxFormat.BC5_SNORM:
+      case BntxFormat.BC6H_UF16:
+      case BntxFormat.BC6H_SF16:
       case BntxFormat.BC7_UNORM:
       case BntxFormat.BC7_SRGB:
       case BntxFormat.ASTC_4x4_UNORM:
@@ -704,6 +759,9 @@ export class BntxDecoder {
       0x1e02: BntxFormat.BC5_SNORM,
       0x1f01: BntxFormat.BC7_UNORM,
       0x1f02: BntxFormat.BC7_SRGB,
+      // BC6H HDR compressed formats
+      0x2006: BntxFormat.BC6H_SF16,
+      0x2106: BntxFormat.BC6H_UF16,
       0x6001: BntxFormat.ASTC_4x4_UNORM,
       0x6002: BntxFormat.ASTC_4x4_SRGB,
       0x6201: BntxFormat.ASTC_5x4_UNORM,
