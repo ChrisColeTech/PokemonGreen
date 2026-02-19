@@ -42,7 +42,7 @@ public static class NPCRegistry
     {
         if (_npcs == null)
         {
-            var json = PokemonGreen.Assets.AssetLoader.LoadDataJson("npcs");
+            var json = PokemonGreen.Core.AssetLoader.LoadDataJson("npcs");
             if (json != null)
                 Initialize(json);
             else

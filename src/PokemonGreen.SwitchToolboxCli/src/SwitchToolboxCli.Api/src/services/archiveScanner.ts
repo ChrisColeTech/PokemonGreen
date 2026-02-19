@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { TrpfsLoader, TrpakHashCache } from '../lib/index.js';
 import type { ScanResult, FolderGroup } from '../types/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Scans a TRPFD/TRPFS archive directory and discovers all .trmdl models,
@@ -37,11 +41,24 @@ export function openArchive(arcPath: string): TrpfsLoader {
 
 function loadHashCache(): TrpakHashCache {
     const hashCache = new TrpakHashCache();
-    const hashFile = path.join(process.cwd(), 'hashes_inside_fd.txt');
-    if (fs.existsSync(hashFile)) {
-        const lines = fs.readFileSync(hashFile, 'utf8').split('\n');
-        hashCache.LoadHashList(lines);
+
+    // Search for the hash file
+    // __dirname = .../SwitchToolboxCli.Api/src/services
+    const candidates = [
+        path.join(process.cwd(), 'hashes_inside_fd.txt'),
+        path.resolve(__dirname, '..', 'lib', 'hashes_inside_fd.txt'),
+    ];
+
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            const lines = fs.readFileSync(candidate, 'utf8').split('\n');
+            hashCache.LoadHashList(lines);
+            console.log(`[archiveScanner] Loaded ${lines.length} hashes from ${candidate}`);
+            return hashCache;
+        }
     }
+
+    console.warn('[archiveScanner] No hash file found — file names will not be resolved');
     return hashCache;
 }
 

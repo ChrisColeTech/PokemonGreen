@@ -14,6 +14,7 @@ export const archiveRoutes: FastifyPluginAsync = async (app) => {
             const result = await scanArchive(arcPath);
             return result;
         } catch (err) {
+            console.error('[scan] Error:', err);
             const message = err instanceof Error ? err.message : 'Scan failed';
             return reply.status(500).send({ error: message });
         }

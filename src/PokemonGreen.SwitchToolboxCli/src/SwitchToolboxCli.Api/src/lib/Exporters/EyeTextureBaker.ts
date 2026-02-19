@@ -7,6 +7,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import sharp from 'sharp';
+import { BntxDecoder } from '../Texture/BntxDecoder.js';
 import type { TrinityMaterial } from '../Decoders/TrinityMaterial.js';
 import { Vector3 } from '../Decoders/Math.js';
 
@@ -19,10 +21,10 @@ export class EyeTextureBaker {
     }
 
     /**
-     * Bake an eye albedo texture and save it, replacing the blank placeholder.
-     * Returns the path to the baked texture, or null if baking fails.
+     * Bake an eye albedo texture and save it.
+     * Returns path to baked texture, or null if baking fails.
      */
-    public static BakeEyeTexture(material: TrinityMaterial, tempRoot: string, texOutDir: string): string | null {
+    public static async BakeEyeTexture(material: TrinityMaterial, tempRoot: string, texOutDir: string): Promise<string | null> {
         if (!EyeTextureBaker.IsEyeMaterial(material)) {
             return null;
         }
@@ -37,30 +39,30 @@ export class EyeTextureBaker {
         const lymBntxPath = EyeTextureBaker.FindBntxFile(lymRef.FilePath, tempRoot);
         if (!lymBntxPath || !fs.existsSync(lymBntxPath)) {
             return null;
-        }
+         }
 
-        // Decode the layer mask texture
-        const maskImage = EyeTextureBaker.DecodeBntxToImage(lymBntxPath);
-        if (!maskImage) {
-            return null;
-        }
+         // Decode layer mask texture
+         const maskImageResult = await EyeTextureBaker.DecodeBntxToImage(lymBntxPath);
+         if (!maskImageResult) {
+             return null;
+         }
 
-        // Extract material color parameters
-        const baseColors = EyeTextureBaker.ExtractBaseColors(material);
-        const emissionColors = EyeTextureBaker.ExtractEmissionColors(material);
-        const emissionIntensities = EyeTextureBaker.ExtractEmissionIntensities(material);
+         // Extract material color parameters
+         const baseColors = EyeTextureBaker.ExtractBaseColors(material);
+         const emissionColors = EyeTextureBaker.ExtractEmissionColors(material);
+         const emissionIntensities = EyeTextureBaker.ExtractEmissionIntensities(material);
 
-        // Bake the composited texture
-        const { width, height, data } = maskImage;
+         // Bake composited texture
+         const { width, height, data } = maskImageResult;
         const result = new Uint8Array(width * height * 4);
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const idx = (y * width + x) * 4;
-                const maskR = maskImage.data[idx] / 255;     // Layer 1
-                const maskG = maskImage.data[idx + 1] / 255; // Layer 2
-                const maskB = maskImage.data[idx + 2] / 255; // Layer 3
-                const maskA = maskImage.data[idx + 3] / 255; // Layer 4
+                const maskR = maskImageResult.data[idx] / 255;     // Layer 1
+                const maskG = maskImageResult.data[idx + 1] / 255; // Layer 2
+                const maskB = maskImageResult.data[idx + 2] / 255; // Layer 3
+                const maskA = maskImageResult.data[idx + 3] / 255; // Layer 4
 
                 // Shader compositing formula
                 const maskSum = maskR + maskG + maskB + maskA;
@@ -120,7 +122,7 @@ export class EyeTextureBaker {
             }
         }
 
-        // Save the baked texture, overwriting the blank placeholder _alb
+        // Save the baked texture
         const albFileName = EyeTextureBaker.GetAlbedoFileName(material);
         const outPath = path.join(texOutDir, albFileName);
 
@@ -130,8 +132,8 @@ export class EyeTextureBaker {
             fs.mkdirSync(outDir, { recursive: true });
         }
 
-        // Save as PNG using simple PNG encoding (stub - actual encoding would require sharp or similar)
-        EyeTextureBaker.SaveAsPng(outPath, result, width, height);
+        // Save as PNG using sharp
+        await sharp(Buffer.from(result), { raw: { width, height, channels: 4 } }).png().toFile(outPath);
 
         console.log(`  Baked eye texture: ${path.basename(outPath)} (${width}x${height})`);
         return outPath;
@@ -219,17 +221,17 @@ export class EyeTextureBaker {
         }
     }
 
-    private static DecodeBntxToImage(bntxPath: string): { width: number; height: number; data: Uint8Array } | null {
+    private static async DecodeBntxToImage(bntxPath: string): Promise<{ width: number; height: number; data: Uint8Array } | null> {
         try {
-            // Stub - actual BNTX decoding would use BntxDecoder
-            // For now, return null to indicate not implemented
-            // In a real implementation, this would:
-            // 1. Read the BNTX file
-            // 2. Decode using BntxDecoder
-            // 3. Return the decoded image data
-            console.warn(`BNTX decoding not implemented for ${bntxPath}`);
-            return null;
-        } catch {
+            const textures = BntxDecoder.decodeFile(bntxPath);
+            if (!textures || textures.length === 0) {
+                return null;
+            }
+
+            const tex = textures[0];
+            return { width: tex.width, height: tex.height, data: new Uint8Array(tex.rgbaData) };
+        } catch (ex) {
+            console.warn(`BNTX decoding failed for ${bntxPath}: ${ex}`);
             return null;
         }
     }
@@ -242,14 +244,6 @@ export class EyeTextureBaker {
         if (linear <= 0.0031308) {
             return linear * 12.92;
         }
-        return 1.055 * Math.pow(linear, 1 / 2.4) - 0.055;
-    }
-
-    private static SaveAsPng(outPath: string, data: Uint8Array, width: number, height: number): void {
-        // Stub - actual PNG encoding would require sharp or similar library
-        // For now, write raw data as a placeholder
-        console.warn(`PNG encoding not implemented, saving raw data to ${outPath}`);
-        // In a real implementation, use something like:
-        // sharp(data, { raw: { width, height, channels: 4 } }).png().toFile(outPath);
+        return 1.055 * Math.pow(linear, 1.0 / 2.4) - 0.055;
     }
 }

@@ -1,14 +1,45 @@
 /**
- * Nintendo Tegra X1 swizzle/unswizzle implementation for Switch textures.
- * 
- * Handles Tegra X1 GPU block-linear and pitch-linear deswizzling.
- * Ported from C# TegraSwizzle.cs
+ * Nintendo Tegra X1 swizzle/unswizzle for Switch textures.
+ *
+ * Calls tegra_swizzle_x64.dll (Rust native library) using koffi FFI.
+ * Function signatures reverse-engineered from the C# P/Invoke wrapper in TegraSwizzle.cs.
  */
 
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+import koffi from 'koffi';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const _dllPath = path.resolve(__dirname, '..', 'tegra_swizzle_x64.dll');
+
+// ---------------------------------------------------------------------------
+// koffi FFI bindings
+// ---------------------------------------------------------------------------
+const _lib = koffi.load(_dllPath);
+
+// ulong = uint64 in koffi
+const _deswizzleBlockLinear = _lib.func(
+  'deswizzle_block_linear',
+  'void',
+  ['uint64', 'uint64', 'uint64',   // width, height, depth
+    'uint8 *', 'uint64',            // source, sourceLength
+    'uint8 *', 'uint64',            // destination, destinationLength
+    'uint64', 'uint64']             // blockHeight, bytesPerPixel
+);
+
+const _blockHeightMip0 = _lib.func(
+  'block_height_mip0',
+  'uint64',
+  ['uint64']  // height (in blocks)
+);
+
+/**
+ * Deswizzle a Tegra X1 block-linear or pitch-linear texture surface.
+ */
 export class TegraSwizzle {
   /**
    * Deswizzle a Tegra X1 block-linear or pitch-linear texture surface.
-   * This is the primary entry point.
+   * Matches the C# TegraSwizzle.Deswizzle() signature exactly.
    */
   static deswizzle(
     width: number,
@@ -16,42 +47,22 @@ export class TegraSwizzle {
     depth: number,
     blkWidth: number,
     blkHeight: number,
-    blkDepth: number,
-    roundPitch: number,
+    _blkDepth: number,
+    _roundPitch: number,
     bpp: number,
     tileMode: number,
     blockHeightLog2: number,
     data: Buffer
   ): Buffer {
     if (tileMode === 1) {
-      return this.deswizzlePitchLinear(
-        width,
-        height,
-        depth,
-        blkWidth,
-        blkHeight,
-        blkDepth,
-        roundPitch,
-        bpp,
-        data
-      );
+      return this.deswizzlePitchLinear(width, height, depth, blkWidth, blkHeight, 1, _roundPitch, bpp, data);
     } else {
-      return this.deswizzleBlockLinearSurface(
-        width,
-        height,
-        depth,
-        blkWidth,
-        blkHeight,
-        blkDepth,
-        bpp,
-        blockHeightLog2,
-        data
-      );
+      return this.deswizzleBlockLinearSurface(width, height, depth, blkWidth, blkHeight, 1, bpp, blockHeightLog2, data);
     }
   }
 
   /**
-   * Deswizzle a block-linear texture surface.
+   * Deswizzle block-linear via the native DLL.
    */
   private static deswizzleBlockLinearSurface(
     width: number,
@@ -59,108 +70,34 @@ export class TegraSwizzle {
     depth: number,
     blkWidth: number,
     blkHeight: number,
-    blkDepth: number,
+    _blkDepth: number,
     bpp: number,
     blockHeightLog2: number,
     data: Buffer
   ): Buffer {
-    // Tegra only allows block heights supported by the TRM (1, 2, 4, 8, 16, 32)
-    const blockHeightMip0 = 1 << Math.max(Math.min(blockHeightLog2, 5), 0);
+    // tegra_swizzle only allows block heights supported by the TRM (1,2,4,8,16,32).
+    const blockHeightMip0 = BigInt(1 << Math.max(Math.min(blockHeightLog2, 5), 0));
 
     // Convert to block dimensions for block compressed formats
     const w = this.divRoundUp(width, blkWidth);
     const h = this.divRoundUp(height, blkHeight);
-    const d = this.divRoundUp(depth, blkDepth);
+    const d = this.divRoundUp(depth, 1);
 
-    const output = Buffer.alloc(w * h * d * bpp);
+    const outputSize = w * h * d * bpp;
+    const output = Buffer.alloc(outputSize);
 
-    this.deswizzleBlockLinear(w, h, d, data, output, BigInt(blockHeightMip0), bpp);
+    _deswizzleBlockLinear(
+      BigInt(w), BigInt(h), BigInt(d),
+      data, BigInt(data.length),
+      output, BigInt(outputSize),
+      blockHeightMip0, BigInt(bpp)
+    );
 
     return output;
   }
 
   /**
-   * Pure JavaScript implementation of block-linear deswizzling.
-   * This mimics the behavior of the native tegra_swizzle library.
-   */
-  private static deswizzleBlockLinear(
-    width: number,
-    height: number,
-    depth: number,
-    source: Buffer,
-    destination: Buffer,
-    blockHeight: bigint,
-    bytesPerPixel: number
-  ): void {
-    const blockHeightNum = Number(blockHeight);
-    const gobWidth = 64; // GOB width in bytes
-    const gobHeight = 8 * blockHeightNum; // GOB height depends on block height
-
-    for (let z = 0; z < depth; z++) {
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          // Calculate the destination position
-          const dstPos = (z * height * width + y * width + x) * bytesPerPixel;
-
-          // Calculate the swizzled source position using Morton order
-          const srcPos = this.getSwizzledOffset(
-            x,
-            y,
-            gobWidth,
-            gobHeight,
-            bytesPerPixel
-          );
-
-          if (srcPos + bytesPerPixel <= source.length && dstPos + bytesPerPixel <= destination.length) {
-            source.copy(destination, dstPos, srcPos, srcPos + bytesPerPixel);
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Calculate the swizzled offset for a given position.
-   * Uses Morton order for Tegra X1 swizzling.
-   */
-  private static getSwizzledOffset(
-    x: number,
-    y: number,
-    gobWidth: number,
-    gobHeight: number,
-    bytesPerPixel: number
-  ): number {
-    // Calculate which GOB this pixel belongs to
-    const gobX = Math.floor((x * bytesPerPixel) / gobWidth);
-    const gobY = Math.floor(y / gobHeight);
-
-    // Position within the GOB
-    const xInGob = (x * bytesPerPixel) % gobWidth;
-    const yInGob = y % gobHeight;
-
-    // Calculate GOB index using Morton order
-    const gobIndex = this.interleaveBits(gobX, gobY);
-
-    // Calculate offset within GOB using Morton order
-    const inGobOffset = this.interleaveBits(xInGob / 4, yInGob) * 4 + (xInGob % 4);
-
-    return gobIndex * gobWidth * gobHeight + inGobOffset;
-  }
-
-  /**
-   * Interleave bits of x and y to create Morton order index.
-   */
-  private static interleaveBits(x: number, y: number): number {
-    let result = 0;
-    for (let i = 0; i < 16; i++) {
-      result |= ((x >> i) & 1) << (2 * i);
-      result |= ((y >> i) & 1) << (2 * i + 1);
-    }
-    return result;
-  }
-
-  /**
-   * Deswizzle a pitch-linear texture surface.
+   * Deswizzle pitch-linear (pure TS, no native needed).
    */
   private static deswizzlePitchLinear(
     width: number,
@@ -168,14 +105,14 @@ export class TegraSwizzle {
     depth: number,
     blkWidth: number,
     blkHeight: number,
-    blkDepth: number,
+    _blkDepth: number,
     roundPitch: number,
     bpp: number,
     data: Buffer
   ): Buffer {
     const w = this.divRoundUp(width, blkWidth);
     const h = this.divRoundUp(height, blkHeight);
-    const d = this.divRoundUp(depth, blkDepth);
+    const d = this.divRoundUp(depth, 1);
 
     let pitch = w * bpp;
     if (roundPitch === 1) {
@@ -189,10 +126,9 @@ export class TegraSwizzle {
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
           const pos = y * pitch + x * bpp;
-          const pos_ = (y * w + x) * bpp;
-
-          if (pos + bpp <= surfSize) {
-            data.copy(result, pos, pos_, pos_ + bpp);
+          const srcPos = (z * h * w + y * w + x) * bpp;
+          if (pos + bpp <= surfSize && srcPos + bpp <= data.length) {
+            data.copy(result, pos, srcPos, srcPos + bpp);
           }
         }
       }
@@ -202,98 +138,24 @@ export class TegraSwizzle {
   }
 
   /**
-   * Get the block height for mip level 0.
+   * Get block height from texture height (in blocks), using native DLL.
    */
   static getBlockHeight(heightInBytes: number): bigint {
-    return this.blockHeightMip0(BigInt(heightInBytes));
+    return BigInt(_blockHeightMip0(BigInt(heightInBytes)));
   }
 
-  /**
-   * Get the block height for a specific mip level.
-   */
-  static getMipBlockHeight(mipHeightInBytes: number, blockHeightMip0: bigint): bigint {
-    return this.mipBlockHeight(BigInt(mipHeightInBytes), blockHeightMip0);
-  }
-
-  /**
-   * Calculate block height for mip level 0.
-   */
-  private static blockHeightMip0(heightInBytes: bigint): bigint {
-    const height = Number(heightInBytes);
-    // Block height is determined by texture height
-    if (height <= 16) return BigInt(1);
-    if (height <= 32) return BigInt(2);
-    if (height <= 64) return BigInt(4);
-    if (height <= 128) return BigInt(8);
-    if (height <= 256) return BigInt(16);
-    return BigInt(32);
-  }
-
-  /**
-   * Calculate block height for a specific mip level.
-   */
-  private static mipBlockHeight(mipHeightInBytes: bigint, blockHeightMip0: bigint): bigint {
-    const height = Number(mipHeightInBytes);
-    const mip0 = Number(blockHeightMip0);
-
-    // Calculate appropriate block height based on mip level size
-    if (height <= 16) return BigInt(1);
-    if (height <= 32 && mip0 >= 2) return BigInt(2);
-    if (height <= 64 && mip0 >= 4) return BigInt(4);
-    if (height <= 128 && mip0 >= 8) return BigInt(8);
-    if (height <= 256 && mip0 >= 16) return BigInt(16);
-
-    // Clamp to the mip0 block height
-    const maxBlockHeight = BigInt(32);
-    return blockHeightMip0 < maxBlockHeight ? blockHeightMip0 : maxBlockHeight;
-  }
-
-  /**
-   * Divide and round up.
-   */
   static divRoundUp(n: number, d: number): number {
     return Math.floor((n + d - 1) / d);
   }
 
-  /**
-   * Round up to the next power of 2.
-   */
   static pow2RoundUp(x: number): number {
     x -= 1;
-    x |= x >> 1;
-    x |= x >> 2;
-    x |= x >> 4;
-    x |= x >> 8;
-    x |= x >> 16;
+    x |= x >> 1; x |= x >> 2; x |= x >> 4; x |= x >> 8; x |= x >> 16;
     return x + 1;
   }
 
-  /**
-   * Round x up to the next multiple of y.
-   */
   private static roundUp(x: number, y: number): number {
     return ((x - 1) | (y - 1)) + 1;
-  }
-
-  /**
-   * Calculate swizzled surface size.
-   */
-  static swizzledSurfaceSize(
-    width: number,
-    height: number,
-    depth: number,
-    blockDim: { width: bigint; height: bigint; depth: bigint },
-    bytesPerPixel: bigint,
-    mipmapCount: bigint,
-    arrayCount: bigint
-  ): bigint {
-    // Simplified calculation - full implementation would need more detail
-    const w = BigInt(Math.ceil(width / Number(blockDim.width)));
-    const h = BigInt(Math.ceil(height / Number(blockDim.height)));
-    const d = BigInt(Math.ceil(depth / Number(blockDim.depth)));
-
-    const surfaceSize = w * h * d * bytesPerPixel * mipmapCount * arrayCount;
-    return surfaceSize;
   }
 }
 

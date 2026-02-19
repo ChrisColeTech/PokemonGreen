@@ -41,7 +41,7 @@ public static class ItemRegistry
     {
         if (_items == null)
         {
-            var json = PokemonGreen.Assets.AssetLoader.LoadDataJson("items");
+            var json = PokemonGreen.Core.AssetLoader.LoadDataJson("items");
             if (json != null)
                 Initialize(json);
             else

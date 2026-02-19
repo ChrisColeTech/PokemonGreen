@@ -119,28 +119,35 @@ export class TrpfsLoader {
 
     private NormalizePath(inputPath: string): string {
         let p = (inputPath ?? '').replace(/\\/g, '/').trim();
-        
+
         if (p.toLowerCase().startsWith('romfs://')) {
             p = p.slice('romfs://'.length);
         }
         if (p.toLowerCase().startsWith('trpfs://')) {
             p = p.slice('trpfs://'.length);
         }
-        
+
         return p.replace(/^\/+/, '');
     }
 
     private ReadFileSystem(trpfsPath: string): FileSystem {
-        const data = fs.readFileSync(trpfsPath);
+        const fd = fs.openSync(trpfsPath, 'r');
+        try {
+            // OneFileHeader: 8 bytes magic + 8 bytes offset
+            const header = Buffer.alloc(16);
+            fs.readSync(fd, header, 0, 16, 0);
+            const fsOffset = Number(header.readBigInt64LE(8));
 
-        // OneFileHeader: 8 bytes magic + 8 bytes offset
-        // Skip magic (8 bytes)
-        let offset = 8;
-        const fsOffset = Number(data.readBigInt64LE(offset));
-        offset += 8;
+            // Read remaining bytes from fsOffset to end of file
+            const stat = fs.fstatSync(fd);
+            const fsSize = Number(stat.size) - fsOffset;
+            const fsData = Buffer.alloc(fsSize);
+            fs.readSync(fd, fsData, 0, fsSize, fsOffset);
 
-        const fsData = data.subarray(fsOffset);
-        return FlatBufferConverter.DeserializeFrom(fsData, FileSystem);
+            return FlatBufferConverter.DeserializeFrom(fsData, FileSystem) as FileSystem;
+        } finally {
+            fs.closeSync(fd);
+        }
     }
 
     private TryResolvePackInfo(fileHash: bigint): { packName: string; packSize: bigint } | null {
@@ -189,12 +196,18 @@ export class TrpfsLoader {
             return null;
         }
 
-        // Read raw pack bytes from TRPFS
-        const data = fs.readFileSync(this._trpfsPath);
+        // Read raw pack bytes from TRPFS using partial read (file can be >2GB)
         const packOffset = Number(this._fs.FileOffsets[fileIndex]);
-        const packBytes = data.subarray(packOffset, packOffset + Number(packSize));
+        const packLen = Number(packSize);
+        const packBytes = Buffer.alloc(packLen);
+        const fd = fs.openSync(this._trpfsPath, 'r');
+        try {
+            fs.readSync(fd, packBytes, 0, packLen, packOffset);
+        } finally {
+            fs.closeSync(fd);
+        }
 
-        const pack = FlatBufferConverter.DeserializeFrom(packBytes, PackedArchive);
+        const pack = FlatBufferConverter.DeserializeFrom(packBytes, PackedArchive) as PackedArchive;
         this._packCache.set(packHash, pack);
         return pack;
     }

@@ -128,11 +128,14 @@ export function fmtFloat(f: number): string {
     return f.toFixed(6).replace(/\.?0+$/, '');
 }
 
-export function fmtMatrix(_m: import('../Decoders/Math.js').Matrix4): string {
-    // Column-major for COLLADA
-    // Matrix4 is a stub - would format actual matrix values
-    // For now, return identity matrix
-    return '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1';
+export function fmtMatrix(m: import('../Decoders/Math.js').Matrix4): string {
+    // Column-major for COLLADA (OpenTK format)
+    // Matrix4 is stored in row-major order, so we transpose for COLLADA column-major
+    const data = m.m;
+    return `${fmtFloat(data[0])} ${fmtFloat(data[4])} ${fmtFloat(data[8])} ${fmtFloat(data[12])} ` +
+           `${fmtFloat(data[1])} ${fmtFloat(data[5])} ${fmtFloat(data[9])} ${fmtFloat(data[13])} ` +
+           `${fmtFloat(data[2])} ${fmtFloat(data[6])} ${fmtFloat(data[10])} ${fmtFloat(data[14])} ` +
+           `${fmtFloat(data[3])} ${fmtFloat(data[7])} ${fmtFloat(data[11])} ${fmtFloat(data[15])}`;
 }
 
 export function createElement(name: string, attributes: Record<string, string>, content?: string): string {

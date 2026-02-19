@@ -223,7 +223,8 @@ class ExportContext {
         this._geometries.push(geometry);
 
         // Material / Effect / Image
-        if (this._seenMaterialIds.add(materialId)) {
+        if (!this._seenMaterialIds.has(materialId)) {
+            this._seenMaterialIds.add(materialId);
             const effectId = `Effect_${materialId}`;
             this._materials.push({ Id: materialId, Name: sub.MaterialName, EffectUrl: `#${effectId}` });
 
@@ -232,7 +233,8 @@ class ExportContext {
             const imageName = texPath ? path.basename(texPath, path.extname(texPath)) : 'DefaultTexture';
             const imageId = `Image_${ExportContext.SanitizeName(imageName)}`;
 
-            if (this._seenImageIds.add(imageId)) {
+            if (!this._seenImageIds.has(imageId)) {
+                this._seenImageIds.add(imageId);
                 this._images.push({
                     Id: imageId,
                     Name: imageName,
@@ -357,12 +359,12 @@ class ExportContext {
         const invBindData: number[] = [];
         for (const bone of armature.Bones) {
             const m = bone.InverseBindWorld;
-            // Column-major for COLLADA - Matrix4 is stub, use identity
+            // Column-major for COLLADA
             invBindData.push(
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1
+                m.m[0], m.m[1], m.m[2], m.m[3],
+                m.m[4], m.m[5], m.m[6], m.m[7],
+                m.m[8], m.m[9], m.m[10], m.m[11],
+                m.m[12], m.m[13], m.m[14], m.m[15]
             );
         }
 
@@ -846,8 +848,7 @@ class ExportContext {
         const matS = Matrix4.CreateScale(sca);
         const matR = Matrix4.CreateFromQuaternion(rot);
         const matT = Matrix4.CreateTranslation(pos);
-        // Stub - would multiply: return matS * matR * matT
-        return Matrix4.Identity;
+        return matS.multiply(matR).multiply(matT);
     }
 
     private WriteAnimSource(lines: string[], id: string, count: number, stride: number, data: string, paramName: string, paramType: string, indent: string): void {
@@ -881,9 +882,9 @@ class ExportContext {
         return name.replace(/[^a-zA-Z0-9_]/g, '_');
     }
 
-    private static FormatMatrix(_m: Matrix4): string {
-        // Column-major for COLLADA - Matrix4 is stub, return identity
-        return '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1';
+    private static FormatMatrix(m: Matrix4): string {
+        // Column-major for COLLADA
+        return m.toArray().map(v => v.toFixed(6)).join(' ');
     }
 
     //#endregion

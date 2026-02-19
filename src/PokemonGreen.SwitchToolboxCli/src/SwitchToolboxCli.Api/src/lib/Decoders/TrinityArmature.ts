@@ -1,5 +1,7 @@
-import * as Decoders from './Math';
-import type { TRSKL, TRTransformNode, TRJointInfo, Matrix4x3f } from '../Flatbuffers/TR/Model/index.js';
+import { Vector3, Vector4, Matrix4, MathQuaternion } from './Math.js';
+import type { TRSKL, TRTransformNode, TRJointInfo } from '../Flatbuffers/TR/Model/index.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface JointInfoJson {
     SegmentScaleCompensate: boolean;
@@ -141,11 +143,16 @@ export class TrinityArmature {
         if (bone.ParentIndex >= 0 && bone.ParentIndex < this.Bones.length && bone.ParentIndex !== index) {
             if (bone.UseSegmentScaleCompensate) {
                 const parent = this.Bones[bone.ParentIndex];
-                // Apply segment scale compensation
-                local = new Matrix4(); // Stub - multiply by scale matrix
+                const invScale = new Vector3(
+                    parent.RestScale.x !== 0 ? 1 / parent.RestScale.x : 1,
+                    parent.RestScale.y !== 0 ? 1 / parent.RestScale.y : 1,
+                    parent.RestScale.z !== 0 ? 1 / parent.RestScale.z : 1
+                );
+                const invScaleMat = Matrix4.CreateScale(invScale);
+                local = Matrix4.Multiply(local, invScaleMat);
             }
             const parentWorld = this.ComputeBindWorld(bone.ParentIndex, useTrsklInverseBind, world, computed);
-            world[index] = new Matrix4(); // Stub - multiply matrices
+            world[index] = Matrix4.Multiply(local, parentWorld);
         } else {
             world[index] = local;
         }
@@ -175,17 +182,204 @@ export class TrinityArmature {
         return mapped >= 0 ? mapped : 0;
     }
 
+    public GetWorldMatrices(): Matrix4[] {
+        const world = new Array(this.Bones.length);
+        const computed = new Array(this.Bones.length).fill(false);
+        for (let i = 0; i < this.Bones.length; i++) {
+            world[i] = this.ComputeWorldMatrix(i, computed, world);
+        }
+        return world;
+    }
+
+    private ComputeWorldMatrix(index: number, computed: boolean[], world: Matrix4[]): Matrix4 {
+        if (computed[index]) {
+            return world[index];
+        }
+
+        const bone = this.Bones[index];
+        const scaleMat = Matrix4.CreateScale(bone.Scale);
+        const rotMat = Matrix4.CreateFromQuaternion(bone.Rotation);
+        const transMat = Matrix4.CreateTranslation(bone.Position);
+        let local = Matrix4.Multiply(Matrix4.Multiply(scaleMat, rotMat), transMat);
+
+        if (bone.ParentIndex >= 0 && bone.ParentIndex < this.Bones.length && bone.ParentIndex !== index) {
+            if (bone.UseSegmentScaleCompensate) {
+                const parent = this.Bones[bone.ParentIndex];
+                const invScale = new Vector3(
+                    parent.Scale.x !== 0 ? 1 / parent.Scale.x : 1,
+                    parent.Scale.y !== 0 ? 1 / parent.Scale.y : 1,
+                    parent.Scale.z !== 0 ? 1 / parent.Scale.z : 1
+                );
+                const invScaleMat = Matrix4.CreateScale(invScale);
+                local = Matrix4.Multiply(local, invScaleMat);
+            }
+            const parentWorld = this.ComputeWorldMatrix(bone.ParentIndex, computed, world);
+            world[index] = Matrix4.Multiply(local, parentWorld);
+        } else {
+            world[index] = local;
+        }
+
+        computed[index] = true;
+        return world[index];
+    }
+
     public MapBoneMetaIndex(_boneMetaIndex: number): number {
         return 0;
     }
 
-    private ApplyJointInfoFromJson(_sourcePath?: string): void {
-        // Stub - JSON parsing not implemented
+    private ApplyJointInfoFromJson(sourcePath?: string): void {
+        const parseResult = TrinityArmature.LoadJointInfoFromJson(sourcePath);
+        if (!parseResult || parseResult.JointInfos.length === 0) {
+            return;
+        }
+
+        if (!this._jointInfoToNode || this._jointInfoToNode.length === 0) {
+            this._jointInfoToNode = new Array(parseResult.JointInfos.length).fill(-1);
+        } else if (parseResult.JointInfos.length > this._jointInfoToNode.length) {
+            const oldLen = this._jointInfoToNode.length;
+            const newArray = new Array(parseResult.JointInfos.length).fill(-1);
+            for (let i = 0; i < oldLen; i++) {
+                newArray[i] = this._jointInfoToNode[i];
+            }
+            this._jointInfoToNode = newArray;
+        }
+
+        if (parseResult.NodeNames.length === 0 || parseResult.NodeJointInfoIds.length === 0) {
+            return;
+        }
+
+        const map = new Map<string, number>();
+        const count = Math.min(parseResult.NodeNames.length, parseResult.NodeJointInfoIds.length);
+        for (let i = 0; i < count; i++) {
+            const name = parseResult.NodeNames[i];
+            if (!name || name.trim().length === 0) {
+                continue;
+            }
+            map.set(name.toLowerCase(), parseResult.NodeJointInfoIds[i]);
+        }
+
+        for (let i = 0; i < this.Bones.length; i++) {
+            const bone = this.Bones[i];
+            const jointId = map.get(bone.Name.toLowerCase());
+            if (jointId === undefined) {
+                continue;
+            }
+
+            if (jointId >= 0 && jointId < this._jointInfoToNode.length) {
+                this._jointInfoToNode[jointId] = i;
+            }
+
+            TrinityArmature.ApplyJointInfoToBone(bone, parseResult, jointId);
+        }
+    }
+
+    private static ApplyJointInfoToBone(bone: Bone, parseResult: JointInfoParseResult, jointId: number): void {
+        if (jointId < 0 || jointId >= parseResult.JointInfos.length) {
+            return;
+        }
+
+        const joint = parseResult.JointInfos[jointId];
+        bone.UseSegmentScaleCompensate = joint.SegmentScaleCompensate;
+        if (joint.HasInverseBind) {
+            bone.JointInverseBindWorld = joint.InverseBind;
+            bone.HasJointInverseBind = true;
+        }
+        bone.Skinning = joint.InfluenceSkinning;
+    }
+
+    private static LoadJointInfoFromJson(sourcePath?: string): JointInfoParseResult | null {
+        const jsonPath = TrinityArmature.ResolveTrsklJsonPath(sourcePath);
+        if (!jsonPath || !fs.existsSync(jsonPath)) {
+            return null;
+        }
+
+        try {
+            let text = fs.readFileSync(jsonPath, 'utf-8');
+            text = text.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\b\s*:/g, '"$1":');
+            const root = JSON.parse(text);
+
+            const jointInfos: JointInfoJson[] = [];
+            const jointInfoList = root.joint_info_list;
+            if (Array.isArray(jointInfoList)) {
+                for (const entry of jointInfoList) {
+                    const info: JointInfoJson = {
+                        SegmentScaleCompensate: entry.segment_scale_compensate === true,
+                        InfluenceSkinning: entry.influence_skinning !== false,
+                        HasInverseBind: false,
+                        InverseBind: Matrix4.Identity
+                    };
+
+                    if (entry.inverse_bind_pose_matrix) {
+                        if (TrinityArmature.TryParseAxisMatrix(entry.inverse_bind_pose_matrix)) {
+                            const axisX = TrinityArmature.ReadVector3Json(entry.inverse_bind_pose_matrix.axis_x);
+                            const axisY = TrinityArmature.ReadVector3Json(entry.inverse_bind_pose_matrix.axis_y);
+                            const axisZ = TrinityArmature.ReadVector3Json(entry.inverse_bind_pose_matrix.axis_z);
+                            const axisW = TrinityArmature.ReadVector3Json(entry.inverse_bind_pose_matrix.axis_w);
+                            info.InverseBind = TrinityArmature.CreateMatrixFromAxis(axisX, axisY, axisZ, axisW);
+                            info.HasInverseBind = true;
+                        }
+                    }
+
+                    jointInfos.push(info);
+                }
+            }
+
+            const nodeJointIds: number[] = [];
+            const nodeNames: string[] = [];
+            const nodeList = root.node_list;
+            if (Array.isArray(nodeList)) {
+                const cnt = nodeList.length;
+                for (let i = 0; i < cnt; i++) {
+                    const node = nodeList[i];
+                    nodeNames.push(node.name ?? '');
+                    nodeJointIds.push(node.joint_info_id ?? -1);
+                }
+            }
+
+            return { JointInfos: jointInfos, NodeJointInfoIds: nodeJointIds, NodeNames: nodeNames };
+        } catch {
+            return null;
+        }
+    }
+
+    private static TryParseAxisMatrix(matrix: any): boolean {
+        return matrix.axis_x !== undefined && matrix.axis_y !== undefined && matrix.axis_z !== undefined && matrix.axis_w !== undefined;
+    }
+
+    private static ReadVector3Json(element: any): Vector3 {
+        const x = element.x !== undefined ? Number(element.x) : 0;
+        const y = element.y !== undefined ? Number(element.y) : 0;
+        const z = element.z !== undefined ? Number(element.z) : 0;
+        return new Vector3(x, y, z);
+    }
+
+    private static ResolveTrsklJsonPath(sourcePath?: string): string | null {
+        if (!sourcePath || sourcePath.trim().length === 0) {
+            return null;
+        }
+
+        const dir = path.dirname(sourcePath);
+        const baseName = path.basename(sourcePath, path.extname(sourcePath));
+        let candidate = path.join(dir, `${baseName}.trskl.json`);
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+
+        candidate = path.join(dir, `${baseName}.json`);
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+
+        return null;
     }
 
     private static CreateMatrixFromAxis(axisX: Vector3, axisY: Vector3, axisZ: Vector3, axisW: Vector3): Matrix4 {
-        // Stub implementation
-        return Matrix4.Identity;
+        return new Matrix4(new Float32Array([
+            axisX.x, axisX.y, axisX.z, 0,
+            axisY.x, axisY.y, axisY.z, 0,
+            axisZ.x, axisZ.y, axisZ.z, 0,
+            axisW.x, axisW.y, axisW.z, 1
+        ]));
     }
 }
 
@@ -220,7 +414,10 @@ export class Bone {
         this.RestPosition = this.Position;
         this.RestRotation = this.Rotation;
         this.RestScale = this.Scale;
-        this.RestLocalMatrix = Matrix4.Identity; // Stub - should be computed from scale, rotation, translation
+        const scaleMat = Matrix4.CreateScale(this.RestScale);
+        const rotMat = Matrix4.CreateFromQuaternion(this.RestRotation);
+        const transMat = Matrix4.CreateTranslation(this.RestPosition);
+        this.RestLocalMatrix = Matrix4.Multiply(Matrix4.Multiply(scaleMat, rotMat), transMat);
         this.ParentIndex = node.ParentNodeIndex;
         this.Skinning = skinning;
         this.HasJointInverseBind = false;
@@ -242,7 +439,7 @@ export class Bone {
         const qx = MathQuaternion.FromAxisAngle(Vector3.UnitX, euler.x);
         const qy = MathQuaternion.FromAxisAngle(Vector3.UnitY, euler.y);
         const qz = MathQuaternion.FromAxisAngle(Vector3.UnitZ, euler.z);
-        // q = qz * qy * qx
-        return MathQuaternion.Identity; // Stub - should multiply quaternions
+        const q = MathQuaternion.Multiply(qz, MathQuaternion.Multiply(qy, qx));
+        return q.Normalized();
     }
 }
